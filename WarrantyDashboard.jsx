@@ -328,6 +328,59 @@ const LS_REPORT = "awntrak_warranty_report_id";
 function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId = "" }) {
   const [tableId,  setTableId]  = useState(initialTableId);
   const [reportId, setReportId] = useState(initialReportId);
+  const [qbUrl, setQbUrl] = useState("");
+  const [urlMessage, setUrlMessage] = useState("");
+  const [urlMessageType, setUrlMessageType] = useState("info");
+
+  function normalizeUrl(raw) {
+    if (!raw) return "";
+    const value = raw.trim();
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    return `https://${value}`;
+  }
+
+  function handleParseUrl() {
+    const normalized = normalizeUrl(qbUrl);
+    if (!normalized) {
+      setUrlMessageType("error");
+      setUrlMessage("Paste a Quickbase URL first.");
+      return;
+    }
+
+    let parsed;
+    try {
+      parsed = new URL(normalized);
+    } catch {
+      setUrlMessageType("error");
+      setUrlMessage("That URL format looks invalid. Please check and try again.");
+      return;
+    }
+
+    const dbMatch = parsed.pathname.match(/\/db\/([a-z0-9]+)/i);
+    const parsedTableId = dbMatch?.[1] || "";
+    const parsedReportId =
+      parsed.searchParams.get("rid") ||
+      parsed.searchParams.get("reportId") ||
+      parsed.searchParams.get("qid") ||
+      "";
+
+    if (!parsedTableId && !parsedReportId) {
+      setUrlMessageType("error");
+      setUrlMessage("Could not detect table or report ID from this URL.");
+      return;
+    }
+
+    if (parsedTableId) setTableId(parsedTableId);
+    if (parsedReportId) setReportId(parsedReportId);
+
+    const updated = [
+      parsedTableId ? `Table ID: ${parsedTableId}` : null,
+      parsedReportId ? `Report ID: ${parsedReportId}` : null,
+    ].filter(Boolean);
+    setUrlMessageType("success");
+    setUrlMessage(`Parsed ${updated.join(" • ")}`);
+  }
 
   function handleSave() {
     const tid = tableId.trim();
@@ -397,6 +450,35 @@ function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId =
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div>
+              <label style={labelStyle}>Quickbase URL (Auto-parse)</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  style={inputStyle}
+                  value={qbUrl}
+                  onChange={e => setQbUrl(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleParseUrl(); }}
+                  placeholder="e.g. https://awnexinc.quickbase.com/db/bkvhg2rwk?a=q&rid=1"
+                  spellCheck={false}
+                />
+                <button
+                  onClick={handleParseUrl}
+                  style={{
+                    padding: "9px 12px", borderRadius: 8, border: `1px solid ${T.border}`,
+                    background: T.bgCard, color: T.brandDark, fontSize: 12, fontWeight: 700,
+                    cursor: "pointer", whiteSpace: "nowrap",
+                  }}
+                >
+                  Parse URL
+                </button>
+              </div>
+              <p style={{
+                fontSize: 11, marginTop: 5,
+                color: urlMessageType === "error" ? "#B42318" : (urlMessageType === "success" ? "#067647" : T.textMuted),
+              }}>
+                {urlMessage || "Paste a table/report URL and we’ll auto-fill IDs when possible."}
+              </p>
+            </div>
             <div>
               <label style={labelStyle}>Table ID</label>
               <input
