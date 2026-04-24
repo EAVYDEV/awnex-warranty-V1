@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { WarrantyDashboard } from "../Warranty Management/WarrantyDashboard";
+import { WarrantyDashboard } from "../WarrantyDashboard";
 
 export default function Home() {
   return (

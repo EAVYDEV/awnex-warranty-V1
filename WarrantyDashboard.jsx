@@ -321,6 +321,15 @@ function SortIcon({ col, sortCol, sortDir }) {
   return <span style={{ marginLeft: 4, color: T.brand }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
 }
 
+function AwnexLogo({ width = 126, height = 44 }) {
+  return (
+    <svg width={width} height={height} viewBox="0 0 126 44" role="img" aria-label="Awnex logo">
+      <rect x="0" y="0" width="126" height="21" fill="#F5B327" />
+      <path d="M0 44 L0 21 C8 21 8 18 16 18 C24 18 24 21 32 21 C40 21 40 18 48 18 C56 18 56 21 64 21 C72 21 72 18 80 18 C88 18 88 21 96 21 C104 21 104 18 112 18 C120 18 120 21 126 21 L126 44 Z" fill="#0D6E9D" />
+    </svg>
+  );
+}
+
 // ─── SETTINGS MODAL ───────────────────────────────────────────────────────────
 const LS_TABLE  = "awntrak_warranty_table_id";
 const LS_REPORT = "awntrak_warranty_report_id";
@@ -328,6 +337,59 @@ const LS_REPORT = "awntrak_warranty_report_id";
 function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId = "" }) {
   const [tableId,  setTableId]  = useState(initialTableId);
   const [reportId, setReportId] = useState(initialReportId);
+  const [qbUrl, setQbUrl] = useState("");
+  const [urlMessage, setUrlMessage] = useState("");
+  const [urlMessageType, setUrlMessageType] = useState("info");
+
+  function normalizeUrl(raw) {
+    if (!raw) return "";
+    const value = raw.trim();
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    return `https://${value}`;
+  }
+
+  function handleParseUrl() {
+    const normalized = normalizeUrl(qbUrl);
+    if (!normalized) {
+      setUrlMessageType("error");
+      setUrlMessage("Paste a Quickbase URL first.");
+      return;
+    }
+
+    let parsed;
+    try {
+      parsed = new URL(normalized);
+    } catch {
+      setUrlMessageType("error");
+      setUrlMessage("That URL format looks invalid. Please check and try again.");
+      return;
+    }
+
+    const dbMatch = parsed.pathname.match(/\/db\/([a-z0-9]+)/i);
+    const parsedTableId = dbMatch?.[1] || "";
+    const parsedReportId =
+      parsed.searchParams.get("rid") ||
+      parsed.searchParams.get("reportId") ||
+      parsed.searchParams.get("qid") ||
+      "";
+
+    if (!parsedTableId && !parsedReportId) {
+      setUrlMessageType("error");
+      setUrlMessage("Could not detect table or report ID from this URL.");
+      return;
+    }
+
+    if (parsedTableId) setTableId(parsedTableId);
+    if (parsedReportId) setReportId(parsedReportId);
+
+    const updated = [
+      parsedTableId ? `Table ID: ${parsedTableId}` : null,
+      parsedReportId ? `Report ID: ${parsedReportId}` : null,
+    ].filter(Boolean);
+    setUrlMessageType("success");
+    setUrlMessage(`Parsed ${updated.join(" • ")}`);
+  }
 
   function handleSave() {
     const tid = tableId.trim();
@@ -397,6 +459,35 @@ function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId =
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div>
+              <label style={labelStyle}>Quickbase URL (Auto-parse)</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  style={inputStyle}
+                  value={qbUrl}
+                  onChange={e => setQbUrl(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleParseUrl(); }}
+                  placeholder="e.g. https://awnexinc.quickbase.com/db/bkvhg2rwk?a=q&rid=1"
+                  spellCheck={false}
+                />
+                <button
+                  onClick={handleParseUrl}
+                  style={{
+                    padding: "9px 12px", borderRadius: 8, border: `1px solid ${T.border}`,
+                    background: T.bgCard, color: T.brandDark, fontSize: 12, fontWeight: 700,
+                    cursor: "pointer", whiteSpace: "nowrap",
+                  }}
+                >
+                  Parse URL
+                </button>
+              </div>
+              <p style={{
+                fontSize: 11, marginTop: 5,
+                color: urlMessageType === "error" ? "#B42318" : (urlMessageType === "success" ? "#067647" : T.textMuted),
+              }}>
+                {urlMessage || "Paste a table/report URL and we’ll auto-fill IDs when possible."}
+              </p>
+            </div>
             <div>
               <label style={labelStyle}>Table ID</label>
               <input
@@ -1035,9 +1126,12 @@ export function WarrantyDashboard({ apiRoute = "/api/warranty-orders", orders: o
 
       {/* ── Page Header ──────────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: T.brandDarkest, margin: 0, lineHeight: 1.2 }}>Warranty Management</h1>
-          <p style={{ fontSize: 13, color: T.textSec, margin: "3px 0 0" }}>Awntrak Platform - QC Module</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <AwnexLogo />
+          <div>
+            <h1 style={{ fontSize: 30, fontWeight: 700, color: "#112A52", margin: 0, lineHeight: 1.05 }}>Warranty Management</h1>
+            <p style={{ fontSize: 13, color: T.textSec, margin: "3px 0 0" }}>Awntrak Platform - QC Module</p>
+          </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {/* Source status pills */}
