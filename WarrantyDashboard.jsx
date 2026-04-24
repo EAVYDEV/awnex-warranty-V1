@@ -321,24 +321,9 @@ function SortIcon({ col, sortCol, sortDir }) {
   return <span style={{ marginLeft: 4, color: T.brand }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
 }
 
-function AwnexLogo({ width = 170, height = 58 }) {
+function AwnexLogo({ height = 52 }) {
   return (
-    <svg width={width} height={height} viewBox="0 0 170 58" role="img" aria-label="Awnex logo">
-      {/* Golden arc swoosh */}
-      <path
-        d="M 3 52 C 22 -6, 155 -6, 165 26"
-        fill="none"
-        stroke="#F5A623"
-        strokeWidth="12"
-        strokeLinecap="round"
-      />
-      {/* AWNEX */}
-      <text x="5" y="56" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="24" fill="#1B5FA8">AWNEX</text>
-      {/* ® superscript */}
-      <text x="106" y="46" fontFamily="Arial, sans-serif" fontSize="11" fill="#1B5FA8">&#174;</text>
-      {/* inc. */}
-      <text x="114" y="56" fontFamily="Arial, sans-serif" fontStyle="italic" fontSize="15" fill="#1B5FA8">inc.</text>
-    </svg>
+    <img src="/awnex-logo-no-tag.png" alt="Awnex logo" height={height} style={{ display: "block" }} />
   );
 }
 
