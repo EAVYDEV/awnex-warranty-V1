@@ -321,11 +321,23 @@ function SortIcon({ col, sortCol, sortDir }) {
   return <span style={{ marginLeft: 4, color: T.brand }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
 }
 
-function AwnexLogo({ width = 126, height = 44 }) {
+function AwnexLogo({ width = 170, height = 58 }) {
   return (
-    <svg width={width} height={height} viewBox="0 0 126 44" role="img" aria-label="Awnex logo">
-      <rect x="0" y="0" width="126" height="21" fill="#F5B327" />
-      <path d="M0 44 L0 21 C8 21 8 18 16 18 C24 18 24 21 32 21 C40 21 40 18 48 18 C56 18 56 21 64 21 C72 21 72 18 80 18 C88 18 88 21 96 21 C104 21 104 18 112 18 C120 18 120 21 126 21 L126 44 Z" fill="#0D6E9D" />
+    <svg width={width} height={height} viewBox="0 0 170 58" role="img" aria-label="Awnex logo">
+      {/* Golden arc swoosh */}
+      <path
+        d="M 3 52 C 22 -6, 155 -6, 165 26"
+        fill="none"
+        stroke="#F5A623"
+        strokeWidth="12"
+        strokeLinecap="round"
+      />
+      {/* AWNEX */}
+      <text x="5" y="56" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="24" fill="#1B5FA8">AWNEX</text>
+      {/* ® superscript */}
+      <text x="106" y="46" fontFamily="Arial, sans-serif" fontSize="11" fill="#1B5FA8">&#174;</text>
+      {/* inc. */}
+      <text x="114" y="56" fontFamily="Arial, sans-serif" fontStyle="italic" fontSize="15" fill="#1B5FA8">inc.</text>
     </svg>
   );
 }
