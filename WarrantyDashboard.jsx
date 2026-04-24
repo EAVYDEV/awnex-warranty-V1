@@ -321,6 +321,15 @@ function SortIcon({ col, sortCol, sortDir }) {
   return <span style={{ marginLeft: 4, color: T.brand }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
 }
 
+function AwnexLogo({ width = 210 }) {
+  return (
+    <svg width={width} viewBox="0 0 350 90" role="img" aria-label="Awnex logo">
+      <path d="M0 90 L0 40 Q50 15 95 22 Q120 8 150 15 Q180 2 205 10 Q230 3 255 9 Q285 1 310 11 L350 11 L350 90 Z" fill="#0D6E9D" />
+      <path d="M0 0 L350 0 L350 30 Q338 36 326 31 L309 31 Q296 27 284 32 L267 32 Q254 28 241 33 L225 33 Q212 29 200 34 L183 34 Q170 30 158 35 L141 35 Q128 31 116 36 L99 36 Q86 32 74 37 L0 37 Z" fill="#F5B327" />
+    </svg>
+  );
+}
+
 // ─── SETTINGS MODAL ───────────────────────────────────────────────────────────
 const LS_TABLE  = "awntrak_warranty_table_id";
 const LS_REPORT = "awntrak_warranty_report_id";
@@ -1117,7 +1126,8 @@ export function WarrantyDashboard({ apiRoute = "/api/warranty-orders", orders: o
 
       {/* ── Page Header ──────────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <AwnexLogo width={190} />
           <h1 style={{ fontSize: 22, fontWeight: 700, color: T.brandDarkest, margin: 0, lineHeight: 1.2 }}>Warranty Management</h1>
           <p style={{ fontSize: 13, color: T.textSec, margin: "3px 0 0" }}>Awntrak Platform - QC Module</p>
         </div>
