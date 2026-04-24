@@ -23,5 +23,6 @@ export const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
+
 export function ChartEditor() { return null; }
-export function ConfigurableChart({ children }) { return children ?? null; }
+export function ConfigurableChart({ children }) { return children; }

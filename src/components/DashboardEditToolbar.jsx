@@ -1,3 +1,3 @@
 export function DashboardEditToolbar({ children }) {
-  return children ?? null;
+  return children || null;
 }

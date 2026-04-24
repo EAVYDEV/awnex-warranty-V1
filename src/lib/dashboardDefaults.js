@@ -35,6 +35,8 @@ export const STATUS_CFG = {
   expired:  { bg: "#FCEBEB", text: "#791F1F", border: "#F09595", dot: "#F09595", label: "Expired" },
 };
 
+export const CHART_PALETTE = ["#1B5FA8", "#F5A623", "#E24B4A", "#97C459", "#7DAEE8", "#FAD07A", "#F09595", "#5DCAA5", "#AFA9EC", "#C4C3BD"];
+
 export const RISK_CFG = {
   critical: { label: "Critical", bg: "#FCEBEB", text: "#791F1F", border: "#F09595", dot: "#E24B4A" },
   high:     { label: "High",     bg: "#FEF6E4", text: "#8C5505", border: "#FAD07A", dot: "#F5A623" },
@@ -42,24 +44,22 @@ export const RISK_CFG = {
   low:      { label: "Low",      bg: "#EAF3DE", text: "#27500A", border: "#97C459", dot: "#97C459" },
 };
 
-export const CHART_PALETTE = ["#1B5FA8", "#F5A623", "#E24B4A", "#97C459", "#7DAEE8", "#FAD07A", "#F09595", "#5DCAA5", "#AFA9EC", "#C4C3BD"];
-
 export const CITY_COORDS = {
-  "san antonio texas": [29.4241, -98.4936],
-  "broadview heights ohio": [41.3131, -81.6882],
-  "winter garden florida": [28.5650, -81.5862],
-  "north liberty iowa": [41.7491, -91.6046],
-  "farmington missouri": [37.7817, -90.4218],
-  "bowling green kentucky": [36.9903, -86.4436],
-  "elkhorn wisconsin": [42.6736, -88.5443],
-  "bridgeport michigan": [43.3592, -83.881],
-  "texarkana texas": [33.4251, -94.0477],
+  "san antonio texas":          [29.4241, -98.4936],
+  "broadview heights ohio":     [41.3131, -81.6882],
+  "winter garden florida":      [28.5650, -81.5862],
+  "north liberty iowa":         [41.7491, -91.6046],
+  "farmington missouri":        [37.7817, -90.4218],
+  "bowling green kentucky":     [36.9903, -86.4436],
+  "elkhorn wisconsin":          [42.6736, -88.5443],
+  "bridgeport michigan":        [43.3592, -83.8810],
+  "texarkana texas":            [33.4251, -94.0477],
   "fayetteville west virginia": [38.0534, -81.1043],
-  "forsyth illinois": [39.9289, -88.9685],
-  "leclaire iowa": [41.5953, -90.3487],
-  "st. michael minnesota": [45.2094, -93.6663],
-  "blue springs missouri": [39.0169, -94.2816],
-  "omaha nebraska": [41.2565, -95.9345],
+  "forsyth illinois":           [39.9289, -88.9685],
+  "leclaire iowa":              [41.5953, -90.3487],
+  "st. michael minnesota":      [45.2094, -93.6663],
+  "blue springs missouri":      [39.0169, -94.2816],
+  "omaha nebraska":             [41.2565, -95.9345],
 };
 
 export const DEFAULT_KPI_CONFIGS = [];
