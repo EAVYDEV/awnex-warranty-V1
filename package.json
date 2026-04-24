@@ -1,16 +1,18 @@
-{
-  "name": "awntrak-warranty",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "recharts": "^2.12.7"
-  }
-}
+const { chromium } = require("playwright");
+
+const url = process.argv[2] || "http://localhost:3000";
+const output = process.argv[3] || "screenshot.png";
+
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage({
+    viewport: { width: 1440, height: 1000 },
+  });
+
+  await page.goto(url, { waitUntil: "networkidle" });
+  await page.screenshot({ path: output, fullPage: true });
+
+  await browser.close();
+
+  console.log(`Screenshot saved to ${output}`);
+})();
