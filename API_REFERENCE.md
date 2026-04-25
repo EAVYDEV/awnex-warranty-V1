@@ -4,6 +4,8 @@
 
 The `/api/warranty-orders` endpoint is a server-side proxy that calls the Quickbase Report Run API and forwards the response to the browser. Quickbase credentials (`QB_REALM` and `QB_TOKEN`) are stored as Vercel environment variables and never exposed to the client.
 
+The raw QB payload is returned unchanged. Client-side transformation happens in `lib/qbUtils.js → mapQBResponse()`, which builds a `labelToId` index from the `fields[]` array and extracts typed values by field label. Extra report columns not in the core field mapping are captured in `order._qbFields` and made available to the configurable KPI and chart system.
+
 ---
 
 ## Endpoint
@@ -39,7 +41,7 @@ No request body is required. The endpoint only accepts `GET` requests.
 
 ## Successful response
 
-Returns the raw Quickbase report payload as JSON, forwarded unchanged. The client-side `mapQBResponse()` function in `WarrantyDashboard.jsx` transforms this into the internal order shape.
+Returns the raw Quickbase report payload as JSON, forwarded unchanged. The client-side `mapQBResponse()` in `lib/qbUtils.js` transforms this into the internal order shape. Extra report columns beyond the core field mapping are stored in `order._qbFields` and exposed to the configurable KPI and chart system.
 
 **HTTP 200**
 
@@ -159,7 +161,7 @@ The dashboard supports optional `sources` prop for connecting multiple QB tables
 - Keep credentials server-side only
 - Return the raw QB Report Run payload
 
-See `TECHNICAL_SPEC.md` for the full multi-source configuration reference.
+See `ARCHITECTURE.md` for the full multi-source configuration reference and component contracts.
 
 ---
 
