@@ -49,11 +49,14 @@ export function KpiCard({
       )}
 
       {/* Header row: label + icon */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <span style={{
           fontSize: 11, fontWeight: 700, color: T.textSec,
           textTransform: "uppercase", letterSpacing: "0.05em",
           paddingRight: editMode ? 68 : 0,
+          minWidth: 0,
+          wordBreak: "break-word",
+          lineHeight: 1.35,
         }}>
           {label}
         </span>
@@ -69,12 +72,15 @@ export function KpiCard({
         )}
       </div>
 
-      {/* Value */}
+      {/* Value — font scales down for long strings so nothing clips */}
       <span style={{
-        fontSize: isBlank ? 22 : 30,
+        fontSize: isBlank ? 22 : value && String(value).length > 12 ? 20 : value && String(value).length > 8 ? 24 : 30,
         fontWeight: 700,
         color: isBlank ? T.textMuted : (color || T.text),
-        lineHeight: 1,
+        lineHeight: 1.15,
+        wordBreak: "break-word",
+        overflowWrap: "anywhere",
+        minWidth: 0,
       }}>
         {isBlank ? "—" : value}
       </span>
