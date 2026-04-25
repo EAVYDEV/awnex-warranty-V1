@@ -9,10 +9,10 @@ npm install       # install dependencies
 npm run dev       # start dev server at http://localhost:3000
 npm run build     # production build
 npm run start     # serve production build
-npm run screenshot [url] [output.png]  # capture a Playwright screenshot (devDependency)
+npm run screenshot [url] [output.png]  # Playwright screenshot (devDependency)
 ```
 
-No test runner is configured. There is no lint script; Next.js type checking runs implicitly during `build`.
+No test runner is configured. Next.js type checking runs implicitly during `build`.
 
 ## Environment setup
 
@@ -29,7 +29,9 @@ Optional env var fallbacks (override via the settings modal):
 - `QB_TABLE_ID` — default table ID
 - `QB_REPORT_ID` — default report ID
 
-## Architecture
+## Architecture overview
+
+The app has been refactored from a single 1,500-line file into a modular structure. All logic is split across `lib/` (pure utilities) and `components/` (React components). `WarrantyDashboard.jsx` is the main orchestrator.
 
 ### Data flow
 
@@ -38,38 +40,109 @@ Browser (WarrantyDashboard.jsx)
   → GET /api/warranty-orders?tableId=…&reportId=…
       → pages/api/warranty-orders.js  (server-side proxy)
           → POST https://api.quickbase.com/v1/reports/{reportId}/run?tableId={tableId}
-              (QB_REALM + QB_TOKEN auth headers injected here)
-  ← raw QB Report Run payload (fields[] + data[])
-  ← mapQBResponse() transforms field-ID-keyed records into typed order objects
-  ← enriched with status, risk score, chart data via useMemo
+              (QB_REALM + QB_TOKEN auth headers injected server-side)
+  ← raw QB payload { fields[], data[] }
+  ← lib/qbUtils.js → mapQBResponse() → typed order objects (+ _qbFields for extra columns)
+  ← enriched with status, riskScore, open/closed claims via useMemo
+  ← lib/dashboardMetrics.js → computeKpiValue() / computeChartData() → KPI values + chart arrays
+  ← components/dashboard/* renders KPI cards, charts, map, table
 ```
 
-### Single-file component architecture
+### File map — where to find things
 
-Almost all logic lives in `WarrantyDashboard.jsx` at the project root. This is intentional — the app is a single dashboard with no routing needs. The file is organized top-to-bottom:
-
-1. **Design tokens** — `const T = { ... }` at the top; all colors/shadows reference this object.
-2. **QB field parsing** — `mapQBResponse()` builds a `labelToId` index from the fields array returned by QB, then extracts typed values by field label (not field ID). If QB field labels change, update the string literals inside `mapQBResponse()`.
-3. **Claims/costs merging** — `mapClaimsResponse()` handles an optional secondary QB table (claims or costs) and returns a lookup keyed by order number, merged into the main orders array.
-4. **Risk scoring** — `computeRiskScore()` produces a 0–100 composite score: claims × 25 (cap 50 pts), QC defect entries × 7 (cap 30 pts), expiring status +15, silent risk (QC flags with no claim) +12, high-value order ($50k+) +5. Thresholds: ≥60 = critical, ≥35 = high, ≥15 = medium.
-5. **Sub-components** — `KpiCard`, `StatusBadge`, `RiskBadge`, `SettingsModal`, `MapView`, `ChartCard` are small presentational components defined before the main export.
-6. **`WarrantyDashboard` export** — the single exported component manages all state (fetch, filters, sort, UI).
+| Need to change | File |
+|---|---|
+| Colors, shadows, status/risk color configs | `lib/tokens.js` |
+| QB field parsing, order mapping, risk scoring | `lib/qbUtils.js` |
+| Filter, aggregate, KPI/chart compute helpers | `lib/dashboardMetrics.js` |
+| Default KPI/chart configs, palettes, themes | `lib/dashboardDefaults.js` |
+| localStorage keys and load/save helpers | `lib/dashboardStorage.js` |
+| SVG icon set | `components/ui/Icon.jsx` |
+| StatusBadge, RiskBadge | `components/ui/Badge.jsx` |
+| Generic modal wrapper, Btn, formStyles | `components/ui/Modal.jsx` |
+| EmptyState, LoadingState, ErrorState | `components/ui/StateScreens.jsx` |
+| Awnex branding logo | `components/AwnexLogo.jsx` |
+| QB connection settings modal | `components/SettingsModal.jsx` |
+| Leaflet map + geocoding | `components/MapView.jsx` |
+| KPI display card | `components/dashboard/KpiCard.jsx` |
+| KPI editor modal | `components/dashboard/KpiEditor.jsx` |
+| Chart wrapper + CustomTooltip | `components/dashboard/ChartCard.jsx` |
+| Chart editor modal | `components/dashboard/ChartEditor.jsx` |
+| Recharts rendering for all chart types | `components/dashboard/ConfigurableChart.jsx` |
+| Edit mode toolbar | `components/dashboard/DashboardEditToolbar.jsx` |
+| All state, data fetch, layout orchestration | `WarrantyDashboard.jsx` |
+| QB API proxy | `pages/api/warranty-orders.js` |
 
 ### Quickbase field mapping
 
-`mapQBResponse()` matches field labels exactly. Required QB report fields (see `README.md` for the full list):
+`mapQBResponse()` in `lib/qbUtils.js` matches field labels exactly. Required QB report fields:
 
 | Label | Purpose |
 |---|---|
-| `Order Number w/Series` | Returns an HTML anchor; URL and numeric order number are extracted via regex |
+| `Order Number w/Series` | HTML anchor; URL and numeric order number extracted via regex |
 | `Order Name (Formula)` | `BRAND-CustomerName-ID-City State-Address` format; brand/location parsed from dash-split |
 | `Project Manager` | Display-name format; `extractPMName()` strips the `<userid>` suffix |
 | `# of Warranty Claims` | Primary risk signal |
 | `# of QC Entries for Peeling Powder` / `# of QC Entries for Powder Failure` | Leading-indicator risk signals |
 
+Any QB field not in this list is captured in `order._qbFields[label]` so it can be used in configurable KPI and chart configs without changing code.
+
+### Configurable dashboard system
+
+Each KPI card and chart is driven by a config object stored in `localStorage`:
+
+**KPI config shape:**
+```js
+{
+  id: string,
+  title: string,
+  aggregation: "count" | "sum" | "avg" | "min" | "max",
+  field: string | null,        // enriched order field key; null for pure count
+  filter: { field, op, value } | null,
+  subtitle: string,
+  icon: string,                // key in components/ui/Icon.jsx PATHS map
+  color: string,               // hex
+  bg: string,                  // hex
+  format: "number" | "currency" | "percent" | "text",
+  decimals: number,
+  hidden: boolean,
+}
+```
+
+**Chart config shape:**
+```js
+{
+  id: string,
+  title: string,
+  type: "bar" | "hbar" | "donut" | "line" | "stacked",
+  groupField: string,          // category / X-axis field key
+  stackField: string | null,   // for stacked type only
+  metrics: [{ field, aggregation, label, color }],
+  filter: { field, op, value } | null,
+  sortDir: "asc" | "desc",
+  maxCategories: number | null,
+  showLegend: boolean,
+  showAxisLabels: boolean,
+  palette: string,             // key in COLOR_PALETTES (lib/dashboardDefaults.js)
+  hidden: boolean,
+}
+```
+
+Default configs are in `lib/dashboardDefaults.js` (`DEFAULT_KPI_CONFIGS`, `DEFAULT_CHART_CONFIGS`). They exactly replicate the original hard-coded dashboard so no visual information is lost.
+
+### Available fields for KPI / chart configuration
+
+`lib/dashboardMetrics.js` exports `BUILTIN_FIELDS` — the enriched order fields always available:
+
+- Text: `status`, `brand`, `pm`, `location`, `customer`, `risk`, `products` (array)
+- Numeric: `claims`, `openClaims`, `closedClaims`, `claimCost`, `orderValue`, `qcPeeling`, `qcPowder`, `riskScore`, `days`
+- Date: `warrantyEnd`
+
+When a QB report is loaded, `buildAvailableFields(qbReportFields)` in `dashboardMetrics.js` merges in any extra QB columns not already mapped.
+
 ### Map view
 
-Leaflet is loaded from CDN at runtime (not bundled). `CITY_COORDS` in `WarrantyDashboard.jsx` is a hardcoded cache of known city coordinates. Unknown locations fall back to Nominatim (OpenStreetMap geocoding API) with a 300 ms delay between requests to respect rate limits. Geocoded results are cached in a `useRef` for the session.
+Leaflet loads from CDN at runtime (not bundled — avoids SSR issues). `CITY_COORDS` in `components/MapView.jsx` caches known city coordinates. Unknown locations fall back to Nominatim (OpenStreetMap) with a 300 ms delay between requests. Geocoded results cache in a `useRef` for the session.
 
 ### Multi-source connections
 
@@ -78,12 +151,19 @@ Leaflet is loaded from CDN at runtime (not bundled). `CITY_COORDS` in `WarrantyD
 ```jsx
 sources={[
   { id: "orders", route: "/api/warranty-orders", role: "orders" },
-  { id: "claims", route: "/api/warranty-claims",  role: "claims", fieldMap: { orderNum: "Order #", cost: "Repair Cost" } },
+  { id: "claims", route: "/api/warranty-claims", role: "claims", fieldMap: { orderNum: "Order #", cost: "Repair Cost" } },
 ]}
 ```
 
-Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in parallel and merged by order number. Additional API routes should follow the same server-side proxy pattern as `pages/api/warranty-orders.js`.
+Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in parallel and merged by order number. Additional routes must follow the same server-side proxy pattern as `pages/api/warranty-orders.js`.
 
 ### LocalStorage keys
 
-`awntrak_warranty_table_id` and `awntrak_warranty_report_id` — set by the Settings modal, read on mount.
+| Key | Purpose |
+|---|---|
+| `awntrak_warranty_table_id` | QB table ID |
+| `awntrak_warranty_report_id` | QB report ID |
+| `awntrak_kpi_configs` | JSON array of KPI configuration objects |
+| `awntrak_chart_configs` | JSON array of chart configuration objects |
+
+All keys are managed through `lib/dashboardStorage.js`.
