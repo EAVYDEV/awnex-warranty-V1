@@ -35,16 +35,28 @@ Full system design, component contracts, config schemas, and extension guide.
 
 | File | Status | Notes |
 |---|---|---|
-| `WarrantyDashboard.jsx` | 🔄 In progress | Rewrite as lean orchestrator; wire up all new components |
+| `src/WarrantyDashboard.jsx` | 🔄 In progress | Rewrite as lean orchestrator; wire up all new components |
 
 ### Not yet started
 
 | Task | Notes |
 |---|---|
+| Update `pages/index.jsx` | Point import at `../src/WarrantyDashboard` (already correct) |
 | Dev server smoke test | `npm run dev` — verify render with sample data and with live QB data |
 | End-to-end edit mode test | Open editor, change a KPI/chart, save, reload, verify persistence |
 | Build verification | `npm run build` — confirm no TypeScript/import errors |
 | Commit and push | Push to `claude/configurable-dashboard-components-1m4P6` |
+
+---
+
+## Execution plan (incremental, avoids single-response timeouts)
+
+Write `src/WarrantyDashboard.jsx` in four append steps:
+
+1. **Imports + component-level state** — all `import` statements, `export function WarrantyDashboard`, state declarations, `fetchData` callback, `useEffect` hooks.
+2. **Enrichment + filter/sort memos** — `enriched`, `filtered`, `availableFields` useMemos; `handleSort` helper.
+3. **Render: header + edit toolbar + KPI grid + editors** — all JSX from the outer `<div>` through the KPI section, `DashboardEditToolbar`, `KpiEditor`, `ChartEditor`.
+4. **Render: filter bar + charts + order table + SAMPLE_ORDERS** — filter row, chart grid with `ConfigurableChart`, sortable order table, `SAMPLE_ORDERS` array, default export.
 
 ---
 
