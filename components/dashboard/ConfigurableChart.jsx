@@ -32,7 +32,7 @@ function TruncatedTick({ x, y, payload, horizontal }) {
         <text
           x={-4} y={0} dy={4}
           textAnchor="end"
-          fill={T.textSec}
+          fill={T.text2}
           fontSize={10}
         >
           {label}
@@ -42,7 +42,7 @@ function TruncatedTick({ x, y, payload, horizontal }) {
   }
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={12} textAnchor="middle" fill={T.textSec} fontSize={10}>
+      <text x={0} y={0} dy={12} textAnchor="middle" fill={T.text2} fontSize={10}>
         {label}
       </text>
     </g>
@@ -61,12 +61,12 @@ export function ConfigurableChart({ config, records }) {
         height: 220, display: "flex", alignItems: "center", justifyContent: "center",
         flexDirection: "column", gap: 8,
       }}>
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={T.textMuted} strokeWidth="1.5">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={T.text3} strokeWidth="1.5">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <line x1="3" y1="9" x2="21" y2="9"/>
           <line x1="9" y1="21" x2="9" y2="9"/>
         </svg>
-        <span style={{ fontSize: 12, color: T.textMuted }}>No data for current configuration</span>
+        <span style={{ fontSize: 12, color: T.text3 }}>No data for current configuration</span>
       </div>
     );
   }
@@ -123,7 +123,7 @@ export function ConfigurableChart({ config, records }) {
           barSize={11}
           margin={{ top: 4, right: 16, bottom: 4, left: 0 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={T.borderLight} horizontal={false} />
           <XAxis
             type="number"
             tick={showAxisLabels ? { fontSize: 10, fill: T.textSec } : false}
@@ -160,7 +160,7 @@ export function ConfigurableChart({ config, records }) {
     return (
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: -10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={T.borderLight} vertical={false} />
           <XAxis
             dataKey={gk}
             tick={showAxisLabels ? <TruncatedTick /> : false}
@@ -198,7 +198,7 @@ export function ConfigurableChart({ config, records }) {
     return (
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={chartData} barSize={18} margin={{ top: 4, right: 8, bottom: 0, left: -10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={T.borderLight} vertical={false} />
           <XAxis
             dataKey={gk}
             tick={showAxisLabels ? <TruncatedTick /> : false}
@@ -237,7 +237,7 @@ export function ConfigurableChart({ config, records }) {
         barSize={Math.max(8, Math.min(18, 80 / Math.max(chartData.length, 1)))}
         margin={{ top: 4, right: 8, bottom: 0, left: -10 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={T.borderLight} vertical={false} />
         <XAxis
           dataKey={gk}
           tick={showAxisLabels ? <TruncatedTick /> : false}

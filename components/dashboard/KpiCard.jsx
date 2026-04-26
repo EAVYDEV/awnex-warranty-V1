@@ -1,11 +1,6 @@
 import { T } from "../../lib/tokens.js";
 import { Icon } from "../ui/Icon.jsx";
 
-// ─── KPI CARD ─────────────────────────────────────────────────────────────────
-// Displays a single KPI metric. Accepts an optional editMode prop; when true
-// shows inline edit / duplicate / hide controls so the dashboard edit toolbar
-// can surface them without a separate layer of state.
-
 export function KpiCard({
   label, value, sub, color, bg, iconName,
   editMode = false,
@@ -16,10 +11,10 @@ export function KpiCard({
 
   return (
     <div style={{
-      background: T.bgCard,
-      borderRadius: 12,
+      background: T.card,
+      borderRadius: 24,
       padding: "16px 18px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+      boxShadow: T.cardShadow,
       display: "flex",
       flexDirection: "column",
       gap: 6,
@@ -51,7 +46,7 @@ export function KpiCard({
       {/* Header row: label + icon */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <span style={{
-          fontSize: 11, fontWeight: 700, color: T.textSec,
+          fontSize: 11, fontWeight: 700, color: T.text2,
           textTransform: "uppercase", letterSpacing: "0.05em",
           paddingRight: editMode ? 68 : 0,
           minWidth: 0,
@@ -62,7 +57,7 @@ export function KpiCard({
         </span>
         {iconName && !editMode && (
           <div style={{
-            width: 32, height: 32, borderRadius: 8,
+            width: 32, height: 32, borderRadius: 10,
             background: bg || T.brandSubtle,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
@@ -72,11 +67,11 @@ export function KpiCard({
         )}
       </div>
 
-      {/* Value — font scales down for long strings so nothing clips */}
+      {/* Value */}
       <span style={{
         fontSize: isBlank ? 22 : value && String(value).length > 12 ? 20 : value && String(value).length > 8 ? 24 : 30,
         fontWeight: 700,
-        color: isBlank ? T.textMuted : (color || T.text),
+        color: isBlank ? T.text3 : (color || T.text1),
         lineHeight: 1.15,
         wordBreak: "break-word",
         overflowWrap: "anywhere",
@@ -87,16 +82,16 @@ export function KpiCard({
 
       {/* Sub-text */}
       {sub && (
-        <span style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.4 }}>{sub}</span>
+        <span style={{ fontSize: 12, color: T.text3, lineHeight: 1.4 }}>{sub}</span>
       )}
 
       {/* Hidden badge in edit mode */}
       {hidden && editMode && (
         <div style={{
           position: "absolute", bottom: 8, left: 8,
-          background: T.bgApp, border: `1px solid ${T.border}`,
-          borderRadius: 4, padding: "1px 6px",
-          fontSize: 10, fontWeight: 700, color: T.textMuted,
+          background: T.bg, border: `1px solid ${T.borderLight}`,
+          borderRadius: 6, padding: "1px 6px",
+          fontSize: 10, fontWeight: 700, color: T.text3,
           textTransform: "uppercase", letterSpacing: "0.04em",
         }}>
           Hidden
@@ -106,18 +101,17 @@ export function KpiCard({
   );
 }
 
-// Small icon-only button used inside the card in edit mode
 function EditBtn({ onClick, title, children }) {
   return (
     <button
       title={title}
       onClick={e => { e.stopPropagation(); onClick?.(); }}
       style={{
-        width: 24, height: 24, borderRadius: 6,
-        border: `1px solid ${T.border}`,
-        background: T.bgCard,
+        width: 24, height: 24, borderRadius: 8,
+        border: `1px solid ${T.borderLight}`,
+        background: T.card,
         display: "flex", alignItems: "center", justifyContent: "center",
-        cursor: "pointer", color: T.textSec, padding: 0,
+        cursor: "pointer", color: T.text2, padding: 0,
       }}
     >
       {children}

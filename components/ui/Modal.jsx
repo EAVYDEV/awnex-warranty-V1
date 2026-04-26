@@ -2,19 +2,13 @@ import { useEffect } from "react";
 import { T } from "../../lib/tokens.js";
 import { Icon } from "./Icon.jsx";
 
-// ─── GENERIC MODAL WRAPPER ────────────────────────────────────────────────────
-// Reusable across all Awntrak modules. Handles backdrop, close-on-outside-click,
-// Escape key dismissal, and scroll-lock on the body.
-
 export function Modal({ title, subtitle, onClose, footer, children, width = 520, zIndex = 1000 }) {
-  // Prevent body scroll while modal is open
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // Escape key closes modal
   useEffect(() => {
     function handler(e) { if (e.key === "Escape") onClose(); }
     window.addEventListener("keydown", handler);
@@ -32,8 +26,8 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{
-        background: T.bgCard,
-        borderRadius: 16,
+        background: T.card,
+        borderRadius: 24,
         width: "100%",
         maxWidth: width,
         boxShadow: "0 20px 60px rgba(0,0,0,0.28)",
@@ -45,23 +39,23 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
         {/* Header */}
         <div style={{
           padding: "18px 24px",
-          borderBottom: `1px solid ${T.border}`,
+          borderBottom: `1px solid ${T.borderLight}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexShrink: 0,
         }}>
           <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: T.brandDarkest, margin: 0 }}>{title}</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: T.brandDeep, margin: 0 }}>{title}</h2>
             {subtitle && (
-              <p style={{ fontSize: 12, color: T.textSec, margin: "3px 0 0" }}>{subtitle}</p>
+              <p style={{ fontSize: 12, color: T.text2, margin: "3px 0 0" }}>{subtitle}</p>
             )}
           </div>
           <button
             onClick={onClose}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              color: T.textMuted, padding: 4, borderRadius: 6,
+              color: T.text3, padding: 4, borderRadius: 8,
               lineHeight: 0, flexShrink: 0,
             }}
           >
@@ -78,8 +72,8 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
         {footer && (
           <div style={{
             padding: "14px 24px",
-            borderTop: `1px solid ${T.border}`,
-            background: "#FAFAF8",
+            borderTop: `1px solid ${T.borderLight}`,
+            background: T.surface,
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
@@ -94,15 +88,12 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
   );
 }
 
-// ─── SHARED FORM STYLES ───────────────────────────────────────────────────────
-// Export so editors can stay consistent without re-defining styles.
-
 export const formStyles = {
   label: {
     display: "block",
     fontSize: 11,
     fontWeight: 700,
-    color: T.textSec,
+    color: T.text2,
     textTransform: "uppercase",
     letterSpacing: "0.05em",
     marginBottom: 6,
@@ -110,11 +101,11 @@ export const formStyles = {
   input: {
     width: "100%",
     padding: "8px 11px",
-    borderRadius: 8,
-    border: `1px solid ${T.border}`,
+    borderRadius: 16,
+    border: `1px solid ${T.borderLight}`,
     fontSize: 13,
-    color: T.text,
-    background: T.bgApp,
+    color: T.text1,
+    background: T.bg,
     outline: "none",
     fontFamily: "inherit",
     boxSizing: "border-box",
@@ -122,11 +113,11 @@ export const formStyles = {
   select: {
     width: "100%",
     padding: "8px 11px",
-    borderRadius: 8,
-    border: `1px solid ${T.border}`,
+    borderRadius: 14,
+    border: `1px solid ${T.borderLight}`,
     fontSize: 13,
-    color: T.text,
-    background: T.bgCard,
+    color: T.text1,
+    background: T.card,
     cursor: "pointer",
     boxSizing: "border-box",
     fontFamily: "inherit",
@@ -141,26 +132,24 @@ export const formStyles = {
   },
   hint: {
     fontSize: 11,
-    color: T.textMuted,
+    color: T.text3,
     marginTop: 4,
   },
 };
 
-// ─── BUTTON VARIANTS ──────────────────────────────────────────────────────────
-
 export function Btn({ onClick, disabled, variant = "ghost", children, style = {} }) {
   const base = {
-    padding: "8px 16px", borderRadius: 8, fontSize: 13,
+    padding: "8px 16px", borderRadius: 12, fontSize: 13,
     fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer",
     border: "none", display: "inline-flex", alignItems: "center", gap: 6,
     transition: "background 0.15s", opacity: disabled ? 0.5 : 1,
     fontFamily: "inherit", ...style,
   };
   const variants = {
-    primary: { background: T.brand,     color: T.white  },
-    danger:  { background: T.danger,    color: T.white  },
-    ghost:   { background: T.bgCard,    color: T.textSec, border: `1px solid ${T.border}` },
-    subtle:  { background: T.bgApp,     color: T.textSec, border: `1px solid ${T.border}` },
+    primary: { background: T.brand,   color: T.card   },
+    danger:  { background: T.danger,  color: T.card   },
+    ghost:   { background: T.card,    color: T.text2,  border: `1px solid ${T.borderLight}` },
+    subtle:  { background: T.bg,      color: T.text2,  border: `1px solid ${T.borderLight}` },
   };
   return (
     <button onClick={disabled ? undefined : onClick} style={{ ...base, ...variants[variant] }}>
