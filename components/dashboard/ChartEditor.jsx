@@ -100,7 +100,7 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
             </>
           ) : (
             <>
-              <Btn variant="ghost" onClick={() => setShowDelete(true)} style={{ color: T.danger, borderColor: T.dangerFill }}>
+              <Btn variant="ghost" onClick={() => setShowDelete(true)} style={{ color: T.danger, borderColor: T.dangerSubtle }}>
                 <Icon name="trash-2" size={13} color={T.danger} /> Delete
               </Btn>
               <Btn variant="ghost" onClick={onDuplicate}>
@@ -129,15 +129,15 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
                 key={ct.value}
                 onClick={() => update({ type: ct.value })}
                 style={{
-                  padding: "8px 14px", borderRadius: 8, cursor: "pointer",
-                  border: `2px solid ${draft.type === ct.value ? T.brand : T.border}`,
-                  background: draft.type === ct.value ? T.brandSubtle : T.bgApp,
-                  color: draft.type === ct.value ? T.brand : T.textSec,
+                  padding: "8px 14px", borderRadius: 10, cursor: "pointer",
+                  border: `2px solid ${draft.type === ct.value ? T.brand : T.borderLight}`,
+                  background: draft.type === ct.value ? T.brandSubtle : T.bg,
+                  color: draft.type === ct.value ? T.brand : T.text2,
                   fontSize: 12, fontWeight: 600,
                   display: "flex", alignItems: "center", gap: 6,
                 }}
               >
-                <Icon name={ct.icon} size={13} color={draft.type === ct.value ? T.brand : T.textSec} />
+                <Icon name={ct.icon} size={13} color={draft.type === ct.value ? T.brand : T.text2} />
                 {ct.label}
               </button>
             ))}
@@ -185,8 +185,8 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
             <button
               onClick={addMetric}
               style={{
-                marginTop: 8, padding: "6px 14px", borderRadius: 8,
-                border: `1px dashed ${T.border}`, background: "transparent",
+                marginTop: 8, padding: "6px 14px", borderRadius: 10,
+                border: `1px dashed ${T.borderLight}`, background: "transparent",
                 color: T.brand, fontSize: 12, fontWeight: 600, cursor: "pointer",
                 display: "flex", alignItems: "center", gap: 6,
               }}
@@ -239,14 +239,14 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
                 style={{
                   display: "flex", alignItems: "center", gap: 3,
                   padding: "5px 10px", borderRadius: 8, cursor: "pointer",
-                  border: `2px solid ${draft.palette === pk ? T.brand : T.border}`,
-                  background: draft.palette === pk ? T.brandSubtle : T.bgApp,
+                  border: `2px solid ${draft.palette === pk ? T.brand : T.borderLight}`,
+                  background: draft.palette === pk ? T.brandSubtle : T.bg,
                 }}
               >
                 {COLOR_PALETTES[pk].slice(0, 5).map((c, i) => (
                   <span key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: c, flexShrink: 0 }} />
                 ))}
-                <span style={{ fontSize: 11, color: draft.palette === pk ? T.brand : T.textSec, fontWeight: 600, marginLeft: 4 }}>{pk}</span>
+                <span style={{ fontSize: 11, color: draft.palette === pk ? T.brand : T.text2, fontWeight: 600, marginLeft: 4 }}>{pk}</span>
               </button>
             ))}
           </div>
@@ -254,13 +254,13 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
 
         {/* Live preview info */}
         <div style={{
-          background: T.bgApp, border: `1px solid ${T.border}`,
-          borderRadius: 10, padding: "12px 16px",
+          background: T.bg, border: `1px solid ${T.borderLight}`,
+          borderRadius: 14, padding: "12px 16px",
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <Icon name="info" size={15} color={T.brand} />
-          <span style={{ fontSize: 12, color: T.textSec }}>
-            <strong style={{ color: T.text }}>Preview: </strong>{previewInfo}
+          <span style={{ fontSize: 12, color: T.text2 }}>
+            <strong style={{ color: T.text1 }}>Preview: </strong>{previewInfo}
           </span>
         </div>
 
@@ -282,7 +282,7 @@ function Field({ label, children, style = {} }) {
 
 function CheckField({ label, checked, onChange }) {
   return (
-    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: T.text, fontWeight: 500 }}>
+    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: T.text1, fontWeight: 500 }}>
       <input
         type="checkbox"
         checked={!!checked}
@@ -299,8 +299,8 @@ function MetricRow({ metric, index, numericFields, onChange, onRemove }) {
     <div style={{
       display: "flex", gap: 8, alignItems: "flex-end",
       padding: "10px 12px",
-      background: T.bgApp, borderRadius: 8,
-      border: `1px solid ${T.border}`,
+      background: T.bg, borderRadius: 14,
+      border: `1px solid ${T.borderLight}`,
     }}>
       {/* Field */}
       <div style={{ flex: 2 }}>
@@ -346,7 +346,7 @@ function MetricRow({ metric, index, numericFields, onChange, onRemove }) {
           type="color"
           value={metric.color || "#1B5FA8"}
           onChange={e => onChange({ color: e.target.value })}
-          style={{ width: 38, height: 38, borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer", padding: 2 }}
+          style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }}
         />
       </div>
 
@@ -356,8 +356,8 @@ function MetricRow({ metric, index, numericFields, onChange, onRemove }) {
           onClick={onRemove}
           style={{
             width: 32, height: 32, borderRadius: 6,
-            border: `1px solid ${T.border}`,
-            background: T.bgCard,
+            border: `1px solid ${T.borderLight}`,
+            background: T.card,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", color: T.danger, flexShrink: 0, padding: 0,
             alignSelf: "flex-end",
@@ -379,9 +379,9 @@ function FilterRow({ filter, fields, onToggle, onChange }) {
           onClick={onToggle}
           style={{
             marginBottom: 6, padding: "2px 10px", borderRadius: 20,
-            border: `1px solid ${filter ? T.brand : T.border}`,
-            background: filter ? T.brandSubtle : T.bgApp,
-            color: filter ? T.brand : T.textSec,
+            border: `1px solid ${filter ? T.brand : T.borderLight}`,
+            background: filter ? T.brandSubtle : T.bg,
+            color: filter ? T.brand : T.text2,
             fontSize: 11, fontWeight: 700, cursor: "pointer",
           }}
         >

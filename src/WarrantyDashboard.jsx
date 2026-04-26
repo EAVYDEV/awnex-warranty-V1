@@ -252,15 +252,15 @@ export function WarrantyDashboard({
   // ── Shared table cell styles ───────────────────────────────────────────────
   const TH = {
     padding: "10px 12px", textAlign: "left", fontSize: 11, fontWeight: 700,
-    color: T.textSec, letterSpacing: "0.05em", textTransform: "uppercase",
-    borderBottom: `2px solid ${T.border}`, cursor: "pointer", whiteSpace: "nowrap",
-    background: "#FAFAF8", userSelect: "none",
+    color: T.text2, letterSpacing: "0.05em", textTransform: "uppercase",
+    borderBottom: `2px solid ${T.borderLight}`, cursor: "pointer", whiteSpace: "nowrap",
+    background: T.surface, userSelect: "none",
   };
   const TD = { padding: "10px 12px", fontSize: 13, verticalAlign: "middle" };
 
   // ── Early returns ──────────────────────────────────────────────────────────
   const wrap = children => (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bgApp, minHeight: "100vh", padding: "24px 24px 48px" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh", padding: "24px 24px 48px" }}>
       {showSettings && (
         <SettingsModal
           initialTableId={settings.tableId}
@@ -279,7 +279,7 @@ export function WarrantyDashboard({
 
   // ── Full render ────────────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bgApp, minHeight: "100vh", padding: "24px 24px 48px" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh", padding: "24px 24px 48px" }}>
 
       {/* Modals */}
       {showSettings && (
@@ -318,14 +318,14 @@ export function WarrantyDashboard({
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <AwnexLogo />
           <div>
-            <h1 style={{ fontSize: 30, fontWeight: 700, color: "#112A52", margin: 0, lineHeight: 1.05 }}>Warranty Management</h1>
-            <p style={{ fontSize: 13, color: T.textSec, margin: "3px 0 0" }}>Awntrak Platform — QC Module</p>
+            <h1 style={{ fontSize: 30, fontWeight: 700, color: T.brandDeep, margin: 0, lineHeight: 1.05 }}>Warranty Management</h1>
+            <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>Awntrak Platform — QC Module</p>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {/* Source status pills */}
           {Object.entries(sourceStatuses).map(([id, st]) => (
-            <div key={id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 6, background: T.bgCard, border: `1px solid ${T.border}`, fontSize: 11, color: T.textSec }}>
+            <div key={id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11, color: T.text2 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: st === "ok" ? T.successFill : st === "error" ? T.danger : T.accentSoft, flexShrink: 0 }} />
               {id}
             </div>
@@ -335,21 +335,21 @@ export function WarrantyDashboard({
           <button
             onClick={() => setEditMode(e => !e)}
             title={editMode ? "Exit edit mode" : "Customise dashboard"}
-            style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${editMode ? T.brand : T.border}`, background: editMode ? T.brandSubtle : T.bgCard, color: editMode ? T.brand : T.textSec, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, boxShadow: T.cardShadow }}
+            style={{ padding: "7px 14px", borderRadius: 10, border: `1px solid ${editMode ? T.brand : T.borderLight}`, background: editMode ? T.brandSubtle : T.card, color: editMode ? T.brand : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, boxShadow: T.cardShadow }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             {editMode ? "Editing…" : "Edit"}
           </button>
 
           {/* Settings */}
-          <button onClick={() => setShowSettings(true)} title="Configure Quickbase connection" style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${T.border}`, background: T.bgCard, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textSec, boxShadow: T.cardShadow }}>
+          <button onClick={() => setShowSettings(true)} title="Configure Quickbase connection" style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
 
           {/* View toggle */}
-          <div style={{ display: "flex", background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 8, overflow: "hidden", boxShadow: T.cardShadow }}>
+          <div style={{ display: "flex", background: T.card, border: `1px solid ${T.borderLight}`, borderRadius: 10, overflow: "hidden", boxShadow: T.cardShadow }}>
             {[["table","Table"],["map","Map"]].map(([v, label]) => (
-              <button key={v} onClick={() => setActiveView(v)} style={{ padding: "7px 14px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: activeView === v ? T.brand : "transparent", color: activeView === v ? T.white : T.textSec, transition: "background 0.15s, color 0.15s" }}>
+              <button key={v} onClick={() => setActiveView(v)} style={{ padding: "7px 14px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: activeView === v ? T.brand : "transparent", color: activeView === v ? T.card : T.text2, transition: "background 0.15s, color 0.15s" }}>
                 {label}
               </button>
             ))}
@@ -392,12 +392,12 @@ export function WarrantyDashboard({
       </div>
 
       {/* ── Filter bar ───────────────────────────────────────────────────── */}
-      <div style={{ background: T.bgCard, borderRadius: 12, padding: "12px 16px", marginBottom: 20, boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div style={{ background: T.card, borderRadius: 20, padding: "12px 16px", marginBottom: 20, boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: "1 1 220px" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.textMuted} strokeWidth="2" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.text3} strokeWidth="2" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input placeholder="Search order, customer, location…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px 8px 30px", borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, color: T.text, background: T.bgApp, outline: "none", boxSizing: "border-box" }} />
+          <input placeholder="Search order, customer, location…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px 8px 30px", borderRadius: 16, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.bg, outline: "none", boxSizing: "border-box" }} />
         </div>
         {[
           { label: "Status", value: statusFilter, setter: setStatusFilter, options: [["all","All Statuses"],["active","Active"],["expiring","Expiring"],["expired","Expired"]] },
@@ -405,16 +405,16 @@ export function WarrantyDashboard({
           { label: "Brand",  value: brandFilter,  setter: setBrandFilter,  options: [["all","All Brands"], ...uniqueBrands.map(b => [b, b])] },
           { label: "Risk",   value: riskFilter,   setter: setRiskFilter,   options: [["all","All Risk Levels"],["critical","Critical"],["high","High"],["medium","Medium"],["low","Low"],["atrisk","At Risk (No Claim)"]] },
         ].map(({ label, value, setter, options }) => (
-          <select key={label} value={value} onChange={e => setter(e.target.value)} style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, color: T.text, background: T.bgCard, cursor: "pointer", flexShrink: 0 }}>
+          <select key={label} value={value} onChange={e => setter(e.target.value)} style={{ padding: "8px 12px", borderRadius: 14, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.card, cursor: "pointer", flexShrink: 0 }}>
             {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         ))}
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setPmFilter("all"); setStatusFilter("all"); setBrandFilter("all"); setRiskFilter("all"); }} style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid ${T.dangerFill}`, background: T.dangerSoft, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button onClick={() => { setSearch(""); setPmFilter("all"); setStatusFilter("all"); setBrandFilter("all"); setRiskFilter("all"); }} style={{ padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
             Clear Filters
           </button>
         )}
-        <span style={{ marginLeft: "auto", fontSize: 12, color: T.textMuted, whiteSpace: "nowrap" }}>{filtered.length} of {enriched.length} orders</span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: T.text3, whiteSpace: "nowrap" }}>{filtered.length} of {enriched.length} orders</span>
       </div>
 
       {/* ── Map view ─────────────────────────────────────────────────────── */}
@@ -441,12 +441,12 @@ export function WarrantyDashboard({
 
       {/* ── Order detail table (table view only) ─────────────────────────── */}
       {activeView === "table" && (
-        <div style={{ background: T.bgCard, borderRadius: 12, boxShadow: T.cardShadow, overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }}>Order Detail</h3>
+        <div style={{ background: T.card, borderRadius: 24, boxShadow: T.cardShadow, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${T.borderLight}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: T.text1, margin: 0 }}>Order Detail</h3>
             <div style={{ display: "flex", gap: 12 }}>
-              <span style={{ fontSize: 12, color: T.textSec }}><b style={{ color: T.text }}>{filteredClaims}</b> claims</span>
-              <span style={{ fontSize: 12, color: T.textSec }}>Portfolio: <b style={{ color: T.text }}>{fmtCurrency(filteredValue)}</b></span>
+              <span style={{ fontSize: 12, color: T.text2 }}><b style={{ color: T.text1 }}>{filteredClaims}</b> claims</span>
+              <span style={{ fontSize: 12, color: T.text2 }}>Portfolio: <b style={{ color: T.text1 }}>{fmtCurrency(filteredValue)}</b></span>
             </div>
           </div>
           <div style={{ overflowX: "auto" }}>
@@ -465,25 +465,25 @@ export function WarrantyDashboard({
               <tbody>
                 {filtered.map((o, i) => {
                   const isExpanded = expandedRow === o.orderNum;
-                  const rowBg = i % 2 === 0 ? T.bgCard : "#FAFAF8";
+                  const rowBg = i % 2 === 0 ? T.card : T.surface;
                   return (
                     <>
-                      <tr key={o.orderNum} style={{ background: rowBg, borderBottom: `1px solid ${T.border}`, cursor: "pointer" }} onClick={() => setExpandedRow(isExpanded ? null : o.orderNum)}>
+                      <tr key={o.orderNum} style={{ background: rowBg, borderBottom: `1px solid ${T.borderLight}`, cursor: "pointer" }} onClick={() => setExpandedRow(isExpanded ? null : o.orderNum)}>
                         <td style={{ ...TD, fontWeight: 700, color: T.brand }}>{o.orderNum}</td>
-                        <td style={{ ...TD, color: T.text, fontWeight: 500 }}>{o.customer}</td>
-                        <td style={{ ...TD, color: T.textSec, fontSize: 12, whiteSpace: "nowrap" }}>{o.location}</td>
-                        <td style={{ ...TD, color: T.text, fontSize: 12 }}>{o.pm}</td>
+                        <td style={{ ...TD, color: T.text1, fontWeight: 500 }}>{o.customer}</td>
+                        <td style={{ ...TD, color: T.text2, fontSize: 12, whiteSpace: "nowrap" }}>{o.location}</td>
+                        <td style={{ ...TD, color: T.text1, fontSize: 12 }}>{o.pm}</td>
                         <td style={TD}><RiskBadge level={o.risk} score={o.riskScore} /></td>
                         <td style={TD}><StatusBadge status={o.status} days={o.days} /></td>
-                        <td style={{ ...TD, color: T.textSec, fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(o.warrantyEnd)}</td>
-                        <td style={{ ...TD, textAlign: "center", fontWeight: 700, color: o.claims > 1 ? T.danger : T.text }}>{o.claims}</td>
-                        <td style={{ ...TD, textAlign: "center", color: T.textSec }}>{o.qcPeeling}</td>
-                        <td style={{ ...TD, textAlign: "center", color: o.qcPowder > 1 ? T.warning : T.textSec, fontWeight: o.qcPowder > 1 ? 700 : 400 }}>{o.qcPowder}</td>
+                        <td style={{ ...TD, color: T.text2, fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(o.warrantyEnd)}</td>
+                        <td style={{ ...TD, textAlign: "center", fontWeight: 700, color: o.claims > 1 ? T.danger : T.text1 }}>{o.claims}</td>
+                        <td style={{ ...TD, textAlign: "center", color: T.text2 }}>{o.qcPeeling}</td>
+                        <td style={{ ...TD, textAlign: "center", color: o.qcPowder > 1 ? T.warningText : T.text2, fontWeight: o.qcPowder > 1 ? 700 : 400 }}>{o.qcPowder}</td>
                         <td style={{ ...TD, fontWeight: 600, whiteSpace: "nowrap" }}>{fmtCurrency(o.orderValue)}</td>
                         <td style={{ ...TD, maxWidth: 220 }}>
                           {o.products.length > 0
                             ? o.products.map(p => <ProductTag key={p} name={p} />)
-                            : <span style={{ fontSize: 11, color: T.textMuted }}>-</span>}
+                            : <span style={{ fontSize: 11, color: T.text3 }}>-</span>}
                         </td>
                         <td style={TD}>
                           <a href={o.qbUrl || "#"} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ padding: "4px 10px", borderRadius: 6, background: T.brandSubtle, color: T.brand, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>
@@ -499,21 +499,21 @@ export function WarrantyDashboard({
                               {[["Final Color Approval", o.colors || "-"], ["Warranty End", fmtDate(o.warrantyEnd)], ["Order Value", fmtCurrency(o.orderValue)]].map(([lbl, val]) => (
                                 <div key={lbl}>
                                   <span style={{ fontSize: 10, fontWeight: 700, color: T.brandDark, textTransform: "uppercase", letterSpacing: "0.05em" }}>{lbl}</span>
-                                  <p style={{ fontSize: 12, color: T.text, margin: "4px 0 0" }}>{val}</p>
+                                  <p style={{ fontSize: 12, color: T.text1, margin: "4px 0 0" }}>{val}</p>
                                 </div>
                               ))}
                               <div>
                                 <span style={{ fontSize: 10, fontWeight: 700, color: T.brandDark, textTransform: "uppercase", letterSpacing: "0.05em" }}>Open Claims</span>
-                                <p style={{ fontSize: 12, color: o.openClaims > 0 ? T.danger : T.textSec, margin: "4px 0 0", fontWeight: o.openClaims > 0 ? 700 : 400 }}>{o.openClaims}</p>
+                                <p style={{ fontSize: 12, color: o.openClaims > 0 ? T.danger : T.text2, margin: "4px 0 0", fontWeight: o.openClaims > 0 ? 700 : 400 }}>{o.openClaims}</p>
                               </div>
                               <div>
                                 <span style={{ fontSize: 10, fontWeight: 700, color: T.brandDark, textTransform: "uppercase", letterSpacing: "0.05em" }}>Closed Claims</span>
-                                <p style={{ fontSize: 12, color: T.textSec, margin: "4px 0 0" }}>{o.closedClaims}</p>
+                                <p style={{ fontSize: 12, color: T.text2, margin: "4px 0 0" }}>{o.closedClaims}</p>
                               </div>
                               {o.claimCost > 0 && (
                                 <div>
                                   <span style={{ fontSize: 10, fontWeight: 700, color: T.brandDark, textTransform: "uppercase", letterSpacing: "0.05em" }}>Claim Cost</span>
-                                  <p style={{ fontSize: 12, color: T.accentDark, margin: "4px 0 0", fontWeight: 600 }}>{fmtCurrency(o.claimCost)}</p>
+                                  <p style={{ fontSize: 12, color: T.warningText, margin: "4px 0 0", fontWeight: 600 }}>{fmtCurrency(o.claimCost)}</p>
                                 </div>
                               )}
                             </div>
@@ -524,14 +524,14 @@ export function WarrantyDashboard({
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={13} style={{ padding: "40px 20px", textAlign: "center", color: T.textMuted, fontSize: 13 }}>No orders match the current filters.</td></tr>
+                  <tr><td colSpan={13} style={{ padding: "40px 20px", textAlign: "center", color: T.text3, fontSize: 13 }}>No orders match the current filters.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div style={{ padding: "10px 20px", borderTop: `1px solid ${T.border}`, background: "#FAFAF8", display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: T.textMuted }}>Click any row to expand color and warranty detail.</span>
-            <span style={{ marginLeft: "auto", fontSize: 12, color: T.textSec }}>Showing <b style={{ color: T.text }}>{filtered.length}</b> orders · <b style={{ color: T.text }}>{filteredClaims}</b> claims · <b style={{ color: T.text }}>{fmtCurrency(filteredValue)}</b> portfolio value</span>
+          <div style={{ padding: "10px 20px", borderTop: `1px solid ${T.borderLight}`, background: T.surface, display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: T.text3 }}>Click any row to expand color and warranty detail.</span>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: T.text2 }}>Showing <b style={{ color: T.text1 }}>{filtered.length}</b> orders · <b style={{ color: T.text1 }}>{filteredClaims}</b> claims · <b style={{ color: T.text1 }}>{fmtCurrency(filteredValue)}</b> portfolio value</span>
           </div>
         </div>
       )}

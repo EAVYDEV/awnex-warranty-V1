@@ -63,7 +63,7 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
       {/* Info banner */}
       <div style={{
         background: T.brandSubtle, border: `1px solid ${T.brandSoft}`,
-        borderRadius: 10, padding: "12px 14px", marginBottom: 22,
+        borderRadius: 14, padding: "12px 14px", marginBottom: 22,
         fontSize: 12, color: T.brandDark, lineHeight: 1.6,
       }}>
         <strong>QB_REALM</strong> and <strong>QB_TOKEN</strong> are server-side environment
@@ -86,8 +86,8 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
             <button
               onClick={handleParseUrl}
               style={{
-                padding: "8px 12px", borderRadius: 8, border: `1px solid ${T.border}`,
-                background: T.bgCard, color: T.brandDark, fontSize: 12, fontWeight: 700,
+                padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.borderLight}`,
+                background: T.card, color: T.brandDark, fontSize: 12, fontWeight: 700,
                 cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit",
               }}
             >
@@ -96,7 +96,7 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
           </div>
           <p style={{
             fontSize: 11, marginTop: 5,
-            color: urlMsgType === "error" ? "#B42318" : urlMsgType === "success" ? "#067647" : T.textMuted,
+            color: urlMsgType === "error" ? "#B42318" : urlMsgType === "success" ? "#067647" : T.text3,
           }}>
             {urlMsg || "Paste a table/report URL and we'll auto-fill IDs."}
           </p>

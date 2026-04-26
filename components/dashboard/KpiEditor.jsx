@@ -85,7 +85,7 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
             </>
           ) : (
             <>
-              <Btn variant="ghost" onClick={() => setShowDelete(true)} style={{ color: T.danger, borderColor: T.dangerFill }}>
+              <Btn variant="ghost" onClick={() => setShowDelete(true)} style={{ color: T.danger, borderColor: T.dangerSubtle }}>
                 <Icon name="trash-2" size={13} color={T.danger} /> Delete
               </Btn>
               <Btn variant="ghost" onClick={onDuplicate}>
@@ -162,14 +162,14 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
                 title={name}
                 onClick={() => update({ icon: name })}
                 style={{
-                  width: 34, height: 34, borderRadius: 8,
-                  border: `2px solid ${draft.icon === name ? T.brand : T.border}`,
-                  background: draft.icon === name ? T.brandSubtle : T.bgApp,
+                  width: 34, height: 34, borderRadius: 10,
+                  border: `2px solid ${draft.icon === name ? T.brand : T.borderLight}`,
+                  background: draft.icon === name ? T.brandSubtle : T.bg,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   cursor: "pointer", padding: 0,
                 }}
               >
-                <Icon name={name} size={15} color={draft.icon === name ? T.brand : T.textSec} />
+                <Icon name={name} size={15} color={draft.icon === name ? T.brand : T.text2} />
               </button>
             ))}
           </div>
@@ -189,7 +189,7 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
                   style={{
                     width: 34, height: 34, borderRadius: 8,
                     background: th.bg,
-                    border: `2px solid ${active ? th.color : T.border}`,
+                    border: `2px solid ${active ? th.color : T.borderLight}`,
                     cursor: "pointer", position: "relative",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}
@@ -200,30 +200,30 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
             })}
             {/* Custom color inputs */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 4 }}>
-              <label style={{ fontSize: 11, color: T.textMuted }}>Value</label>
+              <label style={{ fontSize: 11, color: T.text3 }}>Value</label>
               <input type="color" value={draft.color} onChange={e => update({ color: e.target.value })}
-                style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer", padding: 2 }} />
-              <label style={{ fontSize: 11, color: T.textMuted }}>BG</label>
+                style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }} />
+              <label style={{ fontSize: 11, color: T.text3 }}>BG</label>
               <input type="color" value={draft.bg} onChange={e => update({ bg: e.target.value })}
-                style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer", padding: 2 }} />
+                style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }} />
             </div>
           </div>
         </Field>
 
         {/* Live preview */}
         <div style={{
-          background: T.bgApp, border: `1px solid ${T.border}`,
-          borderRadius: 10, padding: "14px 18px",
+          background: T.bg, border: `1px solid ${T.borderLight}`,
+          borderRadius: 14, padding: "14px 18px",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
         }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
               Live Preview
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, color: draft.color || T.brand, lineHeight: 1 }}>
               {previewValue ?? (enrichedOrders.length ? "0" : "—")}
             </div>
-            {draft.subtitle && <div style={{ fontSize: 12, color: T.textMuted, marginTop: 4 }}>{draft.subtitle}</div>}
+            {draft.subtitle && <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>{draft.subtitle}</div>}
           </div>
           <div style={{
             width: 40, height: 40, borderRadius: 10,
@@ -261,9 +261,9 @@ function FilterRow({ filter, fields, onToggle, onChange }) {
           onClick={onToggle}
           style={{
             marginBottom: 6, padding: "2px 10px", borderRadius: 20,
-            border: `1px solid ${filter ? T.brand : T.border}`,
-            background: filter ? T.brandSubtle : T.bgApp,
-            color: filter ? T.brand : T.textSec,
+            border: `1px solid ${filter ? T.brand : T.borderLight}`,
+            background: filter ? T.brandSubtle : T.bg,
+            color: filter ? T.brand : T.text2,
             fontSize: 11, fontWeight: 700, cursor: "pointer",
           }}
         >
