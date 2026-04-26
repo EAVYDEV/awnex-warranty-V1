@@ -51,7 +51,13 @@ export function MapView({ orders }) {
   useEffect(() => {
     if (!ready || !containerRef.current || mapRef.current) return;
     const L   = window.L;
-    const map = L.map(containerRef.current, { zoomControl: true }).setView([39.5, -98.35], 4);
+    const map = L.map(containerRef.current, {
+      zoomControl:        true,
+      zoomSnap:           0,      // continuous zoom — no snapping to integer levels
+      zoomDelta:          0.5,    // smaller step per scroll notch for fine control
+      wheelPxPerZoomLevel: 80,    // fewer pixels needed per zoom step (default 60, lower = faster)
+      preferCanvas:       true,   // canvas renderer is faster with many markers
+    }).setView([39.5, -98.35], 4);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
     }).addTo(map);
@@ -170,37 +176,37 @@ export function MapView({ orders }) {
   }, [orders, ready]);
 
   return (
-    <div style={{ background: T.bgCard, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.07)", overflow: "hidden" }}>
+    <div style={{ background: T.card, borderRadius: 24, boxShadow: T.cardShadow, overflow: "hidden" }}>
       <div style={{
-        padding: "14px 20px", borderBottom: `1px solid ${T.border}`,
+        padding: "14px 20px", borderBottom: `1px solid ${T.borderLight}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexWrap: "wrap", gap: 8,
       }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }}>Warranty Locations</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: T.text1, margin: 0 }}>Warranty Locations</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {Object.entries(STATUS_CFG).map(([s, cfg]) => (
             <div key={s} style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 9, height: 9, borderRadius: "50%", background: cfg.dot, display: "inline-block" }} />
-              <span style={{ fontSize: 11, color: T.textSec }}>{cfg.label}</span>
+              <span style={{ fontSize: 11, color: T.text2 }}>{cfg.label}</span>
             </div>
           ))}
-          <span style={{ fontSize: 12, color: T.textMuted }}>| {orders.length} orders shown</span>
+          <span style={{ fontSize: 12, color: T.text3 }}>| {orders.length} orders shown</span>
         </div>
       </div>
 
       {!ready
         ? (
-          <div style={{ height: 460, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: T.bgApp }}>
+          <div style={{ height: 460, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: T.bg }}>
             <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
             <div style={{ width: 16, height: 16, border: `2px solid ${T.brandSoft}`, borderTopColor: T.brand, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <span style={{ fontSize: 13, color: T.textSec }}>Loading map…</span>
+            <span style={{ fontSize: 13, color: T.text2 }}>Loading map…</span>
           </div>
         )
         : <div ref={containerRef} style={{ height: 460 }} />
       }
 
-      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.border}`, background: "#FAFAF8" }}>
-        <span style={{ fontSize: 11, color: T.textMuted }}>
+      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.borderLight}`, background: T.surface }}>
+        <span style={{ fontSize: 11, color: T.text3 }}>
           Click any pin to view order details. Stacked locations show a count badge.
         </span>
       </div>
