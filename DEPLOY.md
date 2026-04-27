@@ -15,11 +15,11 @@
 ## Step 2 - Push the code from Terminal
 
 Open Terminal and run these commands one at a time.
-Replace `YOUR_GITHUB_USERNAME` with your actual GitHub username.
+Replace `YOUR_GITHUB_USERNAME` with your actual GitHub username and `PATH_TO_PROJECT` with the local path to the project folder.
 
 ```bash
 # Navigate to the project folder
-cd "/Users/nicklaborde/Documents/Claude/Projects/Awntrak Platform - Cowork"
+cd "PATH_TO_PROJECT"
 
 # Initialize git
 git init
@@ -100,7 +100,6 @@ using the gear icon in the top-right corner of the dashboard.
 Any time you make changes to the code, push them with:
 
 ```bash
-cd "/Users/nicklaborde/Documents/Claude/Projects/Awntrak Platform - Cowork"
 git add .
 git commit -m "describe your change here"
 git push
