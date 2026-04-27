@@ -19,6 +19,7 @@ import {
   loadKpiConfigs, saveKpiConfigs,
   loadChartConfigs, saveChartConfigs,
   loadColumnTitles, saveColumnTitles,
+  loadColumnOrder, saveColumnOrder,
   resetAllConfigs,
 } from "../lib/dashboardStorage.js";
 import { AwnexLogo }            from "../components/AwnexLogo.jsx";
@@ -144,6 +145,7 @@ export function WarrantyDashboard({
   const [editingKpi, setEditingKpi]       = useState(null); // { config, idx }
   const [editingChart, setEditingChart]   = useState(null); // { config, idx }
   const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
+  const [columnOrder,  setColumnOrder]    = useState(() => loadColumnOrder());
   const [showColumnEditor, setShowColumnEditor] = useState(false);
 
   // KPI helpers
@@ -191,7 +193,7 @@ export function WarrantyDashboard({
   function handleResetAll() {
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setKpiConfigs(k); setChartConfigs(c);
-    setColumnTitles({});
+    setColumnTitles({}); setColumnOrder([]);
   }
 
   // ── Enrichment ─────────────────────────────────────────────────────────────
@@ -213,10 +215,16 @@ export function WarrantyDashboard({
     [qbReportFields]
   );
 
-  const columnSpecs = useMemo(
-    () => buildColumnSpecs(qbReportFields, columnTitles),
-    [qbReportFields, columnTitles]
-  );
+  const columnSpecs = useMemo(() => {
+    const specs  = buildColumnSpecs(qbReportFields, columnTitles);
+    if (!columnOrder.length) return specs;
+    // Apply saved order: sort by position in columnOrder; unknown cols go before qbLink
+    const orderMap = Object.fromEntries(columnOrder.map((id, i) => [id, i]));
+    const link     = specs.find(c => c.renderAs === "qbLink");
+    const rest     = specs.filter(c => c.renderAs !== "qbLink");
+    rest.sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999));
+    return link ? [...rest, link] : rest;
+  }, [qbReportFields, columnTitles, columnOrder]);
 
   // ── Table filter + sort ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -520,9 +528,10 @@ export function WarrantyDashboard({
           {showColumnEditor && (
             <ColumnEditor
               columns={columnSpecs}
-              onSave={customTitles => {
+              onSave={(customTitles, newOrder) => {
                 setColumnTitles(customTitles);
                 saveColumnTitles(customTitles);
+                if (newOrder) { setColumnOrder(newOrder); saveColumnOrder(newOrder); }
                 setShowColumnEditor(false);
               }}
               onClose={() => setShowColumnEditor(false)}
