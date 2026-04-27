@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { T } from "../lib/tokens.js";
 import {
   mapQBResponse, mapClaimsResponse,
