@@ -43,12 +43,39 @@ export function KpiCard({
         </div>
       )}
 
+      {editMode && (
+        <div
+          title="Drag this KPI card to reorder"
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "2px 7px",
+            borderRadius: 999,
+            border: `1px solid ${T.borderLight}`,
+            background: T.card,
+            color: T.text3,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.03em",
+            textTransform: "uppercase",
+          }}
+        >
+          <Icon name="grip" size={11} color={T.text3} />
+          Drag
+        </div>
+      )}
+
       {/* Header row: label + icon */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <span style={{
           fontSize: 11, fontWeight: 700, color: T.text2,
           textTransform: "uppercase", letterSpacing: "0.05em",
           paddingRight: editMode ? 68 : 0,
+          paddingLeft: editMode ? 58 : 0,
           minWidth: 0,
           wordBreak: "break-word",
           lineHeight: 1.35,

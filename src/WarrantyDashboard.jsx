@@ -549,6 +549,7 @@ export function WarrantyDashboard({
             <div
               key={cfg.id}
               draggable={editMode}
+              title={editMode ? "Drag to reorder KPI cards" : undefined}
               onDragStart={e => {
                 if (!editMode) return;
                 e.dataTransfer.effectAllowed = "move";
@@ -567,7 +568,7 @@ export function WarrantyDashboard({
                 setDraggingKpiId(null);
               }}
               style={{
-                cursor: editMode ? "grab" : "default",
+                cursor: editMode ? (draggingKpiId === cfg.id ? "grabbing" : "grab") : "default",
                 transform: draggingKpiId === cfg.id ? "scale(0.98)" : "none",
                 opacity: draggingKpiId === cfg.id ? 0.7 : 1,
               }}
@@ -628,6 +629,7 @@ export function WarrantyDashboard({
               <div
                 key={cfg.id}
                 draggable={editMode}
+                title={editMode ? "Drag to reorder chart cards" : undefined}
                 onDragStart={e => {
                   if (!editMode) return;
                   e.dataTransfer.effectAllowed = "move";
@@ -646,7 +648,7 @@ export function WarrantyDashboard({
                   setDraggingChartId(null);
                 }}
                 style={{
-                  cursor: editMode ? "grab" : "default",
+                  cursor: editMode ? (draggingChartId === cfg.id ? "grabbing" : "grab") : "default",
                   transform: draggingChartId === cfg.id ? "scale(0.99)" : "none",
                   opacity: draggingChartId === cfg.id ? 0.7 : 1,
                 }}
