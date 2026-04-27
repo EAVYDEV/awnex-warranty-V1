@@ -56,7 +56,21 @@ Select scope: **repo** (full control of private repositories).
 
 ---
 
-## Step 4 - Add environment variables in Vercel
+## Step 4 - Create a Vercel KV store (cross-device settings sync)
+
+Dashboard settings (KPI layout, charts, column order) are synced across devices via Vercel KV.
+
+1. In your Vercel project, go to the **Storage** tab
+2. Click **Create Database** → select **KV**
+3. Name it anything (e.g. `awntrak-settings`) and click **Create**
+4. On the next screen click **Connect to Project** and select your project
+5. Vercel automatically adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` to your project environment variables — no manual copy needed
+
+> **Local development:** copy `KV_REST_API_URL` and `KV_REST_API_TOKEN` from the KV store's **`.env.local`** tab and paste them into your local `.env.local` file. Without them the app falls back to localStorage silently.
+
+---
+
+## Step 5 - Add Quickbase environment variables in Vercel
 
 1. In your Vercel project, go to **Settings > Environment Variables**
 2. Add these two variables:
@@ -71,7 +85,7 @@ Select scope: **repo** (full control of private repositories).
 
 ---
 
-## Step 5 - Redeploy
+## Step 6 - Redeploy
 
 1. Go to the **Deployments** tab in Vercel
 2. Click the three-dot menu on the most recent deployment
@@ -80,7 +94,7 @@ Select scope: **repo** (full control of private repositories).
 
 ---
 
-## Step 6 - Configure the connection in the dashboard
+## Step 7 - Configure the connection in the dashboard
 
 1. Open your live Vercel URL
 2. You will see the "Connect to Quickbase" screen

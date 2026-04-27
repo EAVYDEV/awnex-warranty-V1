@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { T } from "../lib/tokens.js";
 import {
   mapQBResponse, mapClaimsResponse,
@@ -48,6 +48,59 @@ export function WarrantyDashboard({
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => { setSettings(loadConnectionSettings()); }, []);
+
+  // ── Cross-device sync via Vercel KV ───────────────────────────────────────
+  // "loading" → fetching server settings on mount
+  // "ready"   → up to date
+  // "saving"  → debounced POST in flight
+  // "error"   → last POST failed
+  const [syncStatus,    setSyncStatus]    = useState("loading");
+  const syncStatusRef   = useRef("loading");
+  const skipNextSyncRef = useRef(true); // skip the echo-back after server load
+
+  function updateSyncStatus(s) { syncStatusRef.current = s; setSyncStatus(s); }
+
+  // Load server settings once on mount; override localStorage where present
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(s => {
+        if (s.kpiConfigs?.length)                         setKpiConfigs(s.kpiConfigs);
+        if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
+        if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
+        if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
+        if (s.tableId || s.reportId) {
+          const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
+          setSettings(ns);
+          saveConnectionSettings(ns);
+        }
+        updateSyncStatus("ready");
+      })
+      .catch(() => updateSyncStatus("ready")); // no KV configured — stay on localStorage
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced save whenever any persisted config changes (after first server load)
+  useEffect(() => {
+    if (syncStatusRef.current === "loading") return;
+    if (skipNextSyncRef.current) { skipNextSyncRef.current = false; return; }
+    updateSyncStatus("saving");
+    const timer = setTimeout(() => {
+      fetch("/api/settings", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kpiConfigs, chartConfigs, columnTitles, columnOrder,
+          tableId: settings.tableId, reportId: settings.reportId,
+        }),
+      })
+        .then(r => r.ok ? updateSyncStatus("ready") : updateSyncStatus("error"))
+        .catch(() => updateSyncStatus("error"));
+    }, 800);
+    return () => clearTimeout(timer);
+  // syncStatus intentionally excluded — we use the ref to avoid re-triggering
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, settings]);
 
   // ── Raw data ───────────────────────────────────────────────────────────────
   const [orders, setOrders]             = useState(ordersProp ?? []);
@@ -406,6 +459,18 @@ export function WarrantyDashboard({
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Sync status */}
+          {syncStatus !== "loading" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={syncStatus === "error" ? T.danger : syncStatus === "saving" ? T.text3 : T.successFill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>
+              </svg>
+              <span style={{ color: syncStatus === "error" ? T.danger : T.text2 }}>
+                {syncStatus === "saving" ? "Saving…" : syncStatus === "error" ? "Sync error" : "Synced"}
+              </span>
+            </div>
+          )}
+
           {/* Source status pills */}
           {Object.entries(sourceStatuses).map(([id, st]) => (
             <div key={id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11, color: T.text2 }}>

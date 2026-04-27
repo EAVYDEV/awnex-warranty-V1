@@ -170,11 +170,16 @@ Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in para
 
 ### LocalStorage keys
 
+localStorage is used as an immediate read/write cache. All keys are also synced to Vercel KV via `GET /api/settings` (on mount) and `POST /api/settings` (debounced, 800 ms after any change) so settings persist across devices.
+
 | Key | Purpose |
 |---|---|
 | `awntrak_warranty_table_id` | QB table ID |
 | `awntrak_warranty_report_id` | QB report ID |
 | `awntrak_kpi_configs` | JSON array of KPI configuration objects |
 | `awntrak_chart_configs` | JSON array of chart configuration objects |
+| `awntrak_column_titles` | `{ [colId]: string }` map of custom column display titles |
+| `awntrak_column_order` | `string[]` ordered array of column IDs |
+| `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
 
-All keys are managed through `lib/dashboardStorage.js`.
+All dashboard keys (excluding geocache) are managed through `lib/dashboardStorage.js`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.
