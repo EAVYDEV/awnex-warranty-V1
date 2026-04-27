@@ -317,7 +317,16 @@ export function WarrantyDashboard({
         );
       case "qbField": {
         const v = o._qbFields?.[spec.key];
-        return <td key={spec.id} style={{ ...td, color: T.text2, fontSize: 12 }}>{v != null ? String(v) : "-"}</td>;
+        if (v == null) return <td key={spec.id} style={{ ...td, color: T.text2, fontSize: 12 }}>-</td>;
+        const str = String(v);
+        if (/<[a-z]/i.test(str)) {
+          return (
+            <td key={spec.id} style={{ ...td }}>
+              <div dangerouslySetInnerHTML={{ __html: str }} />
+            </td>
+          );
+        }
+        return <td key={spec.id} style={{ ...td, color: T.text2, fontSize: 12 }}>{str}</td>;
       }
       default:
         return <td key={spec.id} style={{ ...td, color: T.text2 }}>{String(o[spec.key] ?? "-")}</td>;
