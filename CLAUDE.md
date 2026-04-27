@@ -53,7 +53,7 @@ Browser (WarrantyDashboard.jsx)
 | Need to change | File |
 |---|---|
 | Colors, shadows, status/risk color configs | `lib/tokens.js` |
-| QB field parsing, order mapping, risk scoring | `lib/qbUtils.js` |
+| QB field parsing, order mapping, risk scoring, column spec builder | `lib/qbUtils.js` |
 | Filter, aggregate, KPI/chart compute helpers | `lib/dashboardMetrics.js` |
 | Default KPI/chart configs, palettes, themes | `lib/dashboardDefaults.js` |
 | localStorage keys and load/save helpers | `lib/dashboardStorage.js` |
@@ -70,6 +70,7 @@ Browser (WarrantyDashboard.jsx)
 | Chart editor modal | `components/dashboard/ChartEditor.jsx` |
 | Recharts rendering for all chart types | `components/dashboard/ConfigurableChart.jsx` |
 | Edit mode toolbar | `components/dashboard/DashboardEditToolbar.jsx` |
+| Column title editor modal | `components/dashboard/ColumnEditor.jsx` |
 | All state, data fetch, layout orchestration | `WarrantyDashboard.jsx` |
 | QB API proxy | `pages/api/warranty-orders.js` |
 
@@ -81,11 +82,14 @@ Browser (WarrantyDashboard.jsx)
 |---|---|
 | `Order Number w/Series` | HTML anchor; URL and numeric order number extracted via regex |
 | `Order Name (Formula)` | `BRAND-CustomerName-ID-City State-Address` format; brand/location parsed from dash-split |
-| `Project Manager` | Display-name format; `extractPMName()` strips the `<userid>` suffix |
+| `Project Manager` | Display-name format; `extractPMName()` strips the `<userid>` suffix. Also handles QB user-field objects `{id, name}`. |
 | `# of Warranty Claims` | Primary risk signal |
 | `# of QC Entries for Peeling Powder` / `# of QC Entries for Powder Failure` | Leading-indicator risk signals |
+| `Installation Complete Date` / `Shipping Complete Date` | Used to compute `warrantyEnd` (install preferred; shipping as fallback) |
+| `Product Scope` | Semicolon-separated product list |
+| `NEW Final Color Approval` | Shown in expanded row only |
 
-Any QB field not in this list is captured in `order._qbFields[label]` so it can be used in configurable KPI and chart configs without changing code.
+Any QB field not in this list is captured in `order._qbFields[label]` so it can be used in configurable KPI, chart, and table column configs without changing code.
 
 ### Configurable dashboard system
 
@@ -130,6 +134,46 @@ Each KPI card and chart is driven by a config object stored in `localStorage`:
 
 Default configs are in `lib/dashboardDefaults.js` (`DEFAULT_KPI_CONFIGS`, `DEFAULT_CHART_CONFIGS`). They exactly replicate the original hard-coded dashboard so no visual information is lost.
 
+**Table column config shape** (stored as `awntrak_column_titles` — only the title overrides, not the full spec):
+```js
+// localStorage stores only the user-edited title overrides:
+{ [colId]: string }   // e.g. { "col_orderNum": "Order #", "col_qb_42": "Contract Amt" }
+```
+
+The full column spec is rebuilt at runtime by `buildColumnSpecs(qbReportFields, customTitles)` in `lib/qbUtils.js`:
+```js
+{
+  id: string,          // "col_orderNum" | "col_qb_{qbId}" for extra QB fields
+  qbId: number | null, // QB field ID; null for computed columns (risk, status, location)
+  renderAs: string,    // render strategy — see table below
+  key: string,         // enriched order field key, or QB label for _qbFields lookup
+  defaultTitle: string,// original QB field label (or hardcoded default when no QB report)
+  title: string,       // display title (customTitles[id] ?? defaultTitle)
+  sortable: boolean,
+}
+```
+
+`renderAs` strategies used by `renderCell()` in `WarrantyDashboard.jsx`:
+
+| renderAs | Output |
+|---|---|
+| `orderNum` | Bold order number in brand color |
+| `customer` | Semi-bold customer name |
+| `location` | Small gray city/state text |
+| `pm` | Project manager name |
+| `risk` | `RiskBadge` (score/100 + level label) |
+| `status` | `StatusBadge` (Active / Expiring / Expired) |
+| `expires` | Formatted warranty end date |
+| `claims` | Claim count; red + bold when > 1 |
+| `qcPeeling` | QC peeling entry count |
+| `qcPowder` | QC powder-failure count; amber when > 1 |
+| `orderValue` | `fmtCurrency()` formatted value |
+| `products` | `ProductTag` chips list |
+| `qbLink` | "Open ↗" link button to Quickbase record |
+| `qbField` | Plain text from `order._qbFields[spec.key]` |
+
+`DEFAULT_COLUMN_SPECS` in `lib/qbUtils.js` is used when no QB report is loaded (sample data), preserving the original hardcoded column layout.
+
 ### Available fields for KPI / chart configuration
 
 `lib/dashboardMetrics.js` exports `BUILTIN_FIELDS` — the enriched order fields always available:
@@ -157,6 +201,20 @@ sources={[
 
 Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in parallel and merged by order number. Additional routes must follow the same server-side proxy pattern as `pages/api/warranty-orders.js`.
 
+### Table column order and title customization
+
+The Order Detail table column order follows the **QB report field order** exactly. When a report is loaded, `buildColumnSpecs(qbReportFields, customTitles)` converts the QB `fields` array into column specs in the same sequence. Known QB labels map to typed renderers (badges, currency, etc.); any unknown extra QB fields become plain-text columns appended in report order.
+
+Column titles default to the QB field label. Users can rename any column via the **Columns** button in the table header, which opens `ColumnEditor`. Changes are saved to `awntrak_column_titles` in `localStorage` and merged in on the next `buildColumnSpecs` call. Resetting all configs (Edit toolbar → Reset) also clears column title overrides.
+
+Computed columns derived from QB fields (Risk, Warranty Status, Location) are inserted directly after their source QB field in the column order:
+
+| QB field | Derived columns inserted after it |
+|---|---|
+| `Order Name (Formula)` | Customer, Location |
+| `# of Warranty Claims` | Claims, Risk |
+| `Installation Complete Date` | Expires, Warranty Status |
+
 ### LocalStorage keys
 
 | Key | Purpose |
@@ -165,5 +223,6 @@ Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in para
 | `awntrak_warranty_report_id` | QB report ID |
 | `awntrak_kpi_configs` | JSON array of KPI configuration objects |
 | `awntrak_chart_configs` | JSON array of chart configuration objects |
+| `awntrak_column_titles` | JSON object mapping column ID → custom display title |
 
 All keys are managed through `lib/dashboardStorage.js`.
