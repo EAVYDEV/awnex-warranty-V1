@@ -60,48 +60,6 @@ export function WarrantyDashboard({
 
   function updateSyncStatus(s) { syncStatusRef.current = s; setSyncStatus(s); }
 
-  // Load server settings once on mount; override localStorage where present
-  useEffect(() => {
-    fetch("/api/settings")
-      .then(r => r.json())
-      .then(s => {
-        if (s.kpiConfigs?.length)                         setKpiConfigs(s.kpiConfigs);
-        if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
-        if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
-        if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
-        if (s.tableId || s.reportId) {
-          const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
-          setSettings(ns);
-          saveConnectionSettings(ns);
-        }
-        updateSyncStatus("ready");
-      })
-      .catch(() => updateSyncStatus("ready")); // no KV configured — stay on localStorage
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Debounced save whenever any persisted config changes (after first server load)
-  useEffect(() => {
-    if (syncStatusRef.current === "loading") return;
-    if (skipNextSyncRef.current) { skipNextSyncRef.current = false; return; }
-    updateSyncStatus("saving");
-    const timer = setTimeout(() => {
-      fetch("/api/settings", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kpiConfigs, chartConfigs, columnTitles, columnOrder,
-          tableId: settings.tableId, reportId: settings.reportId,
-        }),
-      })
-        .then(r => r.ok ? updateSyncStatus("ready") : updateSyncStatus("error"))
-        .catch(() => updateSyncStatus("error"));
-    }, 800);
-    return () => clearTimeout(timer);
-  // syncStatus intentionally excluded — we use the ref to avoid re-triggering
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, settings]);
-
   // ── Raw data ───────────────────────────────────────────────────────────────
   const [orders, setOrders]             = useState(ordersProp ?? []);
   const [loadState, setLoadState]       = useState(ordersProp ? "loaded" : "loading");
@@ -200,6 +158,48 @@ export function WarrantyDashboard({
   const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
   const [columnOrder,  setColumnOrder]    = useState(() => loadColumnOrder());
   const [showColumnEditor, setShowColumnEditor] = useState(false);
+
+  // Load server settings once on mount; override localStorage where present
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(s => {
+        if (s.kpiConfigs?.length)                         setKpiConfigs(s.kpiConfigs);
+        if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
+        if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
+        if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
+        if (s.tableId || s.reportId) {
+          const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
+          setSettings(ns);
+          saveConnectionSettings(ns);
+        }
+        updateSyncStatus("ready");
+      })
+      .catch(() => updateSyncStatus("ready")); // no KV configured — stay on localStorage
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced save whenever any persisted config changes (after first server load)
+  useEffect(() => {
+    if (syncStatusRef.current === "loading") return;
+    if (skipNextSyncRef.current) { skipNextSyncRef.current = false; return; }
+    updateSyncStatus("saving");
+    const timer = setTimeout(() => {
+      fetch("/api/settings", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kpiConfigs, chartConfigs, columnTitles, columnOrder,
+          tableId: settings.tableId, reportId: settings.reportId,
+        }),
+      })
+        .then(r => r.ok ? updateSyncStatus("ready") : updateSyncStatus("error"))
+        .catch(() => updateSyncStatus("error"));
+    }, 800);
+    return () => clearTimeout(timer);
+  // syncStatus intentionally excluded — we use the ref to avoid re-triggering
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, settings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
