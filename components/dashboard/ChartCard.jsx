@@ -18,6 +18,31 @@ export function ChartCard({
       outline: editMode ? `2px dashed ${T.brandSoft}` : "none",
       outlineOffset: 2,
     }}>
+      {editMode && (
+        <div
+          title="Drag this chart card to reorder"
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "2px 7px",
+            borderRadius: 999,
+            border: `1px solid ${T.borderLight}`,
+            background: T.card,
+            color: T.text3,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.03em",
+            textTransform: "uppercase",
+          }}
+        >
+          <Icon name="grip" size={11} color={T.text3} />
+          Drag
+        </div>
+      )}
 
       {/* Title row */}
       <div style={{
@@ -28,6 +53,7 @@ export function ChartCard({
         <h3 style={{
           fontSize: 13, fontWeight: 700, color: T.text1, margin: 0,
           flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          paddingLeft: editMode ? 58 : 0,
         }}>
           {title}
         </h3>
