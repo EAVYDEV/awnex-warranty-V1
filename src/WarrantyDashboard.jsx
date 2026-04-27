@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { T } from "../lib/tokens.js";
 import {
   mapQBResponse, mapClaimsResponse,
@@ -480,6 +481,14 @@ export function WarrantyDashboard({
           <div>
             <h1 style={{ fontSize: 30, fontWeight: 700, color: T.brandDeep, margin: 0, lineHeight: 1.05 }}>Warranty Management</h1>
             <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>Awntrak Platform — QC Module</p>
+            <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Link href="/" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.brandSubtle, color: T.brand, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
+                Warranty
+              </Link>
+              <Link href="/quality-risk" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
+                Quality Risk & RCA
+              </Link>
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
