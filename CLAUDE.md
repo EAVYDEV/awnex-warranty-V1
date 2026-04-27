@@ -87,6 +87,10 @@ Browser (WarrantyDashboard.jsx)
 
 Any QB field not in this list is captured in `order._qbFields[label]` so it can be used in configurable KPI and chart configs without changing code.
 
+#### Formula field HTML rendering
+
+QB formula fields often return HTML strings (e.g. styled `<div>` blocks with inline CSS). The `qbField` cell renderer in `WarrantyDashboard.jsx` (`renderCell`) detects HTML content via `/<[a-z]/i` and renders it with `dangerouslySetInnerHTML`, so the formula's own inline styles display as intended. Plain-text values from non-HTML formula fields continue to render as text with the standard design-system styles (`T.text2`, `fontSize: 12`).
+
 ### Configurable dashboard system
 
 Each KPI card and chart is driven by a config object stored in `localStorage`:
