@@ -3,8 +3,6 @@ import { T, STATUS_CFG, RISK_CFG } from "../lib/tokens.js";
 import { fmtDate } from "../lib/qbUtils.js";
 
 // ─── CITY COORDINATES CACHE ───────────────────────────────────────────────────
-// Seed cache for known cities to avoid any Nominatim calls on first load.
-
 const CITY_COORDS = {
   "san antonio texas":          [29.4241,  -98.4936],
   "broadview heights ohio":     [41.3131,  -81.6882],
@@ -23,31 +21,57 @@ const CITY_COORDS = {
   "omaha nebraska":             [41.2565,  -95.9345],
 };
 
-const GEOCACHE_KEY = "awntrak_geocache";
+const GEOCACHE_KEY  = "awntrak_geocache";
+// Max Nominatim requests per map load. Nominatim ToS: ≤1 req/s.
+// Each request takes ~1.1 s, so 30 = ~33 s worst-case for a cold cache.
+const GEOCODE_LIMIT = 30;
+
+// ─── CDN LOADER ───────────────────────────────────────────────────────────────
+function loadCss(href) {
+  if (document.querySelector(`link[href="${href}"]`)) return;
+  const el = document.createElement("link");
+  el.rel  = "stylesheet";
+  el.href = href;
+  document.head.appendChild(el);
+}
+
+function loadScript(src) {
+  return new Promise(resolve => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const el    = document.createElement("script");
+    el.src      = src;
+    el.onload   = resolve;
+    document.head.appendChild(el);
+  });
+}
 
 // ─── MAP VIEW ─────────────────────────────────────────────────────────────────
-// Loads Leaflet from CDN at runtime (not bundled) to avoid SSR issues.
+// Loads Leaflet + Leaflet.markercluster from CDN at runtime (avoids SSR issues).
+// Clustering keeps the DOM node count low regardless of total marker count,
+// which is the primary performance fix for 500+ records.
 
 export function MapView({ orders }) {
-  const containerRef = useRef(null);
-  const mapRef       = useRef(null);
-  const markersRef   = useRef([]);
-  // null until first use — lazy-loaded from localStorage in the markers effect
-  const geocacheRef  = useRef(null);
-  const [ready, setReady] = useState(typeof window !== "undefined" && !!window.L);
+  const containerRef    = useRef(null);
+  const mapRef          = useRef(null);
+  const clusterRef      = useRef(null);   // L.markerClusterGroup
+  const geocacheRef     = useRef(null);
+  const [ready, setReady]               = useState(
+    typeof window !== "undefined" && !!window.L && !!window.L.MarkerClusterGroup
+  );
+  const [geocodeSkipped, setGeocodeSkipped] = useState(0);
 
+  // ── Load Leaflet + markercluster from CDN ────────────────────────────────
   useEffect(() => {
-    if (window.L) { setReady(true); return; }
-    const css = document.createElement("link");
-    css.rel  = "stylesheet";
-    css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
-    document.head.appendChild(css);
-    const js = document.createElement("script");
-    js.src    = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-    js.onload = () => setReady(true);
-    document.head.appendChild(js);
+    if (window.L?.MarkerClusterGroup) { setReady(true); return; }
+    loadCss("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css");
+    loadCss("https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css");
+    loadCss("https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css");
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js")
+      .then(() => loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"))
+      .then(() => setReady(true));
   }, []);
 
+  // ── Initialise map once Leaflet is ready ─────────────────────────────────
   useEffect(() => {
     if (!ready || !containerRef.current || mapRef.current) return;
     const L   = window.L;
@@ -55,18 +79,33 @@ export function MapView({ orders }) {
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
     }).addTo(map);
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+
+    // Cluster group: collapses nearby pins into a single node in the DOM at
+    // each zoom level. Only ~10–20 elements are rendered at any given time,
+    // regardless of how many total markers exist.
+    const cluster = L.markerClusterGroup({
+      maxClusterRadius:      60,
+      spiderfyOnMaxZoom:     true,
+      showCoverageOnHover:   false,
+      zoomToBoundsOnClick:   true,
+      disableClusteringAtZoom: 11,
+    });
+    map.addLayer(cluster);
+    mapRef.current     = map;
+    clusterRef.current = cluster;
+    return () => { map.remove(); mapRef.current = null; clusterRef.current = null; };
   }, [ready]);
 
+  // ── Place / refresh markers whenever orders change ────────────────────────
   useEffect(() => {
-    if (!ready || !mapRef.current) return;
-    const L   = window.L;
-    const map = mapRef.current;
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current = [];
+    if (!ready || !mapRef.current || !clusterRef.current) return;
+    const L       = window.L;
+    const cluster = clusterRef.current;
 
-    // Lazy-init geocache: merge seed coords with any previously geocoded locations
+    // Clear previous markers — clearLayers() is O(n) but avoids individual remove() calls
+    cluster.clearLayers();
+
+    // Lazy-init geocache from localStorage, merged with seed coords
     if (!geocacheRef.current) {
       try {
         const stored = localStorage.getItem(GEOCACHE_KEY);
@@ -82,7 +121,7 @@ export function MapView({ orders }) {
     }
 
     function placeMarker(group, coords) {
-      if (!mapRef.current) return;
+      if (!mapRef.current || !clusterRef.current) return;
       const os = group.orders;
       const worstStatus = os.some(o => o.status === "expired")
         ? "expired" : os.some(o => o.status === "expiring") ? "expiring" : "active";
@@ -99,9 +138,10 @@ export function MapView({ orders }) {
       });
 
       const popupHtml = os.map((o, i) => {
-        const c = STATUS_CFG[o.status];
-        const r = RISK_CFG[o.risk || "low"];
-        const sep = i < os.length - 1 ? "border-bottom:1px solid #E5E4E0;margin-bottom:8px;padding-bottom:8px;" : "";
+        const c   = STATUS_CFG[o.status];
+        const r   = RISK_CFG[o.risk || "low"];
+        const sep = i < os.length - 1
+          ? "border-bottom:1px solid #E5E4E0;margin-bottom:8px;padding-bottom:8px;" : "";
         return `<div style="${sep}">
           <div style="font-weight:700;color:#0D3F72;font-size:13px">${o.orderNum} - ${o.brand}</div>
           <div style="font-size:11px;color:#636260;margin:2px 0 4px">${o.customer}</div>
@@ -114,38 +154,53 @@ export function MapView({ orders }) {
         </div>`;
       }).join("");
 
-      const marker = L.marker(coords, { icon })
-        .addTo(map)
-        .bindPopup(
+      // Add to the cluster group — Leaflet.markercluster handles DOM management
+      cluster.addLayer(
+        L.marker(coords, { icon }).bindPopup(
           `<div style="font-family:system-ui,sans-serif;min-width:210px;max-width:270px">${popupHtml}</div>`,
           { maxWidth: 290 },
-        );
-      markersRef.current.push(marker);
+        )
+      );
     }
 
-    // Group orders by location
+    // Group orders by location string so co-located orders share one pin.
+    // Capture QB-stored coordinates (Latitude / Longitude fields) from the
+    // first order in each group that has them — these skip geocoding entirely.
     const byLoc = {};
     orders.forEach(o => {
       const k = o.location.toLowerCase().trim();
-      if (!byLoc[k]) byLoc[k] = { location: o.location, orders: [] };
+      if (!byLoc[k]) byLoc[k] = { location: o.location, orders: [], qbCoords: null };
       byLoc[k].orders.push(o);
+      if (!byLoc[k].qbCoords) {
+        const lat = parseFloat(o._qbFields?.["Latitude"]);
+        const lng = parseFloat(o._qbFields?.["Longitude"]);
+        if (!isNaN(lat) && !isNaN(lng)) byLoc[k].qbCoords = [lat, lng];
+      }
     });
 
     const uncached = [];
     Object.values(byLoc).forEach(group => {
-      const key = group.location.toLowerCase().trim();
-      if (cache[key]) {
-        // Known location — place marker immediately, no network needed
-        placeMarker(group, cache[key]);
+      if (group.qbCoords) {
+        // QB provided coordinates — instant, no network call needed
+        placeMarker(group, group.qbCoords);
       } else {
-        uncached.push(group);
+        const key = group.location.toLowerCase().trim();
+        if (cache[key]) {
+          placeMarker(group, cache[key]);
+        } else {
+          uncached.push(group);
+        }
       }
     });
 
-    // Geocode only the locations not yet in cache, sequentially at ≤1 req/sec
-    // (Nominatim usage policy: max 1 request per second)
+    // Cap Nominatim requests to GEOCODE_LIMIT per load (ToS: ≤1 req/s).
+    // Locations beyond the cap are skipped; they will be resolved on future loads
+    // once earlier results have been persisted to localStorage.
+    const toGeocode = uncached.slice(0, GEOCODE_LIMIT);
+    setGeocodeSkipped(Math.max(0, uncached.length - GEOCODE_LIMIT));
+
     const timers = [];
-    uncached.forEach((group, i) => {
+    toGeocode.forEach((group, i) => {
       const t = setTimeout(async () => {
         if (!mapRef.current) return;
         const key = group.location.toLowerCase().trim();
@@ -199,10 +254,15 @@ export function MapView({ orders }) {
         : <div ref={containerRef} style={{ height: 460 }} />
       }
 
-      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.border}`, background: "#FAFAF8" }}>
+      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.border}`, background: "#FAFAF8", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 11, color: T.textMuted }}>
-          Click any pin to view order details. Stacked locations show a count badge.
+          Click any pin to view order details. Zoom in or click a cluster to expand.
         </span>
+        {geocodeSkipped > 0 && (
+          <span style={{ fontSize: 11, color: T.warningText, background: T.warningFill, padding: "2px 8px", borderRadius: 6 }}>
+            {geocodeSkipped} location{geocodeSkipped > 1 ? "s" : ""} not yet geocoded — will appear on next load
+          </span>
+        )}
       </div>
     </div>
   );

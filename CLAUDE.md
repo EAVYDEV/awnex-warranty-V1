@@ -85,7 +85,18 @@ Browser (WarrantyDashboard.jsx)
 | `# of Warranty Claims` | Primary risk signal |
 | `# of QC Entries for Peeling Powder` / `# of QC Entries for Powder Failure` | Leading-indicator risk signals |
 
+Two optional fields enable instant map rendering with no Nominatim calls:
+
+| Label | Purpose |
+|---|---|
+| `Latitude` | Decimal latitude — read from `order._qbFields["Latitude"]` by `MapView` |
+| `Longitude` | Decimal longitude — read from `order._qbFields["Longitude"]` by `MapView` |
+
 Any QB field not in this list is captured in `order._qbFields[label]` so it can be used in configurable KPI and chart configs without changing code.
+
+#### Formula field HTML rendering
+
+QB formula fields often return HTML strings (e.g. styled `<div>` blocks with inline CSS). The `qbField` cell renderer in `WarrantyDashboard.jsx` (`renderCell`) detects HTML content via `/<[a-z]/i` and renders it with `dangerouslySetInnerHTML`, so the formula's own inline styles display as intended. Plain-text values from non-HTML formula fields continue to render as text with the standard design-system styles (`T.text2`, `fontSize: 12`).
 
 ### Configurable dashboard system
 
@@ -159,11 +170,16 @@ Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in para
 
 ### LocalStorage keys
 
+localStorage is used as an immediate read/write cache. All keys are also synced to Vercel KV via `GET /api/settings` (on mount) and `POST /api/settings` (debounced, 800 ms after any change) so settings persist across devices.
+
 | Key | Purpose |
 |---|---|
 | `awntrak_warranty_table_id` | QB table ID |
 | `awntrak_warranty_report_id` | QB report ID |
 | `awntrak_kpi_configs` | JSON array of KPI configuration objects |
 | `awntrak_chart_configs` | JSON array of chart configuration objects |
+| `awntrak_column_titles` | `{ [colId]: string }` map of custom column display titles |
+| `awntrak_column_order` | `string[]` ordered array of column IDs |
+| `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
 
-All keys are managed through `lib/dashboardStorage.js`.
+All dashboard keys (excluding geocache) are managed through `lib/dashboardStorage.js`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.

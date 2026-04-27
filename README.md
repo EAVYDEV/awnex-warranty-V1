@@ -139,7 +139,16 @@ The report must include these fields. Labels must match exactly (case-sensitive)
 | `Installation Complete Date` | Warranty end calculation (preferred) |
 | `Shipping Complete Date` | Warranty end fallback |
 
-Extra QB fields not listed above are captured in `_qbFields` on each order and exposed in the configurable field picker, so they can be used in custom KPI and chart configurations without any code changes.
+Two optional fields improve map performance significantly — add them to your QB report and they will be used automatically:
+
+| QB Field Label | Purpose |
+|---|---|
+| `Latitude` | Decimal latitude of the installation site |
+| `Longitude` | Decimal longitude of the installation site |
+
+When these fields are present, the map places pins instantly without any Nominatim geocoding calls. Records missing them fall back to the existing Nominatim + localStorage-cache flow.
+
+Extra QB fields not listed above are captured in `_qbFields` on each order and exposed in the configurable field picker, so they can be used in custom KPI and chart configurations without any code changes. QB formula fields that return HTML strings (e.g. styled status badges) are detected automatically and rendered as HTML in the order table.
 
 ---
 
