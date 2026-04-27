@@ -75,7 +75,13 @@ export function MapView({ orders }) {
   useEffect(() => {
     if (!ready || !containerRef.current || mapRef.current) return;
     const L   = window.L;
-    const map = L.map(containerRef.current, { zoomControl: true }).setView([39.5, -98.35], 4);
+    const map = L.map(containerRef.current, {
+      zoomControl:         true,
+      zoomSnap:            0,    // continuous zoom — no snapping to integer levels
+      zoomDelta:           0.5,  // smaller step per scroll notch for fine control
+      wheelPxPerZoomLevel: 80,   // fewer pixels needed per zoom step (default 60, lower = faster)
+      preferCanvas:        true, // canvas renderer is faster with many markers
+    }).setView([39.5, -98.35], 4);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
     }).addTo(map);
