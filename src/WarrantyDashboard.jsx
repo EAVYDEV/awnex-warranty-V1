@@ -5,6 +5,7 @@ import {
   daysFromToday, warrantyStatus,
   computeRiskScore, riskLevel,
   fmtCurrency, fmtDate, buildReportFields,
+  buildColumnSpecs,
 } from "../lib/qbUtils.js";
 import {
   buildAvailableFields,
@@ -17,6 +18,7 @@ import {
   loadConnectionSettings, saveConnectionSettings,
   loadKpiConfigs, saveKpiConfigs,
   loadChartConfigs, saveChartConfigs,
+  loadColumnTitles, saveColumnTitles,
   resetAllConfigs,
 } from "../lib/dashboardStorage.js";
 import { AwnexLogo }            from "../components/AwnexLogo.jsx";
@@ -28,6 +30,7 @@ import { ChartCard }             from "../components/dashboard/ChartCard.jsx";
 import { ChartEditor }           from "../components/dashboard/ChartEditor.jsx";
 import { ConfigurableChart }     from "../components/dashboard/ConfigurableChart.jsx";
 import { DashboardEditToolbar }  from "../components/dashboard/DashboardEditToolbar.jsx";
+import { ColumnEditor }          from "../components/dashboard/ColumnEditor.jsx";
 import { StatusBadge, RiskBadge } from "../components/ui/Badge.jsx";
 import { ProductTag }            from "../components/ui/Tag.jsx";
 import { SortIcon }              from "../components/ui/SortIcon.jsx";
@@ -135,11 +138,13 @@ export function WarrantyDashboard({
   const [activeView, setActiveView]     = useState("table");
 
   // ── Edit mode state ────────────────────────────────────────────────────────
-  const [editMode, setEditMode]         = useState(false);
-  const [kpiConfigs, setKpiConfigs]     = useState(() => loadKpiConfigs());
-  const [chartConfigs, setChartConfigs] = useState(() => loadChartConfigs());
-  const [editingKpi, setEditingKpi]     = useState(null); // { config, idx }
-  const [editingChart, setEditingChart] = useState(null); // { config, idx }
+  const [editMode, setEditMode]           = useState(false);
+  const [kpiConfigs, setKpiConfigs]       = useState(() => loadKpiConfigs());
+  const [chartConfigs, setChartConfigs]   = useState(() => loadChartConfigs());
+  const [editingKpi, setEditingKpi]       = useState(null); // { config, idx }
+  const [editingChart, setEditingChart]   = useState(null); // { config, idx }
+  const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
+  const [showColumnEditor, setShowColumnEditor] = useState(false);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -186,6 +191,7 @@ export function WarrantyDashboard({
   function handleResetAll() {
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setKpiConfigs(k); setChartConfigs(c);
+    setColumnTitles({});
   }
 
   // ── Enrichment ─────────────────────────────────────────────────────────────
@@ -205,6 +211,11 @@ export function WarrantyDashboard({
   const availableFields = useMemo(
     () => buildAvailableFields(qbReportFields),
     [qbReportFields]
+  );
+
+  const columnSpecs = useMemo(
+    () => buildColumnSpecs(qbReportFields, columnTitles),
+    [qbReportFields, columnTitles]
   );
 
   // ── Table filter + sort ────────────────────────────────────────────────────
@@ -229,8 +240,12 @@ export function WarrantyDashboard({
       else
         r = r.filter(o => o.risk === riskFilter);
     }
+    function getVal(o, key) {
+      if (o[key] !== undefined) return o[key];
+      return o._qbFields?.[key] ?? "";
+    }
     return [...r].sort((a, b) => {
-      const av = a[sortCol] ?? ""; const bv = b[sortCol] ?? "";
+      const av = getVal(a, sortCol); const bv = getVal(b, sortCol);
       const cmp = typeof av === "number" && typeof bv === "number"
         ? av - bv : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
@@ -257,6 +272,57 @@ export function WarrantyDashboard({
     background: T.surface, userSelect: "none",
   };
   const TD = { padding: "10px 12px", fontSize: 13, verticalAlign: "middle" };
+
+  // ── Table cell renderer ────────────────────────────────────────────────────
+  function renderCell(o, spec, td) {
+    switch (spec.renderAs) {
+      case "orderNum":
+        return <td key={spec.id} style={{ ...td, fontWeight: 700, color: T.brand }}>{o.orderNum}</td>;
+      case "customer":
+        return <td key={spec.id} style={{ ...td, color: T.text1, fontWeight: 500 }}>{o.customer}</td>;
+      case "location":
+        return <td key={spec.id} style={{ ...td, color: T.text2, fontSize: 12, whiteSpace: "nowrap" }}>{o.location}</td>;
+      case "pm":
+        return <td key={spec.id} style={{ ...td, color: T.text1, fontSize: 12 }}>{o.pm}</td>;
+      case "risk":
+        return <td key={spec.id} style={td}><RiskBadge level={o.risk} score={o.riskScore} /></td>;
+      case "status":
+        return <td key={spec.id} style={td}><StatusBadge status={o.status} days={o.days} /></td>;
+      case "expires":
+        return <td key={spec.id} style={{ ...td, color: T.text2, fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(o.warrantyEnd)}</td>;
+      case "claims":
+        return <td key={spec.id} style={{ ...td, textAlign: "center", fontWeight: 700, color: o.claims > 1 ? T.danger : T.text1 }}>{o.claims}</td>;
+      case "qcPeeling":
+        return <td key={spec.id} style={{ ...td, textAlign: "center", color: T.text2 }}>{o.qcPeeling}</td>;
+      case "qcPowder":
+        return <td key={spec.id} style={{ ...td, textAlign: "center", color: o.qcPowder > 1 ? T.warningText : T.text2, fontWeight: o.qcPowder > 1 ? 700 : 400 }}>{o.qcPowder}</td>;
+      case "orderValue":
+        return <td key={spec.id} style={{ ...td, fontWeight: 600, whiteSpace: "nowrap" }}>{fmtCurrency(o.orderValue)}</td>;
+      case "products":
+        return (
+          <td key={spec.id} style={{ ...td, maxWidth: 220 }}>
+            {o.products.length > 0
+              ? o.products.map(p => <ProductTag key={p} name={p} />)
+              : <span style={{ fontSize: 11, color: T.text3 }}>-</span>}
+          </td>
+        );
+      case "qbLink":
+        return (
+          <td key={spec.id} style={td}>
+            <a href={o.qbUrl || "#"} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ padding: "4px 10px", borderRadius: 6, background: T.brandSubtle, color: T.brand, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>
+              Open
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </td>
+        );
+      case "qbField": {
+        const v = o._qbFields?.[spec.key];
+        return <td key={spec.id} style={{ ...td, color: T.text2, fontSize: 12 }}>{v != null ? String(v) : "-"}</td>;
+      }
+      default:
+        return <td key={spec.id} style={{ ...td, color: T.text2 }}>{String(o[spec.key] ?? "-")}</td>;
+    }
+  }
 
   // ── Early returns ──────────────────────────────────────────────────────────
   const wrap = children => (
@@ -442,24 +508,46 @@ export function WarrantyDashboard({
       {/* ── Order detail table (table view only) ─────────────────────────── */}
       {activeView === "table" && (
         <div style={{ background: T.card, borderRadius: 24, boxShadow: T.cardShadow, overflow: "hidden" }}>
+          {showColumnEditor && (
+            <ColumnEditor
+              columns={columnSpecs}
+              onSave={customTitles => {
+                setColumnTitles(customTitles);
+                saveColumnTitles(customTitles);
+                setShowColumnEditor(false);
+              }}
+              onClose={() => setShowColumnEditor(false)}
+            />
+          )}
           <div style={{ padding: "14px 20px", borderBottom: `1px solid ${T.borderLight}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: T.text1, margin: 0 }}>Order Detail</h3>
-            <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <span style={{ fontSize: 12, color: T.text2 }}><b style={{ color: T.text1 }}>{filteredClaims}</b> claims</span>
               <span style={{ fontSize: 12, color: T.text2 }}>Portfolio: <b style={{ color: T.text1 }}>{fmtCurrency(filteredValue)}</b></span>
+              <button
+                onClick={() => setShowColumnEditor(true)}
+                title="Edit column titles"
+                style={{ padding: "5px 12px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.surface, color: T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Columns
+              </button>
             </div>
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
               <thead>
                 <tr>
-                  {[["orderNum","Order #"],["customer","Customer"],["location","Location"],["pm","Project Manager"],["riskScore","Risk"],["status","Warranty"],["warrantyEnd","Expires"],["claims","Claims"],["qcPeeling","QC Peeling"],["qcPowder","QC Powder"],["orderValue","Order Value"]].map(([col, label]) => (
-                    <th key={col} style={{ ...TH, cursor: "pointer" }} onClick={() => handleSort(col)}>
-                      {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+                  {columnSpecs.map(spec => (
+                    <th
+                      key={spec.id}
+                      style={{ ...TH, cursor: spec.sortable ? "pointer" : "default" }}
+                      onClick={spec.sortable ? () => handleSort(spec.key) : undefined}
+                    >
+                      {spec.title}
+                      {spec.sortable && <SortIcon col={spec.key} sortCol={sortCol} sortDir={sortDir} />}
                     </th>
                   ))}
-                  <th style={{ ...TH, cursor: "default" }}>Products</th>
-                  <th style={{ ...TH, cursor: "default" }}>QB</th>
                 </tr>
               </thead>
               <tbody>
@@ -469,32 +557,11 @@ export function WarrantyDashboard({
                   return (
                     <>
                       <tr key={o.orderNum} style={{ background: rowBg, borderBottom: `1px solid ${T.borderLight}`, cursor: "pointer" }} onClick={() => setExpandedRow(isExpanded ? null : o.orderNum)}>
-                        <td style={{ ...TD, fontWeight: 700, color: T.brand }}>{o.orderNum}</td>
-                        <td style={{ ...TD, color: T.text1, fontWeight: 500 }}>{o.customer}</td>
-                        <td style={{ ...TD, color: T.text2, fontSize: 12, whiteSpace: "nowrap" }}>{o.location}</td>
-                        <td style={{ ...TD, color: T.text1, fontSize: 12 }}>{o.pm}</td>
-                        <td style={TD}><RiskBadge level={o.risk} score={o.riskScore} /></td>
-                        <td style={TD}><StatusBadge status={o.status} days={o.days} /></td>
-                        <td style={{ ...TD, color: T.text2, fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(o.warrantyEnd)}</td>
-                        <td style={{ ...TD, textAlign: "center", fontWeight: 700, color: o.claims > 1 ? T.danger : T.text1 }}>{o.claims}</td>
-                        <td style={{ ...TD, textAlign: "center", color: T.text2 }}>{o.qcPeeling}</td>
-                        <td style={{ ...TD, textAlign: "center", color: o.qcPowder > 1 ? T.warningText : T.text2, fontWeight: o.qcPowder > 1 ? 700 : 400 }}>{o.qcPowder}</td>
-                        <td style={{ ...TD, fontWeight: 600, whiteSpace: "nowrap" }}>{fmtCurrency(o.orderValue)}</td>
-                        <td style={{ ...TD, maxWidth: 220 }}>
-                          {o.products.length > 0
-                            ? o.products.map(p => <ProductTag key={p} name={p} />)
-                            : <span style={{ fontSize: 11, color: T.text3 }}>-</span>}
-                        </td>
-                        <td style={TD}>
-                          <a href={o.qbUrl || "#"} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ padding: "4px 10px", borderRadius: 6, background: T.brandSubtle, color: T.brand, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>
-                            Open
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                          </a>
-                        </td>
+                        {columnSpecs.map(spec => renderCell(o, spec, TD))}
                       </tr>
                       {isExpanded && (
                         <tr key={`${o.orderNum}-exp`} style={{ background: T.brandSubtle }}>
-                          <td colSpan={13} style={{ padding: "10px 20px 12px" }}>
+                          <td colSpan={columnSpecs.length} style={{ padding: "10px 20px 12px" }}>
                             <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
                               {[["Final Color Approval", o.colors || "-"], ["Warranty End", fmtDate(o.warrantyEnd)], ["Order Value", fmtCurrency(o.orderValue)]].map(([lbl, val]) => (
                                 <div key={lbl}>
@@ -524,7 +591,7 @@ export function WarrantyDashboard({
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={13} style={{ padding: "40px 20px", textAlign: "center", color: T.text3, fontSize: 13 }}>No orders match the current filters.</td></tr>
+                  <tr><td colSpan={columnSpecs.length} style={{ padding: "40px 20px", textAlign: "center", color: T.text3, fontSize: 13 }}>No orders match the current filters.</td></tr>
                 )}
               </tbody>
             </table>
