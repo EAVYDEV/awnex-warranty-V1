@@ -1,4 +1,5 @@
 import Head from "next/head";
+import "../styles/quality.css";
 
 export default function App({ Component, pageProps }) {
   return (
