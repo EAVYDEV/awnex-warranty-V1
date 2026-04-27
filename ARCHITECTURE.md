@@ -24,9 +24,9 @@ Full system design, component contracts, config schemas, and extension guide.
 | `components/AwnexLogo.jsx` | ✅ Done | Awnex SVG branding mark |
 | `components/SettingsModal.jsx` | ✅ Done | QB connection modal (URL auto-parse, table ID + report ID inputs) |
 | `components/MapView.jsx` | ✅ Done | Leaflet CDN loader, geocoding with rate-limit, status-colored pins, popup detail |
-| `components/dashboard/KpiCard.jsx` | ✅ Done | Display card, edit-mode overlay controls (edit/duplicate/hide) |
+| `components/dashboard/KpiCard.jsx` | ✅ Done | Display card, edit-mode controls (edit/duplicate/hide) + drag affordance badge |
 | `components/dashboard/KpiEditor.jsx` | ✅ Done | Full KPI editor: aggregation, field, filter, subtitle, icon picker, color themes, custom colors, format, decimals, live preview |
-| `components/dashboard/ChartCard.jsx` | ✅ Done | Chart wrapper, edit-mode controls, CustomTooltip |
+| `components/dashboard/ChartCard.jsx` | ✅ Done | Chart wrapper, edit-mode controls + drag affordance badge, CustomTooltip |
 | `components/dashboard/ChartEditor.jsx` | ✅ Done | Full chart editor: type picker, group field, stack field, up to 3 metrics, filter, sort, palette, live preview (category count) |
 | `components/dashboard/ConfigurableChart.jsx` | ✅ Done | Renders bar / hbar / donut / line / stacked from config; truncated tick labels, semantic colors for status/risk fields |
 | `components/dashboard/DashboardEditToolbar.jsx` | ✅ Done | Add KPI, Add Chart, Reset to Defaults (with confirmation), Done Editing |
@@ -302,7 +302,6 @@ All `lib/` utilities and `components/` are framework-agnostic and importable fro
 
 ## Future improvements
 
-- Drag-and-drop reordering of KPI cards and charts in edit mode
 - Per-row KPI grouping (currently all KPIs render in a single auto-fit grid)
 - Trend line overlay on bar charts
 - Date range filter for time-series line charts
