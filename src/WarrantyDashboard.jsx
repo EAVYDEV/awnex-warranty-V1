@@ -158,6 +158,8 @@ export function WarrantyDashboard({
   const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
   const [columnOrder,  setColumnOrder]    = useState(() => loadColumnOrder());
   const [showColumnEditor, setShowColumnEditor] = useState(false);
+  const [draggingKpiId, setDraggingKpiId] = useState(null);
+  const [draggingChartId, setDraggingChartId] = useState(null);
 
   // Load server settings once on mount; override localStorage where present
   useEffect(() => {
@@ -221,6 +223,17 @@ export function WarrantyDashboard({
     setKpiConfigs(next); saveKpiConfigs(next);
     setEditingKpi({ config: { ...cfg }, idx: next.length - 1 });
   }
+  function moveKpi(sourceId, targetId) {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    const from = kpiConfigs.findIndex(c => c.id === sourceId);
+    const to   = kpiConfigs.findIndex(c => c.id === targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    const next = [...kpiConfigs];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setKpiConfigs(next);
+    saveKpiConfigs(next);
+  }
 
   // Chart helpers
   function updateChart(idx, updated) {
@@ -241,6 +254,17 @@ export function WarrantyDashboard({
     const next = [...chartConfigs, cfg];
     setChartConfigs(next); saveChartConfigs(next);
     setEditingChart({ config: { ...cfg, metrics: cfg.metrics.map(m => ({ ...m })) }, idx: next.length - 1 });
+  }
+  function moveChart(sourceId, targetId) {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    const from = chartConfigs.findIndex(c => c.id === sourceId);
+    const to   = chartConfigs.findIndex(c => c.id === targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    const next = [...chartConfigs];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setChartConfigs(next);
+    saveChartConfigs(next);
   }
 
   function handleResetAll() {
@@ -517,24 +541,51 @@ export function WarrantyDashboard({
 
       {/* ── KPI grid ─────────────────────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 20 }}>
-        {kpiConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg, idx) => {
+        {kpiConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg) => {
+          const idx = kpiConfigs.findIndex(c => c.id === cfg.id);
           const raw = computeKpiValue(enriched, cfg);
           const val = formatKpiValue(raw, cfg.format, cfg.decimals);
           return (
-            <KpiCard
+            <div
               key={cfg.id}
-              label={cfg.title}
-              value={val}
-              sub={cfg.subtitle}
-              color={cfg.color}
-              bg={cfg.bg}
-              iconName={cfg.icon}
-              editMode={editMode}
-              hidden={cfg.hidden}
-              onEdit={() => setEditingKpi({ config: { ...cfg }, idx })}
-              onDuplicate={() => duplicateKpi(idx)}
-              onToggleHide={() => updateKpi(idx, { ...cfg, hidden: !cfg.hidden })}
-            />
+              draggable={editMode}
+              onDragStart={e => {
+                if (!editMode) return;
+                e.dataTransfer.effectAllowed = "move";
+                setDraggingKpiId(cfg.id);
+              }}
+              onDragEnd={() => setDraggingKpiId(null)}
+              onDragOver={e => {
+                if (!editMode || !draggingKpiId || draggingKpiId === cfg.id) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                if (!editMode) return;
+                moveKpi(draggingKpiId, cfg.id);
+                setDraggingKpiId(null);
+              }}
+              style={{
+                cursor: editMode ? "grab" : "default",
+                transform: draggingKpiId === cfg.id ? "scale(0.98)" : "none",
+                opacity: draggingKpiId === cfg.id ? 0.7 : 1,
+              }}
+            >
+              <KpiCard
+                label={cfg.title}
+                value={val}
+                sub={cfg.subtitle}
+                color={cfg.color}
+                bg={cfg.bg}
+                iconName={cfg.icon}
+                editMode={editMode}
+                hidden={cfg.hidden}
+                onEdit={() => setEditingKpi({ config: { ...cfg }, idx })}
+                onDuplicate={() => duplicateKpi(idx)}
+                onToggleHide={() => updateKpi(idx, { ...cfg, hidden: !cfg.hidden })}
+              />
+            </div>
           );
         })}
       </div>
@@ -571,19 +622,48 @@ export function WarrantyDashboard({
       {/* ── Chart grid (table view only) ─────────────────────────────────── */}
       {activeView === "table" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16, marginBottom: 20 }}>
-          {chartConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg, idx) => (
-            <ChartCard
-              key={cfg.id}
-              title={cfg.title}
-              editMode={editMode}
-              hidden={cfg.hidden}
-              onEdit={() => setEditingChart({ config: { ...cfg, metrics: cfg.metrics.map(m => ({ ...m })) }, idx })}
-              onDuplicate={() => duplicateChart(idx)}
-              onToggleHide={() => updateChart(idx, { ...cfg, hidden: !cfg.hidden })}
-            >
-              <ConfigurableChart config={cfg} records={enriched} />
-            </ChartCard>
-          ))}
+          {chartConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg) => {
+            const idx = chartConfigs.findIndex(c => c.id === cfg.id);
+            return (
+              <div
+                key={cfg.id}
+                draggable={editMode}
+                onDragStart={e => {
+                  if (!editMode) return;
+                  e.dataTransfer.effectAllowed = "move";
+                  setDraggingChartId(cfg.id);
+                }}
+                onDragEnd={() => setDraggingChartId(null)}
+                onDragOver={e => {
+                  if (!editMode || !draggingChartId || draggingChartId === cfg.id) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={e => {
+                  e.preventDefault();
+                  if (!editMode) return;
+                  moveChart(draggingChartId, cfg.id);
+                  setDraggingChartId(null);
+                }}
+                style={{
+                  cursor: editMode ? "grab" : "default",
+                  transform: draggingChartId === cfg.id ? "scale(0.99)" : "none",
+                  opacity: draggingChartId === cfg.id ? 0.7 : 1,
+                }}
+              >
+                <ChartCard
+                  title={cfg.title}
+                  editMode={editMode}
+                  hidden={cfg.hidden}
+                  onEdit={() => setEditingChart({ config: { ...cfg, metrics: cfg.metrics.map(m => ({ ...m })) }, idx })}
+                  onDuplicate={() => duplicateChart(idx)}
+                  onToggleHide={() => updateChart(idx, { ...cfg, hidden: !cfg.hidden })}
+                >
+                  <ConfigurableChart config={cfg} records={enriched} />
+                </ChartCard>
+              </div>
+            );
+          })}
         </div>
       )}
 
