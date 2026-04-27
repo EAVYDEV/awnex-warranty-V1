@@ -6,36 +6,65 @@ import { Modal, formStyles, Btn } from "./ui/Modal.jsx";
 // QB connection configuration — table ID and report ID.
 // Credentials (QB_REALM, QB_TOKEN) live in server env vars and are never exposed.
 
+// Handles QB URL formats:
+//   Classic:  https://realm.quickbase.com/db/{tableId}?rid={reportId}
+//   New nav:  https://realm.quickbase.com/nav/app/{appId}/table/{tableId}/report/{reportId}
+function parseQbUrl(raw) {
+  if (!raw?.trim()) return null;
+  const v = raw.trim();
+  const url = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  let parsed;
+  try { parsed = new URL(url); } catch { return null; }
+
+  // /db/{tableId}  →  classic format
+  // /table/{tableId}  →  new nav format (excludes /nav/app/{appId} which is the app, not table)
+  const tableId =
+    parsed.pathname.match(/\/db\/([a-z0-9]+)/i)?.[1] ||
+    parsed.pathname.match(/\/table\/([a-z0-9]+)/i)?.[1] ||
+    "";
+
+  // ?rid=  /  ?reportId=  /  ?qid=  →  classic query params
+  // /report/{id}  →  new nav path segment
+  const reportId =
+    parsed.searchParams.get("rid") ||
+    parsed.searchParams.get("reportId") ||
+    parsed.searchParams.get("qid") ||
+    parsed.pathname.match(/\/report\/(\d+)/i)?.[1] ||
+    "";
+
+  if (!tableId && !reportId) return null;
+  return { tableId, reportId };
+}
+
 export function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId = "" }) {
-  const [tableId,  setTableId]  = useState(initialTableId);
-  const [reportId, setReportId] = useState(initialReportId);
-  const [qbUrl, setQbUrl]       = useState("");
-  const [urlMsg, setUrlMsg]     = useState("");
-  const [urlMsgType, setUrlMsgType] = useState("info");
+  const [tableId,     setTableId]     = useState(initialTableId);
+  const [reportId,    setReportId]    = useState(initialReportId);
+  const [qbUrl,       setQbUrl]       = useState("");
+  const [urlMsg,      setUrlMsg]      = useState("");
+  const [urlMsgType,  setUrlMsgType]  = useState("info");
 
-  function normalise(raw) {
-    if (!raw) return "";
-    const v = raw.trim();
-    return /^https?:\/\//i.test(v) ? v : `https://${v}`;
-  }
-
-  function handleParseUrl() {
-    const url = normalise(qbUrl);
-    if (!url) { setUrlMsgType("error"); setUrlMsg("Paste a Quickbase URL first."); return; }
-    let parsed;
-    try { parsed = new URL(url); } catch {
-      setUrlMsgType("error"); setUrlMsg("That URL format looks invalid."); return;
+  function handleUrlChange(e) {
+    const val = e.target.value;
+    setQbUrl(val);
+    if (!val.trim()) {
+      setUrlMsg("");
+      setUrlMsgType("info");
+      return;
     }
-    const dbMatch      = parsed.pathname.match(/\/db\/([a-z0-9]+)/i);
-    const parsedTable  = dbMatch?.[1] || "";
-    const parsedReport = parsed.searchParams.get("rid") || parsed.searchParams.get("reportId") || parsed.searchParams.get("qid") || "";
-    if (!parsedTable && !parsedReport) {
-      setUrlMsgType("error"); setUrlMsg("Could not detect table or report ID from this URL."); return;
+    const result = parseQbUrl(val);
+    if (!result) {
+      setUrlMsgType("info");
+      setUrlMsg("Paste a table/report URL and we'll auto-fill IDs.");
+      return;
     }
-    if (parsedTable)  setTableId(parsedTable);
-    if (parsedReport) setReportId(parsedReport);
-    const parts = [parsedTable && `Table: ${parsedTable}`, parsedReport && `Report: ${parsedReport}`].filter(Boolean);
-    setUrlMsgType("success"); setUrlMsg(`Parsed ${parts.join(" • ")}`);
+    if (result.tableId)  setTableId(result.tableId);
+    if (result.reportId) setReportId(result.reportId);
+    const parts = [
+      result.tableId  && `Table: ${result.tableId}`,
+      result.reportId && `Report: ${result.reportId}`,
+    ].filter(Boolean);
+    setUrlMsgType("success");
+    setUrlMsg(`Parsed ${parts.join(" • ")}`);
   }
 
   function handleSave() {
@@ -74,31 +103,20 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
         {/* Auto-parse QB URL */}
         <div>
           <label style={formStyles.label}>Quickbase URL (Auto-parse)</label>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              style={formStyles.input}
-              value={qbUrl}
-              onChange={e => setQbUrl(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleParseUrl()}
-              placeholder="https://awnexinc.quickbase.com/db/bkvhg2rwk?a=q&rid=1"
-              spellCheck={false}
-            />
-            <button
-              onClick={handleParseUrl}
-              style={{
-                padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.borderLight}`,
-                background: T.card, color: T.brandDark, fontSize: 12, fontWeight: 700,
-                cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit",
-              }}
-            >
-              Parse
-            </button>
-          </div>
+          <input
+            style={formStyles.input}
+            value={qbUrl}
+            onChange={handleUrlChange}
+            placeholder="https://awnexinc.quickbase.com/db/bkvhg2rwk?a=q&rid=1"
+            spellCheck={false}
+          />
           <p style={{
             fontSize: 11, marginTop: 5,
-            color: urlMsgType === "error" ? "#B42318" : urlMsgType === "success" ? "#067647" : T.text3,
+            color: urlMsgType === "error"   ? "#B42318"
+                 : urlMsgType === "success" ? "#067647"
+                 : T.text3,
           }}>
-            {urlMsg || "Paste a table/report URL and we'll auto-fill IDs."}
+            {urlMsg || "Paste a table/report URL and both IDs will fill in automatically."}
           </p>
         </div>
 
@@ -112,7 +130,7 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
             placeholder="e.g. bkvhg2rwk"
             spellCheck={false}
           />
-          <p style={formStyles.hint}>Found in your QB app URL after <code>/db/</code></p>
+          <p style={formStyles.hint}>Found in your QB app URL after <code>/db/</code> or <code>/table/</code></p>
         </div>
 
         {/* Report ID */}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { T } from "../lib/tokens.js";
 import {
   mapQBResponse, mapClaimsResponse,
@@ -19,6 +19,7 @@ import {
   loadKpiConfigs, saveKpiConfigs,
   loadChartConfigs, saveChartConfigs,
   loadColumnTitles, saveColumnTitles,
+  loadColumnOrder, saveColumnOrder,
   resetAllConfigs,
 } from "../lib/dashboardStorage.js";
 import { AwnexLogo }            from "../components/AwnexLogo.jsx";
@@ -47,6 +48,17 @@ export function WarrantyDashboard({
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => { setSettings(loadConnectionSettings()); }, []);
+
+  // ── Cross-device sync via Vercel KV ───────────────────────────────────────
+  // "loading" → fetching server settings on mount
+  // "ready"   → up to date
+  // "saving"  → debounced POST in flight
+  // "error"   → last POST failed
+  const [syncStatus,    setSyncStatus]    = useState("loading");
+  const syncStatusRef   = useRef("loading");
+  const skipNextSyncRef = useRef(true); // skip the echo-back after server load
+
+  function updateSyncStatus(s) { syncStatusRef.current = s; setSyncStatus(s); }
 
   // ── Raw data ───────────────────────────────────────────────────────────────
   const [orders, setOrders]             = useState(ordersProp ?? []);
@@ -144,7 +156,50 @@ export function WarrantyDashboard({
   const [editingKpi, setEditingKpi]       = useState(null); // { config, idx }
   const [editingChart, setEditingChart]   = useState(null); // { config, idx }
   const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
+  const [columnOrder,  setColumnOrder]    = useState(() => loadColumnOrder());
   const [showColumnEditor, setShowColumnEditor] = useState(false);
+
+  // Load server settings once on mount; override localStorage where present
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(s => {
+        if (s.kpiConfigs?.length)                         setKpiConfigs(s.kpiConfigs);
+        if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
+        if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
+        if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
+        if (s.tableId || s.reportId) {
+          const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
+          setSettings(ns);
+          saveConnectionSettings(ns);
+        }
+        updateSyncStatus("ready");
+      })
+      .catch(() => updateSyncStatus("ready")); // no KV configured — stay on localStorage
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced save whenever any persisted config changes (after first server load)
+  useEffect(() => {
+    if (syncStatusRef.current === "loading") return;
+    if (skipNextSyncRef.current) { skipNextSyncRef.current = false; return; }
+    updateSyncStatus("saving");
+    const timer = setTimeout(() => {
+      fetch("/api/settings", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kpiConfigs, chartConfigs, columnTitles, columnOrder,
+          tableId: settings.tableId, reportId: settings.reportId,
+        }),
+      })
+        .then(r => r.ok ? updateSyncStatus("ready") : updateSyncStatus("error"))
+        .catch(() => updateSyncStatus("error"));
+    }, 800);
+    return () => clearTimeout(timer);
+  // syncStatus intentionally excluded — we use the ref to avoid re-triggering
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, settings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -191,7 +246,7 @@ export function WarrantyDashboard({
   function handleResetAll() {
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setKpiConfigs(k); setChartConfigs(c);
-    setColumnTitles({});
+    setColumnTitles({}); setColumnOrder([]);
   }
 
   // ── Enrichment ─────────────────────────────────────────────────────────────
@@ -213,10 +268,16 @@ export function WarrantyDashboard({
     [qbReportFields]
   );
 
-  const columnSpecs = useMemo(
-    () => buildColumnSpecs(qbReportFields, columnTitles),
-    [qbReportFields, columnTitles]
-  );
+  const columnSpecs = useMemo(() => {
+    const specs  = buildColumnSpecs(qbReportFields, columnTitles);
+    if (!columnOrder.length) return specs;
+    // Apply saved order: sort by position in columnOrder; unknown cols go before qbLink
+    const orderMap = Object.fromEntries(columnOrder.map((id, i) => [id, i]));
+    const link     = specs.find(c => c.renderAs === "qbLink");
+    const rest     = specs.filter(c => c.renderAs !== "qbLink");
+    rest.sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999));
+    return link ? [...rest, link] : rest;
+  }, [qbReportFields, columnTitles, columnOrder]);
 
   // ── Table filter + sort ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -398,6 +459,18 @@ export function WarrantyDashboard({
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Sync status */}
+          {syncStatus !== "loading" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={syncStatus === "error" ? T.danger : syncStatus === "saving" ? T.text3 : T.successFill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>
+              </svg>
+              <span style={{ color: syncStatus === "error" ? T.danger : T.text2 }}>
+                {syncStatus === "saving" ? "Saving…" : syncStatus === "error" ? "Sync error" : "Synced"}
+              </span>
+            </div>
+          )}
+
           {/* Source status pills */}
           {Object.entries(sourceStatuses).map(([id, st]) => (
             <div key={id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11, color: T.text2 }}>
@@ -520,9 +593,10 @@ export function WarrantyDashboard({
           {showColumnEditor && (
             <ColumnEditor
               columns={columnSpecs}
-              onSave={customTitles => {
+              onSave={(customTitles, newOrder) => {
                 setColumnTitles(customTitles);
                 saveColumnTitles(customTitles);
+                if (newOrder) { setColumnOrder(newOrder); saveColumnOrder(newOrder); }
                 setShowColumnEditor(false);
               }}
               onClose={() => setShowColumnEditor(false)}
