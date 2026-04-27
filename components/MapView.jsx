@@ -163,21 +163,33 @@ export function MapView({ orders }) {
       );
     }
 
-    // Group orders by location string so co-located orders share one pin
+    // Group orders by location string so co-located orders share one pin.
+    // Capture QB-stored coordinates (Latitude / Longitude fields) from the
+    // first order in each group that has them — these skip geocoding entirely.
     const byLoc = {};
     orders.forEach(o => {
       const k = o.location.toLowerCase().trim();
-      if (!byLoc[k]) byLoc[k] = { location: o.location, orders: [] };
+      if (!byLoc[k]) byLoc[k] = { location: o.location, orders: [], qbCoords: null };
       byLoc[k].orders.push(o);
+      if (!byLoc[k].qbCoords) {
+        const lat = parseFloat(o._qbFields?.["Latitude"]);
+        const lng = parseFloat(o._qbFields?.["Longitude"]);
+        if (!isNaN(lat) && !isNaN(lng)) byLoc[k].qbCoords = [lat, lng];
+      }
     });
 
     const uncached = [];
     Object.values(byLoc).forEach(group => {
-      const key = group.location.toLowerCase().trim();
-      if (cache[key]) {
-        placeMarker(group, cache[key]);
+      if (group.qbCoords) {
+        // QB provided coordinates — instant, no network call needed
+        placeMarker(group, group.qbCoords);
       } else {
-        uncached.push(group);
+        const key = group.location.toLowerCase().trim();
+        if (cache[key]) {
+          placeMarker(group, cache[key]);
+        } else {
+          uncached.push(group);
+        }
       }
     });
 

@@ -85,6 +85,13 @@ Browser (WarrantyDashboard.jsx)
 | `# of Warranty Claims` | Primary risk signal |
 | `# of QC Entries for Peeling Powder` / `# of QC Entries for Powder Failure` | Leading-indicator risk signals |
 
+Two optional fields enable instant map rendering with no Nominatim calls:
+
+| Label | Purpose |
+|---|---|
+| `Latitude` | Decimal latitude — read from `order._qbFields["Latitude"]` by `MapView` |
+| `Longitude` | Decimal longitude — read from `order._qbFields["Longitude"]` by `MapView` |
+
 Any QB field not in this list is captured in `order._qbFields[label]` so it can be used in configurable KPI and chart configs without changing code.
 
 #### Formula field HTML rendering

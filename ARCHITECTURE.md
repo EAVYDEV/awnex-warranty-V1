@@ -245,6 +245,7 @@ After `mapQBResponse()` + enrichment in `WarrantyDashboard.jsx`:
   qcPowder:    number;
   orderValue:  number;
   _qbFields:   Record<string, any>;  // extra QB columns keyed by field label; values may be HTML strings from QB formula fields
+                                     // special keys read by MapView: "Latitude", "Longitude" (numeric) — skips Nominatim when present
 
   // Added during enrichment
   days:        number;            // days until/since warrantyEnd (negative = expired)
