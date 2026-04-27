@@ -11,7 +11,8 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 - **Configurable KPI cards** — users can edit title, source field, aggregation type, filter condition, icon, color, and number format from the dashboard; no code changes needed
 - **Configurable charts** — users can edit chart type, group-by field, metrics, filter, sort, and color palette from the dashboard
 - Dashboard edit mode with add / duplicate / hide / reset-to-defaults controls
-- KPI and chart configurations persist in `localStorage` (ready to be moved to Quickbase or SharePoint later)
+- Drag-and-drop reordering for KPI cards and chart cards in edit mode
+- Dashboard configuration persists in localStorage and is synced via `/api/settings` for shared layouts when server storage is configured
 - Filter by PM, warranty status, brand, risk level, or free-text search
 - Leaflet map view showing installation locations with status-color pins
 - Multi-source connections (separate claims and costs QB tables merged by order number)
@@ -70,7 +71,8 @@ awnex-warranty-V1/
 │   ├── _app.jsx                  App wrapper (viewport meta, CSS reset)
 │   ├── index.jsx                 Entry page — mounts WarrantyDashboard
 │   └── api/
-│       └── warranty-orders.js    Server-side proxy to Quickbase API
+│       ├── warranty-orders.js    Server-side proxy to Quickbase API
+│       └── settings.js           Dashboard config sync endpoint (KV when configured)
 │
 ├── ARCHITECTURE.md               Full system design, component contracts, extension guide
 ├── API_REFERENCE.md              /api/warranty-orders endpoint documentation
@@ -168,9 +170,10 @@ Extra QB fields not listed above are captured in `_qbFields` on each order and e
 Click the **Edit Layout** button in the top-right header to enter edit mode. While active:
 
 - A dark toolbar appears at the top with **Add KPI**, **Add Chart**, and **Reset to Defaults** actions
+- KPI and chart cards display a **Drag** badge and can be reordered via click-drag-drop
 - Every KPI card and chart card shows inline **Edit**, **Duplicate**, and **Hide/Show** buttons
 - Clicking **Edit** opens the respective editor modal with a live preview
-- Clicking **Done Editing** exits edit mode and saves all changes to `localStorage`
+- Clicking **Done Editing** exits edit mode; changes remain persisted and sync to shared settings when `/api/settings` storage is enabled
 
 ---
 
