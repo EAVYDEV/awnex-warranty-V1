@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import Link from "next/link";
 import { T } from "../lib/tokens.js";
 import {
@@ -408,7 +409,7 @@ export function WarrantyDashboard({
         if (/<[a-z]/i.test(str)) {
           return (
             <td key={spec.id} style={{ ...td }}>
-              <div dangerouslySetInnerHTML={{ __html: str }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(str) }} />
             </td>
           );
         }

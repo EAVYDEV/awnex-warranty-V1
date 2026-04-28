@@ -60,6 +60,13 @@ export default async function handler(req, res) {
     });
   }
 
+  // Reject IDs that contain characters outside the alphanumeric set QB uses.
+  // This prevents path traversal and SSRF via crafted tableId/reportId values.
+  const QB_ID_RE = /^[A-Za-z0-9_-]+$/;
+  if (!QB_ID_RE.test(tableId) || !QB_ID_RE.test(reportId)) {
+    return res.status(400).json({ error: "Invalid Table ID or Report ID format." });
+  }
+
   try {
     const qbRes = await fetch(
       `https://api.quickbase.com/v1/reports/${reportId}/run?tableId=${tableId}`,
@@ -77,15 +84,14 @@ export default async function handler(req, res) {
     const payload = await qbRes.json();
 
     if (!qbRes.ok) {
-      return res.status(qbRes.status).json({
-        error: `Quickbase returned ${qbRes.status}: ${qbRes.statusText}`,
-        detail: payload,
-      });
+      console.error("Quickbase error", qbRes.status, qbRes.statusText, payload);
+      return res.status(502).json({ error: "Failed to fetch data from Quickbase. Check your Table ID and Report ID." });
     }
 
     // Forward QB response as-is; the client maps it via mapQBResponse()
     return res.status(200).json(payload);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("warranty-orders proxy error:", err);
+    return res.status(500).json({ error: "An unexpected error occurred." });
   }
 }
