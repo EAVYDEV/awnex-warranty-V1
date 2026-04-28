@@ -354,6 +354,9 @@ export function WarrantyDashboard({
     }
     return [...r].sort((a, b) => {
       const av = getVal(a, sortCol); const bv = getVal(b, sortCol);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
       const cmp = typeof av === "number" && typeof bv === "number"
         ? av - bv : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
