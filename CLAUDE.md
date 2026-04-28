@@ -29,36 +29,40 @@ Optional env var fallbacks (override via the settings modal):
 - `QB_TABLE_ID` — default table ID
 - `QB_REPORT_ID` — default report ID
 
-## Architecture overview
+## Platform overview
 
-The app has been refactored from a single 1,500-line file into a modular structure. All logic is split across `lib/` (pure utilities) and `components/` (React components). `WarrantyDashboard.jsx` is the main orchestrator.
+Two modules share the same Next.js app and `lib/` utilities:
 
-### Data flow
+| Route | Module | Orchestrator |
+|---|---|---|
+| `/` | Warranty Management | `src/WarrantyDashboard.jsx` |
+| `/quality-risk` | Quality Risk & RCA | `src/pages/QualityRiskDashboard.jsx` |
+
+### Data flow (Warranty)
 
 ```
-Browser (WarrantyDashboard.jsx)
+Browser (src/WarrantyDashboard.jsx)
   → GET /api/warranty-orders?tableId=…&reportId=…
       → pages/api/warranty-orders.js  (server-side proxy)
           → POST https://api.quickbase.com/v1/reports/{reportId}/run?tableId={tableId}
-              (QB_REALM + QB_TOKEN auth headers injected server-side)
   ← raw QB payload { fields[], data[] }
   ← lib/qbUtils.js → mapQBResponse() → typed order objects (+ _qbFields for extra columns)
   ← enriched with status, riskScore, open/closed claims via useMemo
-  ← lib/dashboardMetrics.js → computeKpiValue() / computeChartData() → KPI values + chart arrays
+  ← lib/dashboardMetrics.js → computeKpiValue() / computeChartData()
   ← components/dashboard/* renders KPI cards, charts, map, table
 ```
 
-### File map — where to find things
+## File map — where to find things
 
 | Need to change | File |
 |---|---|
 | Colors, shadows, status/risk color configs | `lib/tokens.js` |
-| QB field parsing, order mapping, risk scoring, column spec builder | `lib/qbUtils.js` |
+| QB field parsing, flexible label matching, risk scoring, column spec builder | `lib/qbUtils.js` |
 | Filter, aggregate, KPI/chart compute helpers | `lib/dashboardMetrics.js` |
 | Default KPI/chart configs, palettes, themes | `lib/dashboardDefaults.js` |
 | localStorage keys and load/save helpers | `lib/dashboardStorage.js` |
 | SVG icon set | `components/ui/Icon.jsx` |
-| StatusBadge, RiskBadge | `components/ui/Badge.jsx` |
+| StatusBadge, RiskBadge (warranty) | `components/ui/Badge.jsx` |
 | Generic modal wrapper, Btn, formStyles | `components/ui/Modal.jsx` |
 | EmptyState, LoadingState, ErrorState | `components/ui/StateScreens.jsx` |
 | Awnex branding logo | `components/AwnexLogo.jsx` |
@@ -71,23 +75,34 @@ Browser (WarrantyDashboard.jsx)
 | Recharts rendering for all chart types | `components/dashboard/ConfigurableChart.jsx` |
 | Edit mode toolbar | `components/dashboard/DashboardEditToolbar.jsx` |
 | Column title editor modal | `components/dashboard/ColumnEditor.jsx` |
-| All state, data fetch, layout orchestration | `WarrantyDashboard.jsx` |
+| Warranty state, data fetch, layout orchestration | `src/WarrantyDashboard.jsx` |
+| Quality Risk case state, views, routing | `src/pages/QualityRiskDashboard.jsx` |
+| Quality Risk scoring, status gating logic | `src/lib/qualityRiskUtils.js` |
+| Quality Risk UI components (case table, card, detail panel, tabs) | `src/components/quality/` |
 | QB API proxy | `pages/api/warranty-orders.js` |
 
-### Quickbase field mapping
+## Quickbase field mapping
 
-`mapQBResponse()` in `lib/qbUtils.js` matches field labels exactly. Required QB report fields:
+`mapQBResponse()` in `lib/qbUtils.js` matches field labels **case-insensitively** and accepts common variations. No QB report needs to use specific labels for data to load.
 
-| Label | Purpose |
+Recognised label groups (first match wins):
+
+| Category | Accepted labels |
 |---|---|
-| `Order Number w/Series` | HTML anchor; URL and numeric order number extracted via regex |
-| `Order Name (Formula)` | `BRAND-CustomerName-ID-City State-Address` format; brand/location parsed from dash-split |
-| `Project Manager` | Display-name format; `extractPMName()` strips the `<userid>` suffix. Also handles QB user-field objects `{id, name}`. |
-| `# of Warranty Claims` | Primary risk signal |
-| `# of QC Entries for Peeling Powder` / `# of QC Entries for Powder Failure` | Leading-indicator risk signals |
-| `Installation Complete Date` / `Shipping Complete Date` | Used to compute `warrantyEnd` (install preferred; shipping as fallback) |
-| `Product Scope` | Semicolon-separated product list |
-| `NEW Final Color Approval` | Shown in expanded row only |
+| Order number | `Order Number w/Series`, `Order Number`, `Order #`, `Order No`, `Order ID` |
+| Order name | `Order Name (Formula)`, `Order Name Formula`, `Order Name` |
+| Project manager | `Project Manager`, `PM`, `Manager`, `Install By`, `Installer` |
+| Install date | `Installation Complete Date`, `Install Complete Date`, `Install Complete`, `Install Date` |
+| Ship date | `Shipping Complete Date`, `Ship Complete Date`, `Shipping Date`, `Ship Date` |
+| Claims | `# of Warranty Claims`, `Warranty Claims`, `Claims` |
+| QC peeling | `# of QC Entries for Peeling Powder`, `QC Peeling`, `Peeling Powder` |
+| QC powder failure | `# of QC Entries for Powder Failure`, `QC Powder Failure`, `Powder Failure` |
+| Order value | `Order Posted $`, `Order Value`, `Contract Amount`, `Total` |
+| Products | `Product Scope`, `Products`, `Product` |
+
+- Records are filtered out only when both `qbRid` and `orderNum` are empty (which cannot happen with a valid QB response).
+- `warrantyEnd` is **optional** — records without an install/ship date are kept and shown with status `"active"` and `"No date"` in the Warranty column.
+- Any label not in the table above is captured in `order._qbFields[label]` for use in KPI/chart/column configs.
 
 Two optional fields enable instant map rendering with no Nominatim calls:
 
@@ -96,13 +111,11 @@ Two optional fields enable instant map rendering with no Nominatim calls:
 | `Latitude` | Decimal latitude — read from `order._qbFields["Latitude"]` by `MapView` |
 | `Longitude` | Decimal longitude — read from `order._qbFields["Longitude"]` by `MapView` |
 
-Any QB field not in this list is captured in `order._qbFields[label]` so it can be used in configurable KPI, chart, and table column configs without changing code.
+### Formula field HTML rendering
 
-#### Formula field HTML rendering
+QB formula fields often return HTML strings (e.g. styled `<div>` blocks). The `qbField` cell renderer in `src/WarrantyDashboard.jsx` (`renderCell`) detects HTML content via `/<[a-z]/i` and renders it via `DOMPurify.sanitize` + `dangerouslySetInnerHTML`. Plain-text values render with standard design-system styles.
 
-QB formula fields often return HTML strings (e.g. styled `<div>` blocks with inline CSS). The `qbField` cell renderer in `WarrantyDashboard.jsx` (`renderCell`) detects HTML content via `/<[a-z]/i` and renders it with `dangerouslySetInnerHTML`, so the formula's own inline styles display as intended. Plain-text values from non-HTML formula fields continue to render as text with the standard design-system styles (`T.text2`, `fontSize: 12`).
-
-### Configurable dashboard system
+## Configurable dashboard system
 
 Each KPI card and chart is driven by a config object stored in `localStorage`:
 
@@ -143,28 +156,14 @@ Each KPI card and chart is driven by a config object stored in `localStorage`:
 }
 ```
 
-Default configs are in `lib/dashboardDefaults.js` (`DEFAULT_KPI_CONFIGS`, `DEFAULT_CHART_CONFIGS`). They exactly replicate the original hard-coded dashboard so no visual information is lost.
+Default configs are in `lib/dashboardDefaults.js` (`DEFAULT_KPI_CONFIGS`, `DEFAULT_CHART_CONFIGS`).
 
-**Table column config shape** (stored as `awntrak_column_titles` — only the title overrides, not the full spec):
+**Table column config shape** (stored as `awntrak_column_titles` — title overrides only):
 ```js
-// localStorage stores only the user-edited title overrides:
 { [colId]: string }   // e.g. { "col_orderNum": "Order #", "col_qb_42": "Contract Amt" }
 ```
 
-The full column spec is rebuilt at runtime by `buildColumnSpecs(qbReportFields, customTitles)` in `lib/qbUtils.js`:
-```js
-{
-  id: string,          // "col_orderNum" | "col_qb_{qbId}" for extra QB fields
-  qbId: number | null, // QB field ID; null for computed columns (risk, status, location)
-  renderAs: string,    // render strategy — see table below
-  key: string,         // enriched order field key, or QB label for _qbFields lookup
-  defaultTitle: string,// original QB field label (or hardcoded default when no QB report)
-  title: string,       // display title (customTitles[id] ?? defaultTitle)
-  sortable: boolean,
-}
-```
-
-`renderAs` strategies used by `renderCell()` in `WarrantyDashboard.jsx`:
+`renderAs` strategies used by `renderCell()`:
 
 | renderAs | Output |
 |---|---|
@@ -173,33 +172,45 @@ The full column spec is rebuilt at runtime by `buildColumnSpecs(qbReportFields, 
 | `location` | Small gray city/state text |
 | `pm` | Project manager name |
 | `risk` | `RiskBadge` (score/100 + level label) |
-| `status` | `StatusBadge` (Active / Expiring / Expired) |
-| `expires` | Formatted warranty end date |
+| `status` | `StatusBadge` (Active / Expiring / Expired / No date) |
+| `expires` | Formatted warranty end date, or `-` when null |
 | `claims` | Claim count; red + bold when > 1 |
 | `qcPeeling` | QC peeling entry count |
 | `qcPowder` | QC powder-failure count; amber when > 1 |
 | `orderValue` | `fmtCurrency()` formatted value |
 | `products` | `ProductTag` chips list |
 | `qbLink` | "Open ↗" link button to Quickbase record |
-| `qbField` | Plain text from `order._qbFields[spec.key]` |
+| `qbField` | Raw value from `order._qbFields[spec.key]`; HTML values sanitized and rendered inline |
 
-`DEFAULT_COLUMN_SPECS` in `lib/qbUtils.js` is used when no QB report is loaded (sample data), preserving the original hardcoded column layout.
+## Quality Risk module
 
-### Available fields for KPI / chart configuration
+Quality cases live in React state in `QualityRiskDashboard`. Key utilities:
 
-`lib/dashboardMetrics.js` exports `BUILTIN_FIELDS` — the enriched order fields always available:
+**`src/lib/qualityRiskUtils.js` exports:**
+- `STATUS_FLOW` — ordered array of status strings
+- `calculateRiskScore(caseRecord)` — severity + scope + detection + fieldImpact bonus
+- `calculateRiskLevel(score)` — "Low" / "Medium" / "High" / "Critical"
+- `isContainmentRequired(caseRecord)` — true for High/Critical severity, field impact, or broad scope
+- `canAdvanceStatus(caseRecord)` — returns true when required fields for the current phase are complete
+- `canCloseCase(caseRecord)` — full closure gate check
+
+**Case status flow:** `Open → Containment → RCA → CAPA → Effectiveness Check → Closed`
+
+## Available fields for KPI / chart configuration
+
+`lib/dashboardMetrics.js` exports `BUILTIN_FIELDS` — enriched order fields always available:
 
 - Text: `status`, `brand`, `pm`, `location`, `customer`, `risk`, `products` (array)
 - Numeric: `claims`, `openClaims`, `closedClaims`, `claimCost`, `orderValue`, `qcPeeling`, `qcPowder`, `riskScore`, `days`
-- Date: `warrantyEnd`
+- Date: `warrantyEnd` (may be null)
 
 When a QB report is loaded, `buildAvailableFields(qbReportFields)` in `dashboardMetrics.js` merges in any extra QB columns not already mapped.
 
-### Map view
+## Map view
 
-Leaflet loads from CDN at runtime (not bundled — avoids SSR issues). `CITY_COORDS` in `components/MapView.jsx` caches known city coordinates. Unknown locations fall back to Nominatim (OpenStreetMap) with a 300 ms delay between requests. Geocoded results cache in a `useRef` for the session.
+Leaflet loads from CDN at runtime (not bundled — avoids SSR issues). Unknown locations fall back to Nominatim (OpenStreetMap) with a 300 ms delay between requests. Geocoded results cache in `awntrak_geocache` in localStorage.
 
-### Multi-source connections
+## Multi-source connections
 
 `WarrantyDashboard` accepts an optional `sources` prop:
 
@@ -210,25 +221,9 @@ sources={[
 ]}
 ```
 
-Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in parallel and merged by order number. Additional routes must follow the same server-side proxy pattern as `pages/api/warranty-orders.js`.
+Roles: `"orders"` (required), `"claims"`, `"costs"`. Sources are fetched in parallel and merged by order number.
 
-### Table column order and title customization
-
-The Order Detail table column order follows the **QB report field order** exactly. When a report is loaded, `buildColumnSpecs(qbReportFields, customTitles)` converts the QB `fields` array into column specs in the same sequence. Known QB labels map to typed renderers (badges, currency, etc.); any unknown extra QB fields become plain-text columns appended in report order.
-
-Column titles default to the QB field label. Users can rename any column via the **Columns** button in the table header, which opens `ColumnEditor`. Changes are saved to `awntrak_column_titles` in `localStorage` and merged in on the next `buildColumnSpecs` call. Resetting all configs (Edit toolbar → Reset) also clears column title overrides.
-
-Computed columns derived from QB fields (Risk, Warranty Status, Location) are inserted directly after their source QB field in the column order:
-
-| QB field | Derived columns inserted after it |
-|---|---|
-| `Order Name (Formula)` | Customer, Location |
-| `# of Warranty Claims` | Claims, Risk |
-| `Installation Complete Date` | Expires, Warranty Status |
-
-### LocalStorage keys
-
-localStorage is used as an immediate read/write cache. All keys are also synced to Vercel KV via `GET /api/settings` (on mount) and `POST /api/settings` (debounced, 800 ms after any change) so settings persist across devices.
+## LocalStorage keys
 
 | Key | Purpose |
 |---|---|
@@ -239,5 +234,7 @@ localStorage is used as an immediate read/write cache. All keys are also synced 
 | `awntrak_column_titles` | `{ [colId]: string }` map of custom column display titles |
 | `awntrak_column_order` | `string[]` ordered array of column IDs |
 | `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
+| `awntrak_dashboard_title` | Editable dashboard title |
+| `awntrak_dashboard_subtitle` | Editable dashboard subtitle |
 
-All dashboard keys (excluding geocache) are managed through `lib/dashboardStorage.js`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.
+All keys (excluding geocache) are synced to Vercel KV via `GET /api/settings` (on mount) and `POST /api/settings` (debounced, 800 ms) so settings persist across devices.
