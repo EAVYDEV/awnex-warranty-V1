@@ -3,10 +3,12 @@ import { STATUS_CFG, RISK_CFG } from "../../lib/tokens.js";
 // ─── STATUS BADGE ─────────────────────────────────────────────────────────────
 
 export function StatusBadge({ status, days }) {
-  const cfg = STATUS_CFG[status] || STATUS_CFG.active;
-  const label = status === "expired"
-    ? `${Math.abs(days)}d ago`
-    : `${days}d left`;
+  const cfg = STATUS_CFG[status] || STATUS_CFG.unknown;
+  const label = days === null || days === undefined
+    ? "—"
+    : status === "expired"
+      ? `${Math.abs(days)}d ago`
+      : `${days}d left`;
   return (
     <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
       <span style={{

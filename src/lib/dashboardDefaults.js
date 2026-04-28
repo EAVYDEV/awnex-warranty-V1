@@ -33,6 +33,7 @@ export const STATUS_CFG = {
   active:   { bg: "#EAF3DE", text: "#27500A", border: "#97C459", dot: "#97C459", label: "Active" },
   expiring: { bg: "#FEF6E4", text: "#8C5505", border: "#FAD07A", dot: "#FAD07A", label: "Expiring" },
   expired:  { bg: "#FCEBEB", text: "#791F1F", border: "#F09595", dot: "#F09595", label: "Expired" },
+  unknown:  { bg: "#F5F5F3", text: "#6B7280", border: "#D1D5DB", dot: "#9CA3AF", label: "—" },
 };
 
 export const CHART_PALETTE = ["#1B5FA8", "#F5A623", "#E24B4A", "#97C459", "#7DAEE8", "#FAD07A", "#F09595", "#5DCAA5", "#AFA9EC", "#C4C3BD"];
