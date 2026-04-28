@@ -25,7 +25,7 @@ import {
   loadDashboardTitle, saveDashboardTitle,
   loadDashboardSubtitle, saveDashboardSubtitle,
   DEFAULT_DASHBOARD_TITLE, DEFAULT_DASHBOARD_SUBTITLE,
-  resetAllConfigs,
+  resetAllConfigs, clearAllData,
 } from "../lib/dashboardStorage.js";
 import { AwnexLogo }            from "../components/AwnexLogo.jsx";
 import { SettingsModal }         from "../components/SettingsModal.jsx";
@@ -285,6 +285,17 @@ export function WarrantyDashboard({
     setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
   }
 
+  function handleClearAll() {
+    clearAllData();
+    const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
+    setSettings({ tableId: "", reportId: "" });
+    setKpiConfigs(k); setChartConfigs(c);
+    setColumnTitles({}); setColumnOrder([]);
+    setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
+    setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
+    setShowSettings(false);
+  }
+
   // ── Enrichment ─────────────────────────────────────────────────────────────
   const enriched = useMemo(() =>
     orders.map(o => {
@@ -439,6 +450,7 @@ export function WarrantyDashboard({
           initialReportId={settings.reportId}
           onClose={() => setShowSettings(false)}
           onSave={s => { const ns = { tableId: s.tableId, reportId: s.reportId }; saveConnectionSettings(ns); setSettings(ns); setShowSettings(false); }}
+          onClear={handleClearAll}
         />
       )}
       {children}
@@ -460,6 +472,7 @@ export function WarrantyDashboard({
           initialReportId={settings.reportId}
           onClose={() => setShowSettings(false)}
           onSave={s => { const ns = { tableId: s.tableId, reportId: s.reportId }; saveConnectionSettings(ns); setSettings(ns); setShowSettings(false); }}
+          onClear={handleClearAll}
         />
       )}
       {editingKpi && (

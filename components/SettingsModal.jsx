@@ -36,12 +36,13 @@ function parseQbUrl(raw) {
   return { tableId, reportId };
 }
 
-export function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId = "" }) {
+export function SettingsModal({ onClose, onSave, onClear, initialTableId = "", initialReportId = "" }) {
   const [tableId,     setTableId]     = useState(initialTableId);
   const [reportId,    setReportId]    = useState(initialReportId);
   const [qbUrl,       setQbUrl]       = useState("");
   const [urlMsg,      setUrlMsg]      = useState("");
   const [urlMsgType,  setUrlMsgType]  = useState("info");
+  const [confirmClear, setConfirmClear] = useState(false);
 
   function handleUrlChange(e) {
     const val = e.target.value;
@@ -83,10 +84,23 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
       onClose={onClose}
       width={480}
       footer={
-        <>
-          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave} disabled={!canSave}>Save and Connect</Btn>
-        </>
+        <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center" }}>
+          {onClear ? (
+            confirmClear ? (
+              <Btn variant="danger" onClick={() => { setConfirmClear(false); onClear(); }}>
+                Confirm Clear
+              </Btn>
+            ) : (
+              <Btn variant="ghost" style={{ color: T.danger }} onClick={() => setConfirmClear(true)}>
+                Clear Cache
+              </Btn>
+            )
+          ) : <span />}
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn variant="ghost" onClick={() => { setConfirmClear(false); onClose(); }}>Cancel</Btn>
+            <Btn variant="primary" onClick={handleSave} disabled={!canSave}>Save and Connect</Btn>
+          </div>
+        </div>
       }
     >
       {/* Info banner */}
