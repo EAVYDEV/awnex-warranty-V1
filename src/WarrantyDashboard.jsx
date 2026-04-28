@@ -22,6 +22,9 @@ import {
   loadChartConfigs, saveChartConfigs,
   loadColumnTitles, saveColumnTitles,
   loadColumnOrder, saveColumnOrder,
+  loadDashboardTitle, saveDashboardTitle,
+  loadDashboardSubtitle, saveDashboardSubtitle,
+  DEFAULT_DASHBOARD_TITLE, DEFAULT_DASHBOARD_SUBTITLE,
   resetAllConfigs,
 } from "../lib/dashboardStorage.js";
 import { AwnexLogo }            from "../components/AwnexLogo.jsx";
@@ -162,6 +165,8 @@ export function WarrantyDashboard({
   const [showColumnEditor, setShowColumnEditor] = useState(false);
   const [draggingKpiId, setDraggingKpiId] = useState(null);
   const [draggingChartId, setDraggingChartId] = useState(null);
+  const [dashboardTitle, setDashboardTitle]       = useState(() => loadDashboardTitle());
+  const [dashboardSubtitle, setDashboardSubtitle] = useState(() => loadDashboardSubtitle());
 
   // Load server settings once on mount; override localStorage where present
   useEffect(() => {
@@ -172,6 +177,8 @@ export function WarrantyDashboard({
         if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
         if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
         if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
+        if (s.dashboardTitle)                             setDashboardTitle(s.dashboardTitle);
+        if (s.dashboardSubtitle)                          setDashboardSubtitle(s.dashboardSubtitle);
         if (s.tableId || s.reportId) {
           const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
           setSettings(ns);
@@ -194,6 +201,7 @@ export function WarrantyDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kpiConfigs, chartConfigs, columnTitles, columnOrder,
+          dashboardTitle, dashboardSubtitle,
           tableId: settings.tableId, reportId: settings.reportId,
         }),
       })
@@ -203,7 +211,7 @@ export function WarrantyDashboard({
     return () => clearTimeout(timer);
   // syncStatus intentionally excluded — we use the ref to avoid re-triggering
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, settings]);
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, dashboardTitle, dashboardSubtitle, settings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -273,6 +281,8 @@ export function WarrantyDashboard({
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setKpiConfigs(k); setChartConfigs(c);
     setColumnTitles({}); setColumnOrder([]);
+    setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
+    setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
   }
 
   // ── Enrichment ─────────────────────────────────────────────────────────────
@@ -480,8 +490,36 @@ export function WarrantyDashboard({
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <AwnexLogo />
           <div>
-            <h1 style={{ fontSize: 30, fontWeight: 700, color: T.brandDeep, margin: 0, lineHeight: 1.05 }}>Warranty Management</h1>
-            <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>Awntrak Platform — QC Module</p>
+            {editMode ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <input
+                  value={dashboardTitle}
+                  onChange={e => { setDashboardTitle(e.target.value); saveDashboardTitle(e.target.value); }}
+                  placeholder="Dashboard title"
+                  style={{
+                    fontSize: 30, fontWeight: 700, color: T.brandDeep,
+                    margin: 0, lineHeight: 1.05, border: `1.5px solid ${T.brand}`,
+                    borderRadius: 6, padding: "2px 8px", background: T.brandSubtle,
+                    fontFamily: "inherit", outline: "none", width: "100%", minWidth: 220,
+                  }}
+                />
+                <input
+                  value={dashboardSubtitle}
+                  onChange={e => { setDashboardSubtitle(e.target.value); saveDashboardSubtitle(e.target.value); }}
+                  placeholder="Subtitle"
+                  style={{
+                    fontSize: 13, color: T.text2, border: `1.5px solid ${T.borderLight}`,
+                    borderRadius: 6, padding: "1px 8px", background: T.card,
+                    fontFamily: "inherit", outline: "none", width: "100%",
+                  }}
+                />
+              </div>
+            ) : (
+              <>
+                <h1 style={{ fontSize: 30, fontWeight: 700, color: T.brandDeep, margin: 0, lineHeight: 1.05 }}>{dashboardTitle}</h1>
+                <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>{dashboardSubtitle}</p>
+              </>
+            )}
             <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
               <a href="/" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.brandSubtle, color: T.brand, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
                 Warranty
