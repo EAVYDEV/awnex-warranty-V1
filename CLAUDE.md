@@ -76,16 +76,18 @@ Browser (WarrantyDashboard.jsx)
 
 ### Quickbase field mapping
 
-`mapQBResponse()` in `lib/qbUtils.js` matches field labels exactly. Required QB report fields:
+`mapQBResponse()` in `lib/qbUtils.js` matches field labels exactly. Records are included regardless of which fields the report exposes — if a field is absent the value defaults to `null` / `0` / `""` and derived columns degrade gracefully (e.g. `warrantyEnd = null` → `status = "unknown"`). The QB record ID is always available as a fallback identifier.
+
+Well-known fields and what they unlock:
 
 | Label | Purpose |
 |---|---|
-| `Order Number w/Series` | HTML anchor; URL and numeric order number extracted via regex |
+| `Order Number w/Series` | HTML anchor; URL and numeric order number extracted via regex. Falls back to QB record ID when absent. |
 | `Order Name (Formula)` | `BRAND-CustomerName-ID-City State-Address` format; brand/location parsed from dash-split |
 | `Project Manager` | Display-name format; `extractPMName()` strips the `<userid>` suffix. Also handles QB user-field objects `{id, name}`. |
 | `# of Warranty Claims` | Primary risk signal |
 | `# of QC Entries for Peeling Powder` / `# of QC Entries for Powder Failure` | Leading-indicator risk signals |
-| `Installation Complete Date` / `Shipping Complete Date` | Used to compute `warrantyEnd` (install preferred; shipping as fallback) |
+| `Installation Complete Date` / `Shipping Complete Date` | Used to compute `warrantyEnd` (install preferred; shipping as fallback). When both are absent `warrantyEnd` is `null` and status renders as `"unknown"`. |
 | `Product Scope` | Semicolon-separated product list |
 | `NEW Final Color Approval` | Shown in expanded row only |
 
@@ -238,6 +240,8 @@ localStorage is used as an immediate read/write cache. All keys are also synced 
 | `awntrak_chart_configs` | JSON array of chart configuration objects |
 | `awntrak_column_titles` | `{ [colId]: string }` map of custom column display titles |
 | `awntrak_column_order` | `string[]` ordered array of column IDs |
+| `awntrak_dashboard_title` | Custom dashboard heading (default: `"Warranty Management"`) |
+| `awntrak_dashboard_subtitle` | Custom dashboard subheading (default: `"Awntrak Platform — QC Module"`) |
 | `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
 
 All dashboard keys (excluding geocache) are managed through `lib/dashboardStorage.js`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.

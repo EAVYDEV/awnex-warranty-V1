@@ -125,11 +125,13 @@ Settings persist in `localStorage`. Data loads immediately after saving.
 
 ## Quickbase report requirements
 
-The report must include these fields. Labels must match exactly (case-sensitive).
+The dashboard loads records from **any** QB report — missing fields degrade gracefully rather than dropping rows. When a well-known field label is absent, that column defaults to blank/zero and derived values fall back safely (e.g. orders without date fields show status `"—"` instead of a warranty expiry countdown).
+
+The following field labels unlock full functionality. Labels are matched case-sensitively.
 
 | QB Field Label | Used for |
 |---|---|
-| `Order Number w/Series` | Order number and direct QB record link |
+| `Order Number w/Series` | Order number and direct QB record link (falls back to QB record ID when absent) |
 | `Order Name (Formula)` | Brand, location, and customer name extraction |
 | `Project Manager` | PM name |
 | `Product Scope` | Semicolon-separated product list |
@@ -162,18 +164,25 @@ Extra QB fields not listed above are captured in `_qbFields` on each order and e
 | `awntrak_warranty_report_id` | QB report ID from Settings modal |
 | `awntrak_kpi_configs` | JSON array of KPI configuration objects |
 | `awntrak_chart_configs` | JSON array of chart configuration objects |
+| `awntrak_column_titles` | `{ [colId]: string }` map of custom column display titles |
+| `awntrak_column_order` | `string[]` ordered array of column IDs |
+| `awntrak_dashboard_title` | Custom dashboard heading text |
+| `awntrak_dashboard_subtitle` | Custom dashboard subheading text |
+| `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
 
 ---
 
 ## Dashboard edit mode
 
-Click the **Edit Layout** button in the top-right header to enter edit mode. While active:
+Click the **Edit** button in the top-right header to enter edit mode. While active:
 
 - A dark toolbar appears at the top with **Add KPI**, **Add Chart**, and **Reset to Defaults** actions
+- The dashboard **title** and **subtitle** become inline text inputs — type to rename them; changes save immediately
 - KPI and chart cards display a **Drag** badge and can be reordered via click-drag-drop
 - Every KPI card and chart card shows inline **Edit**, **Duplicate**, and **Hide/Show** buttons
-- Clicking **Edit** opens the respective editor modal with a live preview
-- Clicking **Done Editing** exits edit mode; changes remain persisted and sync to shared settings when `/api/settings` storage is enabled
+- Clicking **Edit** on a card opens the respective editor modal with a live preview
+- **Reset to Defaults** also resets the title and subtitle to their original values
+- Clicking **Done Editing** exits edit mode; all changes persist in localStorage and sync to shared settings when `/api/settings` storage is enabled
 
 ---
 

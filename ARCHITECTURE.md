@@ -29,7 +29,7 @@ Full system design, component contracts, config schemas, and extension guide.
 | `components/dashboard/ChartCard.jsx` | ✅ Done | Chart wrapper, edit-mode controls + drag affordance badge, CustomTooltip |
 | `components/dashboard/ChartEditor.jsx` | ✅ Done | Full chart editor: type picker, group field, stack field, up to 3 metrics, filter, sort, palette, live preview (category count) |
 | `components/dashboard/ConfigurableChart.jsx` | ✅ Done | Renders bar / hbar / donut / line / stacked from config; truncated tick labels, semantic colors for status/risk fields |
-| `components/dashboard/DashboardEditToolbar.jsx` | ✅ Done | Add KPI, Add Chart, Reset to Defaults (with confirmation), Done Editing |
+| `components/dashboard/DashboardEditToolbar.jsx` | ✅ Done | Add KPI, Add Chart, Reset to Defaults (with confirmation), Done Editing; title/subtitle fields are in `WarrantyDashboard.jsx` header (not the toolbar) |
 
 ### In progress / remaining
 
@@ -56,7 +56,8 @@ pages/index.jsx
         │     returns order[]
         │
         ├── useMemo (enriched)
-        │     • daysFromToday, warrantyStatus
+        │     • daysFromToday (returns null when warrantyEnd is null)
+        │     • warrantyStatus → "active" | "expiring" | "expired" | "unknown"
         │     • computeRiskScore, riskLevel
         │     • infer openClaims / closedClaims if no claims source
         │     returns enrichedOrder[]
@@ -230,14 +231,14 @@ After `mapQBResponse()` + enrichment in `WarrantyDashboard.jsx`:
 ```ts
 {
   // From mapQBResponse
-  orderNum:    string;
+  orderNum:    string;            // parsed from "Order Number w/Series"; falls back to qbRid when field is absent
   qbRid:       string;
   qbUrl:       string | null;
   brand:       string;
   location:    string;
   customer:    string;
   pm:          string;
-  warrantyEnd: string;            // "YYYY-MM-DD"
+  warrantyEnd: string | null;     // "YYYY-MM-DD", or null when neither date field is in the report
   products:    string[];
   colors:      string;
   claims:      number;
@@ -248,8 +249,8 @@ After `mapQBResponse()` + enrichment in `WarrantyDashboard.jsx`:
                                      // special keys read by MapView: "Latitude", "Longitude" (numeric) — skips Nominatim when present
 
   // Added during enrichment
-  days:        number;            // days until/since warrantyEnd (negative = expired)
-  status:      "active" | "expiring" | "expired";
+  days:        number | null;     // days until/since warrantyEnd (negative = expired); null when warrantyEnd is null
+  status:      "active" | "expiring" | "expired" | "unknown";  // "unknown" when warrantyEnd is null
   openClaims:  number;
   closedClaims:number;
   claimCost:   number;
