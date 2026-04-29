@@ -145,10 +145,7 @@ export function WarrantyDashboard({
 
   // ── Table UI state ─────────────────────────────────────────────────────────
   const [search, setSearch]             = useState("");
-  const [pmFilter, setPmFilter]         = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [brandFilter, setBrandFilter]   = useState("all");
-  const [riskFilter, setRiskFilter]     = useState("all");
+  const [fieldFilters, setFieldFilters] = useState({});
   const [sortCol, setSortCol]           = useState("warrantyEnd");
   const [sortDir, setSortDir]           = useState("asc");
   const [expandedRow, setExpandedRow]   = useState(null);
@@ -297,18 +294,7 @@ export function WarrantyDashboard({
   }
 
   // ── Enrichment ─────────────────────────────────────────────────────────────
-  const enriched = useMemo(() =>
-    orders.map(o => {
-      const days        = daysFromToday(o.warrantyEnd);
-      const status      = warrantyStatus(o.warrantyEnd);
-      const openClaims  = o.openClaims   ?? (status !== "expired" ? o.claims : 0);
-      const closedClaims= o.closedClaims ?? (status === "expired"  ? o.claims : 0);
-      const claimCost   = o.claimCost    ?? 0;
-      const riskScore   = computeRiskScore({ ...o, status });
-      const risk        = riskLevel(riskScore);
-      return { ...o, days, status, openClaims, closedClaims, claimCost, riskScore, risk };
-    })
-  , [orders]);
+  const enriched = useMemo(() => orders, [orders]);
 
   const availableFields = useMemo(
     () => buildAvailableFields(qbReportFields),
@@ -331,23 +317,12 @@ export function WarrantyDashboard({
     let r = enriched;
     if (search) {
       const q = search.toLowerCase();
-      r = r.filter(o =>
-        o.orderNum.toLowerCase().includes(q) ||
-        o.customer.toLowerCase().includes(q)  ||
-        o.location.toLowerCase().includes(q)  ||
-        o.pm.toLowerCase().includes(q)        ||
-        o.brand.toLowerCase().includes(q)
-      );
+      r = r.filter(o => Object.values(o).some(v => String(v ?? "").toLowerCase().includes(q)));
     }
-    if (statusFilter !== "all") r = r.filter(o => o.status === statusFilter);
-    if (pmFilter     !== "all") r = r.filter(o => o.pm === pmFilter);
-    if (brandFilter  !== "all") r = r.filter(o => o.brand === brandFilter);
-    if (riskFilter   !== "all") {
-      if (riskFilter === "atrisk")
-        r = r.filter(o => o.claims === 0 && (o.qcPeeling > 0 || o.qcPowder > 0));
-      else
-        r = r.filter(o => o.risk === riskFilter);
-    }
+    Object.entries(fieldFilters).forEach(([k,v]) => {
+      if (!v || v === "all") return;
+      r = r.filter(o => String(o[k] ?? "") === String(v));
+    });
     function getVal(o, key) {
       if (o[key] !== undefined) return o[key];
       return o._qbFields?.[key] ?? "";
@@ -361,19 +336,19 @@ export function WarrantyDashboard({
         ? av - bv : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [enriched, search, pmFilter, statusFilter, brandFilter, riskFilter, sortCol, sortDir]);
+  }, [enriched, search, fieldFilters, sortCol, sortDir]);
 
-  const uniquePMs    = useMemo(() => [...new Set(enriched.map(o => o.pm))].sort(),    [enriched]);
-  const uniqueBrands = useMemo(() => [...new Set(enriched.map(o => o.brand))].sort(), [enriched]);
-  const hasFilters   = search || pmFilter !== "all" || statusFilter !== "all" || brandFilter !== "all" || riskFilter !== "all";
+  const filterableFields = useMemo(() => availableFields.filter(f => ["text","number","currency","date"].includes(f.type)).slice(0,4), [availableFields]);
+  const filterOptions = useMemo(() => Object.fromEntries(filterableFields.map(f => [f.key, [...new Set(enriched.map(o => String(o[f.key] ?? "")).filter(Boolean))].slice(0,200)])), [filterableFields, enriched]);
+  const hasFilters   = search || Object.values(fieldFilters).some(v => v && v !== "all");
 
   function handleSort(col) {
     if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortCol(col); setSortDir("asc"); }
   }
 
-  const filteredClaims = filtered.reduce((s, o) => s + o.claims, 0);
-  const filteredValue  = filtered.reduce((s, o) => s + o.orderValue, 0);
+  const filteredClaims = 0;
+  const filteredValue  = 0;
 
   // ── Shared table cell styles ───────────────────────────────────────────────
   const TH = {
@@ -663,18 +638,14 @@ export function WarrantyDashboard({
           </svg>
           <input placeholder="Search order, customer, location…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px 8px 30px", borderRadius: 16, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.bg, outline: "none", boxSizing: "border-box" }} />
         </div>
-        {[
-          { label: "Status", value: statusFilter, setter: setStatusFilter, options: [["all","All Statuses"],["active","Active"],["expiring","Expiring"],["expired","Expired"]] },
-          { label: "PM",     value: pmFilter,     setter: setPmFilter,     options: [["all","All PMs"],    ...uniquePMs.map(p => [p, p])] },
-          { label: "Brand",  value: brandFilter,  setter: setBrandFilter,  options: [["all","All Brands"], ...uniqueBrands.map(b => [b, b])] },
-          { label: "Risk",   value: riskFilter,   setter: setRiskFilter,   options: [["all","All Risk Levels"],["critical","Critical"],["high","High"],["medium","Medium"],["low","Low"],["atrisk","At Risk (No Claim)"]] },
-        ].map(({ label, value, setter, options }) => (
-          <select key={label} value={value} onChange={e => setter(e.target.value)} style={{ padding: "8px 12px", borderRadius: 14, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.card, cursor: "pointer", flexShrink: 0 }}>
-            {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        {filterableFields.map((f) => (
+          <select key={f.key} value={fieldFilters[f.key] || "all"} onChange={e => setFieldFilters(prev => ({ ...prev, [f.key]: e.target.value }))} style={{ padding: "8px 12px", borderRadius: 14, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.card, cursor: "pointer", flexShrink: 0 }}>
+            <option value="all">All {f.label}</option>
+            {filterOptions[f.key]?.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         ))}
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setPmFilter("all"); setStatusFilter("all"); setBrandFilter("all"); setRiskFilter("all"); }} style={{ padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button onClick={() => { setSearch(""); setFieldFilters({}); }} style={{ padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
             Clear Filters
           </button>
         )}
@@ -836,25 +807,3 @@ export function WarrantyDashboard({
   );
 }
 
-// ─── SAMPLE DATA ──────────────────────────────────────────────────────────────
-export const SAMPLE_ORDERS = [
-  { orderNum: "80886", qbRid: "10886", qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=10886", brand: "McDonald's", location: "San Antonio Texas",        customer: "MCDS-McDonalds-042-3611, NSN 43567",           pm: "Betty Burford",  warrantyEnd: "2027-01-06", products: ["Colorado Canopy","Downspouts"],                                               colors: "IFS - PLSF50970CN - Yellow Texture",            claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 36747.68 },
-  { orderNum: "80103", qbRid: "10103", qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=10103", brand: "Chick-fil-A", location: "Broadview Heights Ohio",   customer: "CFA-Chick-fil-A-#05925 Broadview Heights",    pm: "Betty Burford",  warrantyEnd: "2027-02-09", products: ["Colorado Canopy w/ Lights","Phoenix System"],                                colors: "PPG - PCTT20129 - Patio Bronze",                claims: 1, qcPeeling: 1, qcPowder: 2, orderValue: 54089.58 },
-  { orderNum: "80950", qbRid: "10950", qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=10950", brand: "Municipal",   location: "Winter Garden Florida",    customer: "MUNIC-Horizon West Library-21-109",           pm: "Betty Burford",  warrantyEnd: "2027-02-12", products: [],                                                                            colors: "TIGER - 038/60080 - Statuary Bronze",           claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 16862.99 },
-  { orderNum: "79615", qbRid: "9615",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=9615",  brand: "ADN",         location: "North Liberty Iowa",       customer: "ADN-O-North Liberty Retail-23-132",          pm: "Riley Garrison", warrantyEnd: "2026-01-14", products: ["Colorado Canopy 2.0"],                                                        colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 31443.26 },
-  { orderNum: "78984", qbRid: "8984",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8984",  brand: "Chick-fil-A", location: "Farmington Missouri",      customer: "CFA-Chick-fil-A-#05788 Farmington FSU",      pm: "Henry Black",    warrantyEnd: "2025-10-06", products: ["Colorado Canopy w/ Lights","Phoenix System"],                                colors: "PPG - PCTT20129 - Patio Bronze",                claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 46815.34 },
-  { orderNum: "78845", qbRid: "8845",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8845",  brand: "Morgantown",  location: "Bowling Green Kentucky",   customer: "Morgantown Bank and Trust Branch Office",    pm: "John Massaro",   warrantyEnd: "2025-10-22", products: ["Phoenix System"],                                                            colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 10627.28 },
-  { orderNum: "78306", qbRid: "8306",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8306",  brand: "Anytime",     location: "Elkhorn Wisconsin",        customer: "Anytime Fitness-22018-01",                   pm: "Matt Dillon",    warrantyEnd: "2024-11-08", products: [],                                                                            colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 25726.48 },
-  { orderNum: "77958", qbRid: "7958",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=7958",  brand: "Starbucks",   location: "Bridgeport Michigan",      customer: "SBUX-Starbucks-23-107",                      pm: "Mark Williams",  warrantyEnd: "2024-11-09", products: ["Colorado Canopy w/ Lights"],                                                  colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 31774.47 },
-  { orderNum: "78409", qbRid: "8409",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8409",  brand: "Starbucks",   location: "Texarkana Texas",          customer: "SBUX-Starbucks-22125",                       pm: "Matt Dillon",    warrantyEnd: "2024-11-30", products: ["Colorado Canopy","Colorado Canopy w/ Lights","IWP SOFFIT/DECKING"],        colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 2, qcPeeling: 2, qcPowder: 2, orderValue: 53339.47 },
-  { orderNum: "78349", qbRid: "8349",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8349",  brand: "Starbucks",   location: "Fayetteville West Virginia",customer: "SBUX-Starbucks-11481.1.003",                 pm: "Matt Dillon",    warrantyEnd: "2024-12-13", products: ["Colorado Canopy"],                                                           colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 46481.83 },
-  { orderNum: "78538", qbRid: "8538",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8538",  brand: "Starbucks",   location: "Forsyth Illinois",         customer: "SBUX-Starbucks-22007",                       pm: "Matt Dillon",    warrantyEnd: "2025-02-20", products: ["Colorado Canopy","IWP SOFFIT/DECKING"],                                      colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 48364.15 },
-  { orderNum: "78733", qbRid: "8733",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8733",  brand: "Starbucks",   location: "LeClaire Iowa",            customer: "SBUX-Starbucks-80221",                       pm: "Matt Dillon",    warrantyEnd: "2025-03-05", products: ["Colorado Canopy"],                                                           colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 48453.01 },
-  { orderNum: "78585", qbRid: "8585",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8585",  brand: "Starbucks",   location: "St. Michael Minnesota",    customer: "SBUX-Starbucks-2023-0252",                   pm: "Matt Dillon",    warrantyEnd: "2025-03-27", products: ["Colorado Canopy"],                                                           colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 52891.52 },
-  { orderNum: "78814", qbRid: "8814",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8814",  brand: "Starbucks",   location: "Blue Springs Missouri",    customer: "SBUX-Starbucks-230458",                      pm: "Matt Dillon",    warrantyEnd: "2025-04-26", products: ["Colorado Canopy 2.0","Colorado Canopy w/ Lights"],                           colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 76017.94 },
-  { orderNum: "78821", qbRid: "8821",  qbUrl: "https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=8821",  brand: "Chick-fil-A", location: "Omaha Nebraska",           customer: "CFA-Chick-fil-A-#05599 156th & Maple FSU",   pm: "Henry Black",    warrantyEnd: "2025-09-12", products: ["Fabric Awnings"],                                                            colors: "Prismatic Powders - PSB 6865 - Blackboard",    claims: 1, qcPeeling: 1, qcPowder: 1, orderValue: 51480.73 },
-];
-
-export default function WarrantyDashboardPreview() {
-  return <WarrantyDashboard orders={SAMPLE_ORDERS} />;
-}
