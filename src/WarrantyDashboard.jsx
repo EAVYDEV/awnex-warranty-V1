@@ -152,6 +152,16 @@ export function WarrantyDashboard({
   const [expandedRow, setExpandedRow]   = useState(null);
   const [activeView, setActiveView]     = useState("table");
   const [viewerUrl, setViewerUrl]       = useState(null);
+  const [viewerOpen, setViewerOpen]     = useState(false);
+
+  const handleOpenLink = useCallback((raw) => {
+    if (!raw || typeof raw !== "string") return;
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed === "#") return;
+    const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    setViewerUrl(normalized);
+    setViewerOpen(true);
+  }, []);
 
   // ── Edit mode state ────────────────────────────────────────────────────────
   const [editMode, setEditMode]           = useState(false);
@@ -397,7 +407,7 @@ export function WarrantyDashboard({
       case "qbLink":
         return (
           <td key={spec.id} style={td}>
-            <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenLink(o.qbUrl); }} style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.brandSubtle, color: T.brand, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap", cursor: "pointer" }}>
+            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenLink(o.qbUrl); }} style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.brandSubtle, color: T.brand, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap", cursor: "pointer" }}>
               Open
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </button>
@@ -410,7 +420,7 @@ export function WarrantyDashboard({
         if (/^https?:\/\//i.test(str)) {
           return (
             <td key={spec.id} style={{ ...td }}>
-              <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenLink(str); }} style={{ border: "none", background: "transparent", color: T.brand, textDecoration: "underline", cursor: "pointer", padding: 0 }}>
+              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenLink(str); }} style={{ border: "none", background: "transparent", color: T.brand, textDecoration: "underline", cursor: "pointer", padding: 0 }}>
                 Open link
               </button>
             </td>
@@ -473,7 +483,14 @@ export function WarrantyDashboard({
           onClear={handleClearAll}
         />
       )}
-      <ContentViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />
+      <ContentViewer
+        open={viewerOpen}
+        url={viewerUrl}
+        onClose={() => {
+          setViewerOpen(false);
+          setViewerUrl(null);
+        }}
+      />
       {editingKpi && (
         <KpiEditor
           config={editingKpi.config}
@@ -827,9 +844,3 @@ export function WarrantyDashboard({
     </div>
   );
 }
-  function handleOpenLink(raw) {
-    const url = String(raw || "").trim();
-    if (!url || url === "#") return;
-    const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
-    setViewerUrl(normalized);
-  }

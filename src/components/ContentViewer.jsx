@@ -14,12 +14,12 @@ function detectViewerUrl(rawUrl) {
   return { src: url, mode: "iframe" };
 }
 
-export function ContentViewer({ url, onClose }) {
+export function ContentViewer({ open, url, onClose }) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const viewer = useMemo(() => detectViewerUrl(url), [url]);
-  if (!url || !viewer) return null;
+  if (!open || !url || !viewer) return null;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, pointerEvents: "none" }}>
