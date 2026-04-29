@@ -30,6 +30,7 @@ import {
 import { AwnexLogo }            from "../components/AwnexLogo.jsx";
 import { SettingsModal }         from "../components/SettingsModal.jsx";
 import { MapView }               from "../components/MapView.jsx";
+import { ContentViewer }         from "./components/ContentViewer.jsx";
 import { KpiCard }               from "../components/dashboard/KpiCard.jsx";
 import { KpiEditor }             from "../components/dashboard/KpiEditor.jsx";
 import { ChartCard }             from "../components/dashboard/ChartCard.jsx";
@@ -150,6 +151,7 @@ export function WarrantyDashboard({
   const [sortDir, setSortDir]           = useState("asc");
   const [expandedRow, setExpandedRow]   = useState(null);
   const [activeView, setActiveView]     = useState("table");
+  const [viewerUrl, setViewerUrl]       = useState(null);
 
   // ── Edit mode state ────────────────────────────────────────────────────────
   const [editMode, setEditMode]           = useState(false);
@@ -395,20 +397,37 @@ export function WarrantyDashboard({
       case "qbLink":
         return (
           <td key={spec.id} style={td}>
-            <a href={o.qbUrl || "#"} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ padding: "4px 10px", borderRadius: 6, background: T.brandSubtle, color: T.brand, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>
+            <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenLink(o.qbUrl); }} style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.brandSubtle, color: T.brand, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap", cursor: "pointer" }}>
               Open
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
+            </button>
           </td>
         );
       case "qbField": {
         const v = o._qbFields?.[spec.key];
         if (v == null) return <td key={spec.id} style={{ ...td, color: T.text2, fontSize: 12 }}>-</td>;
         const str = String(v);
-        if (/<[a-z]/i.test(str)) {
+        if (/^https?:\/\//i.test(str)) {
           return (
             <td key={spec.id} style={{ ...td }}>
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(str) }} />
+              <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenLink(str); }} style={{ border: "none", background: "transparent", color: T.brand, textDecoration: "underline", cursor: "pointer", padding: 0 }}>
+                Open link
+              </button>
+            </td>
+          );
+        }
+        if (/<[a-z]/i.test(str)) {
+          const safeHtml = DOMPurify.sanitize(str, { ADD_ATTR: ["target", "rel"] }).replace(/href=(['"])(.*?)\1/gi, 'href="#" data-app-url="$2"');
+          return (
+            <td key={spec.id} style={{ ...td }} onClick={(e) => {
+              const anchor = e.target.closest?.("a[data-app-url]");
+              if (anchor) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleOpenLink(anchor.getAttribute("data-app-url"));
+              }
+            }}>
+              <div dangerouslySetInnerHTML={{ __html: safeHtml }} />
             </td>
           );
         }
@@ -431,6 +450,7 @@ export function WarrantyDashboard({
           onClear={handleClearAll}
         />
       )}
+      <ContentViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />
       {children}
     </div>
   );
@@ -453,6 +473,7 @@ export function WarrantyDashboard({
           onClear={handleClearAll}
         />
       )}
+      <ContentViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />
       {editingKpi && (
         <KpiEditor
           config={editingKpi.config}
@@ -806,4 +827,9 @@ export function WarrantyDashboard({
     </div>
   );
 }
-
+  function handleOpenLink(raw) {
+    const url = String(raw || "").trim();
+    if (!url || url === "#") return;
+    const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    setViewerUrl(normalized);
+  }
