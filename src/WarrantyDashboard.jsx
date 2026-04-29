@@ -460,6 +460,7 @@ export function WarrantyDashboard({
           onClear={handleClearAll}
         />
       )}
+      <ContentViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />
       {children}
     </div>
   );
