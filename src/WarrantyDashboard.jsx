@@ -585,6 +585,8 @@ export function WarrantyDashboard({
             </div>
           ))}
 
+          {activeModule === "warranty" && (
+          <>
           {/* Edit mode toggle */}
           <button
             onClick={() => setEditMode(e => !e)}
@@ -608,6 +610,8 @@ export function WarrantyDashboard({
               </button>
             ))}
           </div>
+          </>
+          )}
         </div>
       </div>
 
