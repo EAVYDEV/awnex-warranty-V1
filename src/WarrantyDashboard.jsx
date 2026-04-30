@@ -363,7 +363,30 @@ export function WarrantyDashboard({
     });
   }, [enriched, search, fieldFilters, sortCol, sortDir]);
 
-  const filterableFields = useMemo(() => availableFields.filter(f => ["text","number","currency","date"].includes(f.type)).slice(0,4), [availableFields]);
+  const filterableFields = useMemo(() => {
+    const availableByKey = new Map(availableFields.map((f) => [f.key, f]));
+    const availableByQbId = new Map(availableFields.filter((f) => f.qbId != null).map((f) => [f.qbId, f]));
+    const seen = new Set();
+
+    return columnSpecs
+      .filter((c) => c.renderAs !== "qbLink")
+      .map((c) => {
+        const source = availableByQbId.get(c.qbId) || availableByKey.get(c.key);
+        return {
+          key: c.key,
+          qbId: c.qbId,
+          label: c.title,
+          type: source?.type || "text",
+        };
+      })
+      .filter((f) => {
+        if (!["text", "number", "currency", "date"].includes(f.type)) return false;
+        if (seen.has(f.key)) return false;
+        seen.add(f.key);
+        return true;
+      })
+      .slice(0, 4);
+  }, [availableFields, columnSpecs]);
   const filterOptions = useMemo(() => Object.fromEntries(filterableFields.map(f => [f.key, [...new Set(enriched.map(o => String(o[f.key] ?? "")).filter(Boolean))].slice(0,200)])), [filterableFields, enriched]);
   const hasFilters   = search || Object.values(fieldFilters).some(v => v && v !== "all");
 
