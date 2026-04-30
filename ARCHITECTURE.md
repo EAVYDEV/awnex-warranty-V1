@@ -30,12 +30,15 @@ Full system design, component contracts, config schemas, and extension guide.
 | `components/dashboard/ChartEditor.jsx` | ✅ Done | Full chart editor: type picker, group field, stack field, up to 3 metrics, filter, sort, palette, live preview (category count) |
 | `components/dashboard/ConfigurableChart.jsx` | ✅ Done | Renders bar / hbar / donut / line / stacked from config; truncated tick labels, semantic colors for status/risk fields |
 | `components/dashboard/DashboardEditToolbar.jsx` | ✅ Done | Add KPI, Add Chart, Reset to Defaults (with confirmation), Done Editing |
+| `lib/installationData.js` | ✅ Done | Installation field alias map, fixed status pipeline, Quickbase payload normalization |
+| `lib/installationHelpers.js` | ✅ Done | Installation grouping/filter helpers + KPI metric derivation |
+| `src/components/installation/*` | ✅ Done | Installation Kanban/Table/Map UI, job card, and detail panel |
 
 ### In progress / remaining
 
 | File | Status | Notes |
 |---|---|---|
-| `src/WarrantyDashboard.jsx` | ✅ Done | Lean orchestrator — data fetch, enrichment memos, filter/sort, table with QB formula HTML rendering, edit mode wiring |
+| `src/WarrantyDashboard.jsx` | ✅ Done | Orchestrator for Warranty + Installation modules, shared Quickbase fetch/settings flow, query-based module activation (`?module=installation`) |
 
 ---
 
@@ -293,6 +296,11 @@ Add a key + hex array to `COLOR_PALETTES` in `lib/dashboardDefaults.js`. It will
 ### Persist configs to Quickbase instead of localStorage
 
 Replace the read/write calls in `lib/dashboardStorage.js` with QB API calls. The config JSON schema is portable — no changes needed to the dashboard components.
+
+### Module navigation and deep links
+
+- `/?module=installation` activates the Installation module within `src/WarrantyDashboard.jsx`.
+- `/quality-risk` hosts the RCA workflow and includes nav links back to Warranty and Installation.
 
 ### Add a second dashboard module (e.g. QC Module)
 
