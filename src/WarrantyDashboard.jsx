@@ -42,6 +42,8 @@ import { StatusBadge, RiskBadge } from "../components/ui/Badge.jsx";
 import { ProductTag }            from "../components/ui/Tag.jsx";
 import { SortIcon }              from "../components/ui/SortIcon.jsx";
 import { EmptyState, LoadingState, ErrorState } from "../components/ui/StateScreens.jsx";
+import { InstallationDashboard } from "./components/installation/InstallationDashboard.jsx";
+import { mapInstallationData } from "../lib/installationData";
 
 // ─── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 export function WarrantyDashboard({
@@ -72,6 +74,7 @@ export function WarrantyDashboard({
   const [errorMsg, setErrorMsg]         = useState("");
   const [sourceStatuses, setSourceStatuses] = useState({});
   const [qbReportFields, setQbReportFields] = useState([]);
+  const [installationJobs, setInstallationJobs] = useState([]);
 
   const fetchData = useCallback(async () => {
     setLoadState("loading");
@@ -111,6 +114,7 @@ export function WarrantyDashboard({
         setQbReportFields(buildReportFields(ordersResult.payload.fields));
 
       let mapped = mapQBResponse(ordersResult.payload);
+      const mappedInstallation = mapInstallationData(ordersResult.payload);
 
       const claimsResult = results.find(r => r.role === "claims" && !r.error);
       if (claimsResult) {
@@ -131,6 +135,7 @@ export function WarrantyDashboard({
       }
 
       setOrders(mapped);
+      setInstallationJobs(mappedInstallation);
       setLoadState("loaded");
     } catch (err) {
       setErrorMsg(err.message);
@@ -151,6 +156,7 @@ export function WarrantyDashboard({
   const [sortDir, setSortDir]           = useState("asc");
   const [expandedRow, setExpandedRow]   = useState(null);
   const [activeView, setActiveView]     = useState("table");
+  const [activeModule, setActiveModule] = useState("warranty");
   const [viewerUrl, setViewerUrl]       = useState(null);
   const [viewerOpen, setViewerOpen]     = useState(false);
 
@@ -550,9 +556,8 @@ export function WarrantyDashboard({
               </>
             )}
             <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <a href="/" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.brandSubtle, color: T.brand, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
-                Warranty
-              </a>
+              <button onClick={() => setActiveModule("warranty")} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: activeModule === "warranty" ? T.brandSubtle : T.card, color: activeModule === "warranty" ? T.brand : T.text2, fontSize: 12, fontWeight: 600 }}>Warranty</button>
+              <button onClick={() => setActiveModule("installation")} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: activeModule === "installation" ? T.brandSubtle : T.card, color: activeModule === "installation" ? T.brand : T.text2, fontSize: 12, fontWeight: 600 }}>Installation</button>
               <a href="/quality-risk" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
                 Quality Risk & RCA
               </a>
@@ -606,6 +611,10 @@ export function WarrantyDashboard({
         </div>
       </div>
 
+      {activeModule === "installation" ? (
+        <InstallationDashboard jobs={installationJobs} />
+      ) : (
+      <>
       {/* ── Edit toolbar ─────────────────────────────────────────────────── */}
       {editMode && (
         <DashboardEditToolbar
@@ -841,6 +850,8 @@ export function WarrantyDashboard({
         </div>
       )}
 
+      </>
+      )}
     </div>
   );
 }
