@@ -39,6 +39,7 @@ Full system design, component contracts, config schemas, and extension guide.
 | File | Status | Notes |
 |---|---|---|
 | `src/WarrantyDashboard.jsx` | ✅ Done | Orchestrator for Warranty + Installation modules, shared Quickbase fetch/settings flow, query-based module activation (`?module=installation`) |
+| `src/WarrantyDashboard.jsx` (filters) | ✅ Updated | Filter dropdowns are built from visible `columnSpecs`; labels use `columnSpecs.title` so custom column names propagate to filters. |
 
 ---
 
@@ -316,3 +317,15 @@ All `lib/` utilities and `components/` are framework-agnostic and importable fro
 - Export dashboard config to JSON / import from JSON
 - Save configs to Quickbase or SharePoint instead of localStorage
 - Role-based edit-mode access (read-only view for shop floor / leadership displays)
+
+
+### Filter-label synchronization (column rename support)
+
+`WarrantyDashboard.jsx` now derives `filterableFields` from `columnSpecs` instead of raw report-field metadata. This ensures:
+
+- Filter labels always use the active display title (`columnSpecs.title`).
+- Renaming a column via Column Editor updates the corresponding filter label immediately.
+- Quickbase-backed fields and computed fields remain aligned via `qbId`/`key` matching.
+
+Implementation reference: `filterableFields` memo around line ~366 in `src/WarrantyDashboard.jsx`.
+

@@ -14,6 +14,7 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 - Drag-and-drop reordering for KPI cards and chart cards in edit mode
 - Dashboard configuration persists in localStorage and is synced via `/api/settings` for shared layouts when server storage is configured
 - Filter by PM, warranty status, brand, risk level, or free-text search
+- Filter dropdown labels now stay synchronized with customized Order Detail column titles (including Quickbase-backed columns)
 - Leaflet map view showing installation locations with status-color pins
 - Multi-module header navigation: Warranty, Installation, and Quality Risk & RCA
 - Multi-source connections (separate claims and costs QB tables merged by order number)
@@ -91,6 +92,13 @@ awnex-warranty-V1/
 ```
 
 ---
+
+## Recent updates
+
+- Fixed deployment-blocking JSX regressions in `src/components/installation/InstallationDashboard.jsx` and `src/components/installation/JobCard.jsx` (syntax now validated by `npm run build`).
+- Warranty filter dropdown labels now derive from configured `columnSpecs` titles so renamed columns update corresponding filter labels immediately.
+- Filter field derivation is now based on visible `columnSpecs` (deduped by key), preserving consistent behavior with user-customized columns.
+
 
 ## Local development
 
