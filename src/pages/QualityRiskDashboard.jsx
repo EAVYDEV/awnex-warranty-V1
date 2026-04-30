@@ -149,6 +149,7 @@ export default function QualityRiskDashboard() {
             <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>Issue intake, risk, containment, RCA, CAPA, field impact, evidence, and closure workflow.</p>
             <div className="mt-3 flex gap-2">
               <Link href="/" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Warranty</Link>
+              <Link href="/?module=installation" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Installation</Link>
               <Link href="/quality-risk" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.brandSubtle, color: T.brand, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Quality Risk & RCA</Link>
             </div>
           </div>

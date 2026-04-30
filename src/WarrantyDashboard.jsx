@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { T } from "../lib/tokens.js";
 import {
   mapQBResponse, mapClaimsResponse,
@@ -157,9 +158,15 @@ export function WarrantyDashboard({
   const [expandedRow, setExpandedRow]   = useState(null);
   const [activeView, setActiveView]     = useState("table");
   const [activeModule, setActiveModule] = useState("warranty");
+  const router = useRouter();
   const [viewerUrl, setViewerUrl]       = useState(null);
   const [viewerOpen, setViewerOpen]     = useState(false);
 
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.module === "installation") setActiveModule("installation");
+  }, [router.isReady, router.query.module]);
   const handleOpenLink = useCallback((raw) => {
     if (!raw || typeof raw !== "string") return;
     const trimmed = raw.trim();
