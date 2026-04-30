@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { T } from "../../lib/tokens";
+import { AwnexLogo } from "../../components/AwnexLogo";
 import CaseTable from "../components/quality/CaseTable";
 import CaseCard from "../components/quality/CaseCard";
 import CreateCaseModal from "../components/quality/CreateCaseModal";
@@ -139,32 +141,32 @@ export default function QualityRiskDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div style={{ minHeight: "100vh", background: T.bg, padding: 24, fontFamily: "DM Sans, system-ui, sans-serif" }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+        <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Awntrak Quality Risk & Root Cause</h1>
-            <p className="text-sm text-slate-600">Issue intake, risk, containment, RCA, CAPA, field impact, evidence, and closure workflow.</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}><AwnexLogo /><h1 style={{ fontSize: 38, fontWeight: 700, color: T.brandDeep, margin: 0 }}>Awntrak Quality Risk & Root Cause</h1></div>
+            <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>Issue intake, risk, containment, RCA, CAPA, field impact, evidence, and closure workflow.</p>
             <div className="mt-3 flex gap-2">
-              <Link href="/" className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">Warranty</Link>
-              <Link href="/quality-risk" className="rounded-md border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Quality Risk & RCA</Link>
+              <Link href="/" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Warranty</Link>
+              <Link href="/quality-risk" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.brandSubtle, color: T.brand, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Quality Risk & RCA</Link>
             </div>
           </div>
-          <button onClick={() => setShowCreate(true)} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Create Case</button>
+          <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.brand, color: T.card, fontSize: 13, fontWeight: 700, boxShadow: T.cardShadow, cursor: "pointer" }}>Create Case</button>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>
           {dashboardTabs.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`rounded-md px-3 py-1 text-sm font-semibold ${activeTab === tab ? "bg-blue-600 text-white" : "bg-white text-slate-700 border border-slate-200"}`}>
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: "7px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: activeTab === tab ? T.brand : T.card, color: activeTab === tab ? T.card : T.text2, fontSize: 12, fontWeight: 600 }}>
               {tab}
             </button>
           ))}
         </div>
 
         {activeTab === "Overview" && (
-          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+          <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             {[ ["Open Cases", kpi.open], ["Critical Issues", kpi.critical], ["Field Impact Cases", kpi.fieldImpact], ["Average Days Open", kpi.avgDaysOpen] ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">{label}</p><p className="text-2xl font-bold text-slate-900">{value}</p></div>
+              <div key={label} style={{ borderRadius: 20, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}><p style={{ fontSize: 11, color: T.text3, margin: 0, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p><p style={{ fontSize: 40, margin: "4px 0 0", fontWeight: 700, color: T.text1 }}>{value}</p></div>
             ))}
           </div>
         )}
