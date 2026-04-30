@@ -120,3 +120,22 @@ git push
 ```
 
 Vercel automatically redeploys on every push to `main`.
+
+
+## Build troubleshooting (common)
+
+If Vercel fails during `next build` with parser errors like `Unexpected token` or `Unexpected eof` in JSX files:
+
+1. Check for unresolved Git conflict markers in source files:
+   - `<<<<<<<`
+   - `=======`
+   - `>>>>>>>`
+2. Resolve the conflict and keep one valid JSX tree only.
+3. Run local verification before pushing:
+
+```bash
+npm run build
+```
+
+For recent installation-module fixes, ensure `src/components/installation/InstallationDashboard.jsx` and `src/components/installation/JobCard.jsx` contain a single valid component declaration each.
+

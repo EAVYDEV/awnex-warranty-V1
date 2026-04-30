@@ -25,6 +25,7 @@ import {
   loadColumnOrder, saveColumnOrder,
   loadDashboardTitle, saveDashboardTitle,
   loadDashboardSubtitle, saveDashboardSubtitle,
+  loadFilterFields, saveFilterFields,
   DEFAULT_DASHBOARD_TITLE, DEFAULT_DASHBOARD_SUBTITLE,
   resetAllConfigs, clearAllData,
 } from "../lib/dashboardStorage.js";
@@ -185,6 +186,7 @@ export function WarrantyDashboard({
   const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
   const [columnOrder,  setColumnOrder]    = useState(() => loadColumnOrder());
   const [showColumnEditor, setShowColumnEditor] = useState(false);
+  const [selectedFilterFieldIds, setSelectedFilterFieldIds] = useState(() => loadFilterFields());
   const [draggingKpiId, setDraggingKpiId] = useState(null);
   const [draggingChartId, setDraggingChartId] = useState(null);
   const [dashboardTitle, setDashboardTitle]       = useState(() => loadDashboardTitle());
@@ -199,6 +201,7 @@ export function WarrantyDashboard({
         if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
         if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
         if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
+        if (Array.isArray(s.filterFieldIds))              setSelectedFilterFieldIds(s.filterFieldIds);
         if (s.dashboardTitle)                             setDashboardTitle(s.dashboardTitle);
         if (s.dashboardSubtitle)                          setDashboardSubtitle(s.dashboardSubtitle);
         if (s.tableId || s.reportId) {
@@ -223,6 +226,7 @@ export function WarrantyDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kpiConfigs, chartConfigs, columnTitles, columnOrder,
+          filterFieldIds: selectedFilterFieldIds,
           dashboardTitle, dashboardSubtitle,
           tableId: settings.tableId, reportId: settings.reportId,
         }),
@@ -233,7 +237,7 @@ export function WarrantyDashboard({
     return () => clearTimeout(timer);
   // syncStatus intentionally excluded — we use the ref to avoid re-triggering
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, dashboardTitle, dashboardSubtitle, settings]);
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, selectedFilterFieldIds, dashboardTitle, dashboardSubtitle, settings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -303,6 +307,7 @@ export function WarrantyDashboard({
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setKpiConfigs(k); setChartConfigs(c);
     setColumnTitles({}); setColumnOrder([]);
+    setSelectedFilterFieldIds([]);
     setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
     setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
   }
@@ -313,6 +318,7 @@ export function WarrantyDashboard({
     setSettings({ tableId: "", reportId: "" });
     setKpiConfigs(k); setChartConfigs(c);
     setColumnTitles({}); setColumnOrder([]);
+    setSelectedFilterFieldIds([]);
     setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
     setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
     setShowSettings(false);
@@ -363,9 +369,41 @@ export function WarrantyDashboard({
     });
   }, [enriched, search, fieldFilters, sortCol, sortDir]);
 
-  const filterableFields = useMemo(() => availableFields.filter(f => ["text","number","currency","date"].includes(f.type)).slice(0,4), [availableFields]);
+  const filterableFields = useMemo(() => {
+    const availableByKey = new Map(availableFields.map((f) => [f.key, f]));
+    const availableByQbId = new Map(availableFields.filter((f) => f.qbId != null).map((f) => [f.qbId, f]));
+    const seen = new Set();
+    const candidates = columnSpecs
+      .filter((c) => c.renderAs !== "qbLink")
+      .map((c) => {
+        const source = availableByQbId.get(c.qbId) || availableByKey.get(c.key);
+        return {
+          id: c.id,
+          key: c.key,
+          qbId: c.qbId,
+          label: c.title,
+          type: source?.type || "text",
+        };
+      })
+      .filter((f) => {
+        if (!["text", "number", "currency", "date"].includes(f.type)) return false;
+        if (seen.has(f.key)) return false;
+        seen.add(f.key);
+        return true;
+      });
+
+    if (!selectedFilterFieldIds.length) return candidates.slice(0, 4);
+    return selectedFilterFieldIds
+      .map((id) => candidates.find((c) => c.id === id))
+      .filter(Boolean)
+      .slice(0, 4);
+  }, [availableFields, columnSpecs, selectedFilterFieldIds]);
   const filterOptions = useMemo(() => Object.fromEntries(filterableFields.map(f => [f.key, [...new Set(enriched.map(o => String(o[f.key] ?? "")).filter(Boolean))].slice(0,200)])), [filterableFields, enriched]);
   const hasFilters   = search || Object.values(fieldFilters).some(v => v && v !== "all");
+  useEffect(() => {
+    const allowed = new Set(filterableFields.map((f) => f.key));
+    setFieldFilters((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => allowed.has(k))));
+  }, [filterableFields]);
 
   function handleSort(col) {
     if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -702,6 +740,34 @@ export function WarrantyDashboard({
             {filterOptions[f.key]?.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         ))}
+        {editMode && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", borderLeft: `1px solid ${T.borderLight}`, paddingLeft: 10 }}>
+            <span style={{ fontSize: 11, color: T.text3, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>Edit Filters</span>
+            {[0, 1, 2, 3].map((slot) => (
+              <select
+                key={slot}
+                value={selectedFilterFieldIds[slot] || ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedFilterFieldIds((prev) => {
+                    const next = [...prev];
+                    if (value) next[slot] = value;
+                    else next.splice(slot, 1);
+                    const deduped = next.filter((id, idx) => id && next.indexOf(id) === idx).slice(0, 4);
+                    saveFilterFields(deduped);
+                    return deduped;
+                  });
+                }}
+                style={{ padding: "7px 9px", borderRadius: 10, border: `1px solid ${T.borderLight}`, fontSize: 12, color: T.text2, background: T.bg }}
+              >
+                <option value="">Filter {slot + 1}…</option>
+                {columnSpecs
+                  .filter((c) => c.renderAs !== "qbLink")
+                  .map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            ))}
+          </div>
+        )}
         {hasFilters && (
           <button onClick={() => { setSearch(""); setFieldFilters({}); }} style={{ padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
             Clear Filters
