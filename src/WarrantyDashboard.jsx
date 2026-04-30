@@ -363,7 +363,13 @@ export function WarrantyDashboard({
     });
   }, [enriched, search, fieldFilters, sortCol, sortDir]);
 
-  const filterableFields = useMemo(() => availableFields.filter(f => ["text","number","currency","date"].includes(f.type)).slice(0,4), [availableFields]);
+  const filterableFields = useMemo(() => {
+    const titleByKey = new Map(columnSpecs.map((c) => [c.key, c.title]));
+    return availableFields
+      .filter((f) => ["text", "number", "currency", "date"].includes(f.type))
+      .slice(0, 4)
+      .map((f) => ({ ...f, label: titleByKey.get(f.key) || f.label }));
+  }, [availableFields, columnSpecs]);
   const filterOptions = useMemo(() => Object.fromEntries(filterableFields.map(f => [f.key, [...new Set(enriched.map(o => String(o[f.key] ?? "")).filter(Boolean))].slice(0,200)])), [filterableFields, enriched]);
   const hasFilters   = search || Object.values(fieldFilters).some(v => v && v !== "all");
 
