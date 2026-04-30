@@ -365,19 +365,10 @@ export function WarrantyDashboard({
 
   const filterableFields = useMemo(() => {
     const titleByKey = new Map(columnSpecs.map((c) => [c.key, c.title]));
-    const titleByQbId = new Map(
-      columnSpecs
-        .filter((c) => c.qbId != null && c.renderAs !== "qbLink")
-        .map((c) => [c.qbId, c.title])
-    );
-
     return availableFields
       .filter((f) => ["text", "number", "currency", "date"].includes(f.type))
       .slice(0, 4)
-      .map((f) => ({
-        ...f,
-        label: titleByQbId.get(f.qbId) || titleByKey.get(f.key) || f.label,
-      }));
+      .map((f) => ({ ...f, label: titleByKey.get(f.key) || f.label }));
   }, [availableFields, columnSpecs]);
   const filterOptions = useMemo(() => Object.fromEntries(filterableFields.map(f => [f.key, [...new Set(enriched.map(o => String(o[f.key] ?? "")).filter(Boolean))].slice(0,200)])), [filterableFields, enriched]);
   const hasFilters   = search || Object.values(fieldFilters).some(v => v && v !== "all");
