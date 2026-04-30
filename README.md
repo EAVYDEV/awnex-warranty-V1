@@ -15,6 +15,7 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 - Dashboard configuration persists in localStorage and is synced via `/api/settings` for shared layouts when server storage is configured
 - Filter by PM, warranty status, brand, risk level, or free-text search
 - Leaflet map view showing installation locations with status-color pins
+- Multi-module header navigation: Warranty, Installation, and Quality Risk & RCA
 - Multi-source connections (separate claims and costs QB tables merged by order number)
 - Connection settings stored in the browser — credentials never leave the server
 
@@ -46,7 +47,9 @@ awnex-warranty-V1/
 │   ├── qbUtils.js                QB field parsing, mapQBResponse, mapClaimsResponse, risk scoring
 │   ├── dashboardMetrics.js       Filter, aggregate, computeKpiValue, computeChartData helpers
 │   ├── dashboardDefaults.js      Default KPI/chart configs, KPI_THEMES, COLOR_PALETTES
-│   └── dashboardStorage.js       localStorage load/save helpers for all config keys
+│   ├── dashboardStorage.js       localStorage load/save helpers for all config keys
+│   ├── installationData.js       Installation status pipeline + Quickbase dynamic field mapping
+│   └── installationHelpers.js    Installation grouping/filter/KPI helpers
 │
 ├── components/
 │   ├── ui/                       Platform-wide presentational components
@@ -66,6 +69,13 @@ awnex-warranty-V1/
 │       ├── ChartEditor.jsx       Chart editor modal with live preview
 │       ├── ConfigurableChart.jsx Renders bar / hbar / donut / line / stacked from config
 │       └── DashboardEditToolbar.jsx  Edit mode toolbar (add, reset, exit)
+│
+├── src/components/installation/
+│   ├── InstallationDashboard.jsx  Installation module shell (KPI/filters/view switch)
+│   ├── InstallationKanban.jsx     Status-pipeline board (Scheduled → Complete)
+│   ├── InstallationMap.jsx        Installation map wrapper over shared MapView
+│   ├── JobCard.jsx                Job summary card + quick actions
+│   └── JobDetailPanel.jsx         Slide-out detail drawer
 │
 ├── pages/
 │   ├── _app.jsx                  App wrapper (viewport meta, CSS reset)
@@ -189,3 +199,12 @@ See [DEPLOY.md](DEPLOY.md) for the full GitHub + Vercel deployment guide.
 - [API_REFERENCE.md](API_REFERENCE.md) — `/api/warranty-orders` endpoint reference
 - [DEPLOY.md](DEPLOY.md) — GitHub and Vercel deployment
 - [CLAUDE.md](CLAUDE.md) — Claude Code guidance for AI-assisted development
+
+
+## Module routing
+
+- Main dashboard route: `/`
+- Quality Risk route: `/quality-risk`
+- Deep link into Installation module from other screens: `/?module=installation`
+
+`src/WarrantyDashboard.jsx` reads the `module` query param and activates the Installation module when present.
