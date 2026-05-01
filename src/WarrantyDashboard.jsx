@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import DOMPurify from "isomorphic-dompurify";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { T } from "../lib/tokens.js";
 import {
@@ -23,13 +22,11 @@ import {
   loadChartConfigs, saveChartConfigs,
   loadColumnTitles, saveColumnTitles,
   loadColumnOrder, saveColumnOrder,
-  loadDashboardTitle, saveDashboardTitle,
-  loadDashboardSubtitle, saveDashboardSubtitle,
   loadFilterFields, saveFilterFields,
   DEFAULT_DASHBOARD_TITLE, DEFAULT_DASHBOARD_SUBTITLE,
   resetAllConfigs, clearAllData,
 } from "../lib/dashboardStorage.js";
-import { AwnexLogo }            from "../components/AwnexLogo.jsx";
+import AppHeader from "./components/AppHeader.jsx";
 import { SettingsModal }         from "../components/SettingsModal.jsx";
 import { MapView }               from "../components/MapView.jsx";
 import { ContentViewer }         from "./components/ContentViewer.jsx";
@@ -189,8 +186,6 @@ export function WarrantyDashboard({
   const [selectedFilterFieldIds, setSelectedFilterFieldIds] = useState(() => loadFilterFields());
   const [draggingKpiId, setDraggingKpiId] = useState(null);
   const [draggingChartId, setDraggingChartId] = useState(null);
-  const [dashboardTitle, setDashboardTitle]       = useState(() => loadDashboardTitle());
-  const [dashboardSubtitle, setDashboardSubtitle] = useState(() => loadDashboardSubtitle());
 
   // Load server settings once on mount; override localStorage where present
   useEffect(() => {
@@ -202,8 +197,6 @@ export function WarrantyDashboard({
         if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
         if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
         if (Array.isArray(s.filterFieldIds))              setSelectedFilterFieldIds(s.filterFieldIds);
-        if (s.dashboardTitle)                             setDashboardTitle(s.dashboardTitle);
-        if (s.dashboardSubtitle)                          setDashboardSubtitle(s.dashboardSubtitle);
         if (s.tableId || s.reportId) {
           const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
           setSettings(ns);
@@ -227,7 +220,6 @@ export function WarrantyDashboard({
         body: JSON.stringify({
           kpiConfigs, chartConfigs, columnTitles, columnOrder,
           filterFieldIds: selectedFilterFieldIds,
-          dashboardTitle, dashboardSubtitle,
           tableId: settings.tableId, reportId: settings.reportId,
         }),
       })
@@ -237,7 +229,7 @@ export function WarrantyDashboard({
     return () => clearTimeout(timer);
   // syncStatus intentionally excluded — we use the ref to avoid re-triggering
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, selectedFilterFieldIds, dashboardTitle, dashboardSubtitle, settings]);
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, selectedFilterFieldIds, settings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -568,46 +560,7 @@ export function WarrantyDashboard({
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <AwnexLogo />
-          <div>
-            {editMode ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <input
-                  value={dashboardTitle}
-                  onChange={e => { setDashboardTitle(e.target.value); saveDashboardTitle(e.target.value); }}
-                  placeholder="Dashboard title"
-                  style={{
-                    fontSize: 30, fontWeight: 700, color: T.brandDeep,
-                    margin: 0, lineHeight: 1.05, border: `1.5px solid ${T.brand}`,
-                    borderRadius: 6, padding: "2px 8px", background: T.brandSubtle,
-                    fontFamily: "inherit", outline: "none", width: "100%", minWidth: 220,
-                  }}
-                />
-                <input
-                  value={dashboardSubtitle}
-                  onChange={e => { setDashboardSubtitle(e.target.value); saveDashboardSubtitle(e.target.value); }}
-                  placeholder="Subtitle"
-                  style={{
-                    fontSize: 13, color: T.text2, border: `1.5px solid ${T.borderLight}`,
-                    borderRadius: 6, padding: "1px 8px", background: T.card,
-                    fontFamily: "inherit", outline: "none", width: "100%",
-                  }}
-                />
-              </div>
-            ) : (
-              <>
-                <h1 style={{ fontSize: 30, fontWeight: 700, color: T.brandDeep, margin: 0, lineHeight: 1.05 }}>{dashboardTitle}</h1>
-                <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>{dashboardSubtitle}</p>
-              </>
-            )}
-            <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={() => setActiveModule("warranty")} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: activeModule === "warranty" ? T.brandSubtle : T.card, color: activeModule === "warranty" ? T.brand : T.text2, fontSize: 12, fontWeight: 600 }}>Warranty</button>
-              <button onClick={() => setActiveModule("installation")} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: activeModule === "installation" ? T.brandSubtle : T.card, color: activeModule === "installation" ? T.brand : T.text2, fontSize: 12, fontWeight: 600 }}>Installation</button>
-              <a href="/quality-risk" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
-                Quality Risk & RCA
-              </a>
-            </div>
-          </div>
+          <AppHeader />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {/* Sync status */}
