@@ -34,8 +34,32 @@ export function InstallationDashboard({ jobs }) {
       </div>
     </div>
 
+    {/* TODO: wire onStatusChange to persist status updates to QB */}
     {view === "kanban" && <InstallationKanban jobs={filtered} onOpenDetail={setSelected} onStatusChange={() => {}} />}
-    {view === "table" && <div style={{ overflow: "auto", borderRadius: 20, boxShadow: T.cardShadow, background: T.card }}><table style={{ minWidth: "100%", fontSize: 13 }}><thead><tr>{["Job", "Location", "Status", "Crew", "PM"].map((h) => <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: T.text2 }}>{h}</th>)}</tr></thead><tbody>{filtered.map((j) => <tr key={j._rowId} style={{ borderTop: `1px solid ${T.borderLight}` }}><td style={{ padding: "8px 12px" }}>{j.jobName}</td><td>{j.city}, {j.state}</td><td>{j.status}</td><td>{j.crew}</td><td>{j.projectManager}</td></tr>)}</tbody></table></div>}
+    {view === "table" && (
+      <div style={{ overflow: "auto", borderRadius: 20, boxShadow: T.cardShadow, background: T.card }}>
+        <table style={{ minWidth: "100%", fontSize: 13 }}>
+          <thead>
+            <tr>
+              {["Job", "Location", "Status", "Crew", "PM"].map((h) => (
+                <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: T.text2 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((j) => (
+              <tr key={j._rowId} style={{ borderTop: `1px solid ${T.borderLight}` }}>
+                <td style={{ padding: "8px 12px" }}>{j.jobName}</td>
+                <td>{j.city}, {j.state}</td>
+                <td>{j.status}</td>
+                <td>{j.crew}</td>
+                <td>{j.projectManager}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
     {view === "map" && <InstallationMap jobs={filtered} />}
     <JobDetailPanel job={selected} onClose={() => setSelected(null)} />
   </div>;
