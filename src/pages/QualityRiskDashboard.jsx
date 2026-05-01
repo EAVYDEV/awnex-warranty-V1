@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { T } from "../../lib/tokens";
-import { AwnexLogo } from "../../components/AwnexLogo";
+import AppHeader from "../components/AppHeader";
 import CaseTable from "../components/quality/CaseTable";
 import CaseCard from "../components/quality/CaseCard";
 import CreateCaseModal from "../components/quality/CreateCaseModal";
@@ -141,18 +140,10 @@ export default function QualityRiskDashboard() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, padding: 24, fontFamily: "DM Sans, system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, padding: "24px 24px 48px", fontFamily: "DM Sans, system-ui, sans-serif" }}>
+      <div>
         <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}><AwnexLogo /><h1 style={{ fontSize: 38, fontWeight: 700, color: T.brandDeep, margin: 0 }}>Awntrak Quality Risk & Root Cause</h1></div>
-            <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>Issue intake, risk, containment, RCA, CAPA, field impact, evidence, and closure workflow.</p>
-            <div className="mt-3 flex gap-2">
-              <Link href="/" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Warranty</Link>
-              <Link href="/?module=installation" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Installation</Link>
-              <Link href="/quality-risk" style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.brandSubtle, color: T.brand, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Quality Risk & RCA</Link>
-            </div>
-          </div>
+          <AppHeader />
           <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.brand, color: T.card, fontSize: 13, fontWeight: 700, boxShadow: T.cardShadow, cursor: "pointer" }}>Create Case</button>
         </div>
 
