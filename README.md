@@ -17,6 +17,7 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 - Filter dropdown labels now stay synchronized with customized Order Detail column titles (including Quickbase-backed columns)
 - Leaflet map view showing installation locations with status-color pins
 - Multi-module header navigation: Warranty, Installation, and Quality Risk & RCA
+- Shared `AppHeader` component keeps top-level branding and module tabs consistent across Warranty, Installation, and Quality Risk pages
 - Multi-source connections (separate claims and costs QB tables merged by order number)
 - Connection settings stored in the browser — credentials never leave the server
 
@@ -50,7 +51,8 @@ awnex-warranty-V1/
 │   ├── dashboardDefaults.js      Default KPI/chart configs, KPI_THEMES, COLOR_PALETTES
 │   ├── dashboardStorage.js       localStorage load/save helpers for all config keys
 │   ├── installationData.js       Installation status pipeline + Quickbase dynamic field mapping
-│   └── installationHelpers.js    Installation grouping/filter/KPI helpers
+│   ├── installationHelpers.js    Installation grouping/filter/KPI helpers
+│   └── qualityRiskDataSource.js  Quality Risk data provider (mock/live switch point)
 │
 ├── components/
 │   ├── ui/                       Platform-wide presentational components
@@ -61,6 +63,7 @@ awnex-warranty-V1/
 │   │   ├── StateScreens.jsx      EmptyState, LoadingState, ErrorState
 │   │   └── SortIcon.jsx          Column sort direction indicator
 │   ├── AwnexLogo.jsx             Awnex SVG branding mark
+│   ├── AppHeader.jsx             Shared module header (logo, title, module tabs)
 │   ├── SettingsModal.jsx         Quickbase connection configuration modal
 │   ├── MapView.jsx               Leaflet map with geocoding and status pins
 │   └── dashboard/                Configurable dashboard components
@@ -81,6 +84,7 @@ awnex-warranty-V1/
 ├── pages/
 │   ├── _app.jsx                  App wrapper (viewport meta, CSS reset)
 │   ├── index.jsx                 Entry page — mounts WarrantyDashboard
+│   ├── quality-risk.jsx          Quality Risk & RCA route entry
 │   └── api/
 │       ├── warranty-orders.js    Server-side proxy to Quickbase API
 │       └── settings.js           Dashboard config sync endpoint (KV when configured)
@@ -95,6 +99,9 @@ awnex-warranty-V1/
 
 ## Recent updates
 
+- Added `src/lib/qualityRiskDataSource.js` with a clear `USE_MOCK_QUALITY_RISK_DATA` switch and `getQualityRiskDashboardData()` provider to make swapping from mock data to live API data low-risk and centralized.
+- Quality Risk **Trends** tab now renders mock-backed trend cards (department, severity, recurring categories) instead of placeholder text.
+- Added shared `src/components/AppHeader.jsx` and wired Warranty + Quality Risk pages to use the same top-of-page header and module navigation.
 - Fixed deployment-blocking JSX regressions in `src/components/installation/InstallationDashboard.jsx` and `src/components/installation/JobCard.jsx` (syntax now validated by `npm run build`).
 - Warranty filter dropdown labels now derive from configured `columnSpecs` titles so renamed columns update corresponding filter labels immediately.
 - Filter field derivation is now based on visible `columnSpecs` (deduped by key), preserving consistent behavior with user-customized columns.
@@ -216,3 +223,26 @@ See [DEPLOY.md](DEPLOY.md) for the full GitHub + Vercel deployment guide.
 - Deep link into Installation module from other screens: `/?module=installation`
 
 `src/WarrantyDashboard.jsx` reads the `module` query param and activates the Installation module when present.
+
+---
+
+## Quality Risk data source (mock to live)
+
+The Quality Risk dashboard now reads cases and trends from a provider function in `src/lib/qualityRiskDataSource.js`.
+
+- Entry point used by the page: `getQualityRiskDashboardData()`
+- Toggle: `USE_MOCK_QUALITY_RISK_DATA`
+- Current return shape:
+
+```ts
+{
+  cases: CaseRecord[];
+  trends: {
+    byDepartment: Array<{ label: string; value: number }>;
+    bySeverity: Array<{ label: string; value: number }>;
+    recurringCategories: Array<{ label: string; value: number }>;
+  };
+}
+```
+
+To switch to live data, replace `fetchLiveQualityRiskData()` in that file and set `USE_MOCK_QUALITY_RISK_DATA = false`.

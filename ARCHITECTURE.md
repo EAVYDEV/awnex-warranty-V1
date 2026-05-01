@@ -22,6 +22,7 @@ Full system design, component contracts, config schemas, and extension guide.
 | `components/ui/StateScreens.jsx` | ✅ Done | EmptyState, LoadingState (shimmer skeleton), ErrorState |
 | `components/ui/SortIcon.jsx` | ✅ Done | Column sort direction indicator |
 | `components/AwnexLogo.jsx` | ✅ Done | Awnex SVG branding mark |
+| `src/components/AppHeader.jsx` | ✅ Done | Shared top-level module header (logo, title/subtitle, route-aware module tabs) |
 | `components/SettingsModal.jsx` | ✅ Done | QB connection modal (URL auto-parse, table ID + report ID inputs) |
 | `components/MapView.jsx` | ✅ Done | Leaflet CDN loader, geocoding with rate-limit, status-colored pins, popup detail |
 | `components/dashboard/KpiCard.jsx` | ✅ Done | Display card, edit-mode controls (edit/duplicate/hide) + drag affordance badge |
@@ -32,6 +33,7 @@ Full system design, component contracts, config schemas, and extension guide.
 | `components/dashboard/DashboardEditToolbar.jsx` | ✅ Done | Add KPI, Add Chart, Reset to Defaults (with confirmation), Done Editing |
 | `lib/installationData.js` | ✅ Done | Installation field alias map, fixed status pipeline, Quickbase payload normalization |
 | `lib/installationHelpers.js` | ✅ Done | Installation grouping/filter helpers + KPI metric derivation |
+| `src/lib/qualityRiskDataSource.js` | ✅ Done | Quality Risk data provider abstraction with mock/live switch and standard `{ cases, trends }` shape |
 | `src/components/installation/*` | ✅ Done | Installation Kanban/Table/Map UI, job card, and detail panel |
 
 ### In progress / remaining
@@ -39,6 +41,7 @@ Full system design, component contracts, config schemas, and extension guide.
 | File | Status | Notes |
 |---|---|---|
 | `src/WarrantyDashboard.jsx` | ✅ Done | Orchestrator for Warranty + Installation modules, shared Quickbase fetch/settings flow, query-based module activation (`?module=installation`) |
+| `src/pages/QualityRiskDashboard.jsx` | ✅ Updated | Reads case/trend data through provider (`getQualityRiskDashboardData`) and renders Trends cards from structured data |
 | `src/WarrantyDashboard.jsx` (filters) | ✅ Updated | Filter dropdowns are built from visible `columnSpecs`; labels use `columnSpecs.title` so custom column names propagate to filters. |
 
 ---
@@ -72,6 +75,17 @@ pages/index.jsx
         └── lib/dashboardMetrics.js → computeChartData(enriched, chartConfig)
               → applyFilter → groupBy → aggregate per metric
               renders via components/dashboard/ConfigurableChart.jsx
+
+pages/quality-risk.jsx
+  └── <QualityRiskDashboard />
+        ├── getQualityRiskDashboardData()  → src/lib/qualityRiskDataSource.js
+        │     • uses mock records today (toggleable)
+        │     • same shape can be served by a future API adapter
+        ├── hydrateCase()
+        │     • calculateRiskScore, calculateRiskLevel
+        │     • containment/field impact derived flags
+        └── Trends tab
+              • renders cards from trends.byDepartment / bySeverity / recurringCategories
 ```
 
 ---
@@ -328,4 +342,3 @@ All `lib/` utilities and `components/` are framework-agnostic and importable fro
 - Quickbase-backed fields and computed fields remain aligned via `qbId`/`key` matching.
 
 Implementation reference: `filterableFields` memo around line ~366 in `src/WarrantyDashboard.jsx`.
-
