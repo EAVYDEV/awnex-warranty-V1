@@ -5,6 +5,8 @@ import CaseTable from "../components/quality/CaseTable";
 import CaseCard from "../components/quality/CaseCard";
 import CreateCaseModal from "../components/quality/CreateCaseModal";
 import CaseDetailPanel from "../components/quality/CaseDetailPanel";
+import { SettingsModal } from "../components/SettingsModal";
+import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage";
 import {
   calculateRiskLevel,
   calculateRiskScore,
@@ -35,6 +37,22 @@ export default function QualityRiskDashboard() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState(null);
+  const [qualitySettings, setQualitySettings] = useState({ tableId: "", reportId: "" });
+  const [showQualitySettings, setShowQualitySettings] = useState(false);
+
+  useEffect(() => {
+    setQualitySettings(loadModuleSettings("quality"));
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(s => {
+        if (s.qualityTableId || s.qualityReportId) {
+          const ns = { tableId: s.qualityTableId || "", reportId: s.qualityReportId || "" };
+          setQualitySettings(ns);
+          saveModuleSettings("quality", ns);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
 
   useEffect(() => {
@@ -95,10 +113,34 @@ export default function QualityRiskDashboard() {
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, padding: "24px 24px 48px", fontFamily: "DM Sans, system-ui, sans-serif" }}>
+      {showQualitySettings && (
+        <SettingsModal
+          dashboardLabel="Quality Risk & RCA"
+          initialTableId={qualitySettings.tableId}
+          initialReportId={qualitySettings.reportId}
+          onClose={() => setShowQualitySettings(false)}
+          onSave={s => {
+            const ns = { tableId: s.tableId, reportId: s.reportId };
+            saveModuleSettings("quality", ns);
+            setQualitySettings(ns);
+            setShowQualitySettings(false);
+            fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qualityTableId: ns.tableId, qualityReportId: ns.reportId }) }).catch(() => {});
+          }}
+        />
+      )}
       <div>
         <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <AppHeader />
-          <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.brand, color: T.card, fontSize: 13, fontWeight: 700, boxShadow: T.cardShadow, cursor: "pointer" }}>Create Case</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={() => setShowQualitySettings(true)}
+              title="Configure Quickbase connection"
+              style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            </button>
+            <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.brand, color: T.card, fontSize: 13, fontWeight: 700, boxShadow: T.cardShadow, cursor: "pointer" }}>Create Case</button>
+          </div>
         </div>
 
         <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>

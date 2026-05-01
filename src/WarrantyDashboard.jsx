@@ -18,6 +18,7 @@ import {
 import { blankKpiConfig, blankChartConfig } from "../lib/dashboardDefaults.js";
 import {
   loadConnectionSettings, saveConnectionSettings,
+  loadModuleSettings, saveModuleSettings,
   loadKpiConfigs, saveKpiConfigs,
   loadChartConfigs, saveChartConfigs,
   loadColumnTitles, saveColumnTitles,
@@ -51,10 +52,15 @@ export function WarrantyDashboard({
   sources   = null,
 }) {
   // ── Connection settings ────────────────────────────────────────────────────
-  const [settings, setSettings]         = useState({ tableId: "", reportId: "" });
-  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings]                           = useState({ tableId: "", reportId: "" });
+  const [showSettings, setShowSettings]                   = useState(false);
+  const [installationSettings, setInstallationSettings]   = useState({ tableId: "", reportId: "" });
+  const [showInstallationSettings, setShowInstallationSettings] = useState(false);
 
-  useEffect(() => { setSettings(loadConnectionSettings()); }, []);
+  useEffect(() => {
+    setSettings(loadConnectionSettings());
+    setInstallationSettings(loadModuleSettings("installation"));
+  }, []);
 
   // ── Cross-device sync via Vercel KV ───────────────────────────────────────
   // "loading" → fetching server settings on mount
@@ -73,7 +79,9 @@ export function WarrantyDashboard({
   const [errorMsg, setErrorMsg]         = useState("");
   const [sourceStatuses, setSourceStatuses] = useState({});
   const [qbReportFields, setQbReportFields] = useState([]);
-  const [installationJobs, setInstallationJobs] = useState([]);
+  const [installationJobs, setInstallationJobs]       = useState([]);
+  const [installationLoadState, setInstallationLoadState] = useState("loading");
+  const [installationErrorMsg, setInstallationErrorMsg]   = useState("");
 
   const fetchData = useCallback(async () => {
     setLoadState("loading");
@@ -113,7 +121,6 @@ export function WarrantyDashboard({
         setQbReportFields(buildReportFields(ordersResult.payload.fields));
 
       let mapped = mapQBResponse(ordersResult.payload);
-      const mappedInstallation = mapInstallationData(ordersResult.payload);
 
       const claimsResult = results.find(r => r.role === "claims" && !r.error);
       if (claimsResult) {
@@ -134,7 +141,6 @@ export function WarrantyDashboard({
       }
 
       setOrders(mapped);
-      setInstallationJobs(mappedInstallation);
       setLoadState("loaded");
     } catch (err) {
       setErrorMsg(err.message);
@@ -147,6 +153,34 @@ export function WarrantyDashboard({
     if (!settings.tableId || !settings.reportId) { setLoadState("unconfigured"); return; }
     fetchData();
   }, [fetchData, ordersProp, settings]);
+
+  // ── Installation independent fetch ────────────────────────────────────────
+  const fetchInstallationData = useCallback(async () => {
+    setInstallationLoadState("loading");
+    try {
+      const sep = apiRoute.includes("?") ? "&" : "?";
+      const route = `${apiRoute}${sep}tableId=${encodeURIComponent(installationSettings.tableId)}&reportId=${encodeURIComponent(installationSettings.reportId)}`;
+      const res = await fetch(route);
+      const ct  = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json"))
+        throw new Error(`Installation source returned non-JSON (${res.status})`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `Installation source returned ${res.status}`);
+      setInstallationJobs(mapInstallationData(json));
+      setInstallationLoadState("loaded");
+    } catch (err) {
+      setInstallationErrorMsg(err.message);
+      setInstallationLoadState("error");
+    }
+  }, [apiRoute, installationSettings]);
+
+  useEffect(() => {
+    if (!installationSettings.tableId || !installationSettings.reportId) {
+      setInstallationLoadState("unconfigured");
+      return;
+    }
+    fetchInstallationData();
+  }, [fetchInstallationData, installationSettings]);
 
   // ── Table UI state ─────────────────────────────────────────────────────────
   const [search, setSearch]             = useState("");
@@ -202,6 +236,11 @@ export function WarrantyDashboard({
           setSettings(ns);
           saveConnectionSettings(ns);
         }
+        if (s.installationTableId || s.installationReportId) {
+          const ns = { tableId: s.installationTableId || "", reportId: s.installationReportId || "" };
+          setInstallationSettings(ns);
+          saveModuleSettings("installation", ns);
+        }
         updateSyncStatus("ready");
       })
       .catch(() => updateSyncStatus("ready")); // no KV configured — stay on localStorage
@@ -221,6 +260,8 @@ export function WarrantyDashboard({
           kpiConfigs, chartConfigs, columnTitles, columnOrder,
           filterFieldIds: selectedFilterFieldIds,
           tableId: settings.tableId, reportId: settings.reportId,
+          installationTableId: installationSettings.tableId,
+          installationReportId: installationSettings.reportId,
         }),
       })
         .then(r => r.ok ? updateSyncStatus("ready") : updateSyncStatus("error"))
@@ -229,7 +270,7 @@ export function WarrantyDashboard({
     return () => clearTimeout(timer);
   // syncStatus intentionally excluded — we use the ref to avoid re-triggering
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, selectedFilterFieldIds, settings]);
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, selectedFilterFieldIds, settings, installationSettings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -492,10 +533,11 @@ export function WarrantyDashboard({
   }
 
   // ── Early returns ──────────────────────────────────────────────────────────
-  const wrap = children => (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh", padding: "24px 24px 48px" }}>
+  const settingsModals = (
+    <>
       {showSettings && (
         <SettingsModal
+          dashboardLabel="Warranty"
           initialTableId={settings.tableId}
           initialReportId={settings.reportId}
           onClose={() => setShowSettings(false)}
@@ -503,29 +545,42 @@ export function WarrantyDashboard({
           onClear={handleClearAll}
         />
       )}
+      {showInstallationSettings && (
+        <SettingsModal
+          dashboardLabel="Installation"
+          initialTableId={installationSettings.tableId}
+          initialReportId={installationSettings.reportId}
+          onClose={() => setShowInstallationSettings(false)}
+          onSave={s => { const ns = { tableId: s.tableId, reportId: s.reportId }; saveModuleSettings("installation", ns); setInstallationSettings(ns); setShowInstallationSettings(false); }}
+        />
+      )}
+    </>
+  );
+
+  const wrap = children => (
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh", padding: "24px 24px 48px" }}>
+      {settingsModals}
       <ContentViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />
       {children}
     </div>
   );
 
-  if (loadState === "unconfigured") return wrap(<EmptyState onConfigure={() => setShowSettings(true)} />);
-  if (loadState === "loading")      return wrap(<LoadingState />);
-  if (loadState === "error")        return wrap(<ErrorState message={errorMsg} onRetry={fetchData} />);
+  if (activeModule === "installation") {
+    if (installationLoadState === "unconfigured") return wrap(<EmptyState onConfigure={() => setShowInstallationSettings(true)} />);
+    if (installationLoadState === "loading")      return wrap(<LoadingState />);
+    if (installationLoadState === "error")        return wrap(<ErrorState message={installationErrorMsg} onRetry={fetchInstallationData} />);
+  } else {
+    if (loadState === "unconfigured") return wrap(<EmptyState onConfigure={() => setShowSettings(true)} />);
+    if (loadState === "loading")      return wrap(<LoadingState />);
+    if (loadState === "error")        return wrap(<ErrorState message={errorMsg} onRetry={fetchData} />);
+  }
 
   // ── Full render ────────────────────────────────────────────────────────────
   return (
     <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh", padding: "24px 24px 48px" }}>
 
       {/* Modals */}
-      {showSettings && (
-        <SettingsModal
-          initialTableId={settings.tableId}
-          initialReportId={settings.reportId}
-          onClose={() => setShowSettings(false)}
-          onSave={s => { const ns = { tableId: s.tableId, reportId: s.reportId }; saveConnectionSettings(ns); setSettings(ns); setShowSettings(false); }}
-          onClear={handleClearAll}
-        />
-      )}
+      {settingsModals}
       <ContentViewer
         open={viewerOpen}
         url={viewerUrl}
@@ -583,6 +638,15 @@ export function WarrantyDashboard({
             </div>
           ))}
 
+          {/* Settings gear — opens module-specific QB connection modal */}
+          <button
+            onClick={() => activeModule === "installation" ? setShowInstallationSettings(true) : setShowSettings(true)}
+            title="Configure Quickbase connection"
+            style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+
           {activeModule === "warranty" && (
           <>
           {/* Edit mode toggle */}
@@ -593,11 +657,6 @@ export function WarrantyDashboard({
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             {editMode ? "Editing…" : "Edit"}
-          </button>
-
-          {/* Settings */}
-          <button onClick={() => setShowSettings(true)} title="Configure Quickbase connection" style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
 
           {/* View toggle */}

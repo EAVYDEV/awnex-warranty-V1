@@ -28,7 +28,8 @@ export default async function handler(req, res) {
       return res.status(503).json({ error: "KV storage not configured. Add KV_REST_API_URL and KV_REST_API_TOKEN to your environment." });
     }
     try {
-      await kv.set(KEY, req.body);
+      const existing = (await kv.get(KEY)) ?? {};
+      await kv.set(KEY, { ...existing, ...req.body });
       return res.status(200).json({ ok: true });
     } catch (err) {
       return res.status(500).json({ error: String(err.message) });
