@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { T } from "../../lib/tokens";
 import AppHeader from "../components/AppHeader";
 import CaseTable from "../components/quality/CaseTable";
@@ -13,67 +13,10 @@ import {
   isContainmentRequired,
   isFieldImpactReviewRequired,
 } from "../lib/qualityRiskUtils";
+import { getQualityRiskDashboardData } from "../lib/qualityRiskDataSource";
 
 const dashboardTabs = ["Overview", "Active Cases", "High Risk", "Field Impact", "CAPA Tracking", "Trends"];
 
-const starterCases = [
-  {
-    id: "QRC-001",
-    title: "Powder coat blistering after install",
-    description: "Customer complaint received for blistering at welded seam in coastal environment.",
-    severity: "High",
-    scope: "Multiple Orders",
-    detectionRisk: "Partially Known",
-    status: "Containment",
-    department: "Quality",
-    reportedBy: "R. Lopez",
-    dateReported: "2026-04-08",
-    owner: "M. Nguyen",
-    fieldImpact: true,
-    customerImpact: true,
-    safetyImpact: false,
-    containmentSummary: "Stop ship on affected finish lot and launch inspection lot segregation.",
-    rootCauseSummary: "",
-    verifiedRootCause: "",
-    closureSummary: "",
-    capaActions: [{ actionType: "Corrective Action", actionDescription: "Add seam prep verification", owner: "M. Nguyen", department: "Manufacturing", dueDate: "2026-05-02", status: "In Progress", completionDate: "", verificationRequired: true, notes: "Pilot line first" }],
-    affectedOrders: [{ orderNumber: "AW-88219", customer: "Metro Retail", location: "Dallas", shipDate: "2026-03-11", installStatus: "Installed", suspectedImpact: "Surface failure", verificationStatus: "Potentially Affected", notes: "Follow-up scheduled" }],
-    evidenceItems: [{ evidenceType: "Photo", description: "Coating blister sample", uploadedBy: "R. Lopez", uploadDate: "2026-04-09", relatedPhase: "Intake", fileLink: "https://files.local/qrc-001-photo-1" }],
-    rca: { problemStatement: "Coating delamination at seam region", suspectedRootCauses: ["Inconsistent pretreatment"], rootCauseVerificationStatus: "Not Yet Verified" },
-    containment: { containmentRequired: true, productHoldRequired: true, productionStopRequired: false, customerNotificationNeeded: true, actions: [] },
-    closure: {},
-    fieldImpactReviewStatus: "In Progress",
-    fieldImpactLeadershipAcceptedUncertainty: false,
-  },
-  {
-    id: "QRC-002",
-    title: "Arm bracket hole mismatch",
-    description: "Inspection discovered recurring bracket mismatch during assembly.",
-    severity: "Medium",
-    scope: "Batch",
-    detectionRisk: "Known Extent",
-    status: "RCA",
-    department: "Engineering",
-    reportedBy: "L. Martin",
-    dateReported: "2026-04-14",
-    owner: "K. Patel",
-    fieldImpact: false,
-    customerImpact: false,
-    safetyImpact: false,
-    containmentSummary: "Incoming bracket sort and temporary drill fixture update.",
-    rootCauseSummary: "",
-    verifiedRootCause: "",
-    closureSummary: "",
-    capaActions: [{ actionType: "SOP Update", actionDescription: "Update drill setup SOP", owner: "K. Patel", department: "Engineering", dueDate: "2026-04-30", status: "Not Started", completionDate: "", verificationRequired: true, notes: "" }],
-    affectedOrders: [],
-    evidenceItems: [],
-    rca: { problemStatement: "Hole centerline offset", suspectedRootCauses: ["Fixture wear"], rootCauseVerificationStatus: "Not Yet Verified" },
-    containment: { containmentRequired: true, actions: [] },
-    closure: {},
-    fieldImpactReviewStatus: "Not Started",
-    fieldImpactLeadershipAcceptedUncertainty: false,
-  },
-];
 
 function hydrateCase(caseRecord) {
   const riskScore = calculateRiskScore(caseRecord);
@@ -87,11 +30,22 @@ function hydrateCase(caseRecord) {
 }
 
 export default function QualityRiskDashboard() {
-  const [cases, setCases] = useState(starterCases.map(hydrateCase));
+  const [cases, setCases] = useState([]);
+  const [trendData, setTrendData] = useState({ byDepartment: [], bySeverity: [], recurringCategories: [] });
   const [activeTab, setActiveTab] = useState("Overview");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState(null);
 
+
+  useEffect(() => {
+    let mounted = true;
+    getQualityRiskDashboardData().then((data) => {
+      if (!mounted) return;
+      setCases((data.cases || []).map(hydrateCase));
+      setTrendData(data.trends || { byDepartment: [], bySeverity: [], recurringCategories: [] });
+    });
+    return () => { mounted = false; };
+  }, []);
   const selectedCase = useMemo(() => cases.find((c) => c.id === selectedCaseId) || null, [cases, selectedCaseId]);
 
   const filteredCases = useMemo(() => {
@@ -106,7 +60,7 @@ export default function QualityRiskDashboard() {
     const open = cases.filter((c) => c.status !== "Closed").length;
     const critical = cases.filter((c) => c.severity === "Critical").length;
     const fieldImpact = cases.filter((c) => c.fieldImpact).length;
-    const avgDaysOpen = Math.round(cases.reduce((sum, c) => sum + Math.max(0, Math.floor((Date.now() - new Date(c.dateReported).getTime()) / 86400000)), 0) / cases.length);
+    const avgDaysOpen = cases.length ? Math.round(cases.reduce((sum, c) => sum + Math.max(0, Math.floor((Date.now() - new Date(c.dateReported).getTime()) / 86400000)), 0) / cases.length) : 0;
     return { open, critical, fieldImpact, avgDaysOpen };
   }, [cases]);
 
@@ -164,9 +118,27 @@ export default function QualityRiskDashboard() {
         )}
 
         {activeTab === "Trends" ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {["Cases by Department", "Cases by Severity", "Recurring Issue Categories"].map((card) => (
-              <div key={card} className="rounded-xl border border-slate-200 bg-white p-5"><h3 className="font-semibold text-slate-900">{card}</h3><p className="mt-2 text-sm text-slate-600">Trend placeholder for future chart integration.</p></div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 12 }}>
+            {[
+              { title: "Cases by Department", rows: trendData.byDepartment },
+              { title: "Cases by Severity", rows: trendData.bySeverity },
+              { title: "Recurring Issue Categories", rows: trendData.recurringCategories },
+            ].map((card) => (
+              <div key={card.title} style={{ borderRadius: 16, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}>
+                <h3 style={{ margin: 0, color: T.text1, fontSize: 36, fontWeight: 700 }}>{card.title}</h3>
+                <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+                  {card.rows.map((item) => (
+                    <div key={item.label} style={{ display: "grid", gridTemplateColumns: "160px 1fr auto", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 14, color: T.text2, fontWeight: 600 }}>{item.label}</span>
+                      <div style={{ width: "100%", height: 10, borderRadius: 999, background: T.bg }}>
+                        <div style={{ width: `${Math.min(100, item.value * 12)}%`, height: "100%", borderRadius: 999, background: T.brand }} />
+                      </div>
+                      <span style={{ fontSize: 14, color: T.text1, fontWeight: 700 }}>{item.value}</span>
+                    </div>
+                  ))}
+                  {card.rows.length === 0 && <p style={{ margin: 0, color: T.text3, fontSize: 13 }}>No trend data available.</p>}
+                </div>
+              </div>
             ))}
           </div>
         ) : (
