@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { T } from "../lib/dashboardDefaults";
-import { saveDashboardConfig } from "../lib/dashboardStorage";
 
-export function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId = "" }) {
+export function SettingsModal({ onClose, onSave, initialTableId = "", initialReportId = "", dashboardLabel = "" }) {
   const [tableId,  setTableId]  = useState(initialTableId);
   const [reportId, setReportId] = useState(initialReportId);
   const [qbUrl, setQbUrl] = useState("");
@@ -63,7 +62,6 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
     const tid = tableId.trim();
     const rid = reportId.trim();
     if (!tid || !rid) return;
-    saveDashboardConfig({ tableId: tid, reportId: rid });
     onSave({ tableId: tid, reportId: rid });
   }
 
@@ -97,7 +95,7 @@ export function SettingsModal({ onClose, onSave, initialTableId = "", initialRep
         }}>
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: T.brandDarkest, margin: 0 }}>
-              Quickbase Connection
+              {dashboardLabel ? `${dashboardLabel} — Quickbase Connection` : "Quickbase Connection"}
             </h2>
             <p style={{ fontSize: 12, color: T.textSec, margin: "3px 0 0" }}>
               Configure which table and report to load
