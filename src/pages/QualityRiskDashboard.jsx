@@ -140,8 +140,8 @@ export default function QualityRiskDashboard() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, padding: 24, fontFamily: "DM Sans, system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, padding: "24px 24px 48px", fontFamily: "DM Sans, system-ui, sans-serif" }}>
+      <div>
         <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <AppHeader />
           <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.brand, color: T.card, fontSize: 13, fontWeight: 700, boxShadow: T.cardShadow, cursor: "pointer" }}>Create Case</button>
