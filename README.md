@@ -1,25 +1,61 @@
-# Awntrak Warranty Management Dashboard
+# Awnex Quality Management System
 
-A Next.js application that pulls live warranty order data from Quickbase and presents it as an interactive, fully configurable dashboard. Part of the **Awntrak Platform** suite built for Awnex, Inc.
+A Next.js application that provides a unified **Quality Management System (QMS)** for Awnex manufacturing operations. Five modules — Warranty, Inspections, Non-Conformances, Corrective Actions (CAPA), and Production & Batch Tracking — share a common sidebar shell and each connect independently to their own Quickbase report.
+
+---
+
+## Modules
+
+| Module | Route / Activation | Data source |
+|---|---|---|
+| **Overview** | Default home view | Aggregate KPIs from all modules |
+| **Warranty** | Sidebar → Warranty | `/api/warranty-orders` |
+| **Inspections** | Sidebar → Inspections | `/api/inspections` |
+| **Non-Conformances** | Sidebar → Non-Conformances | `/api/ncrs` |
+| **Corrective Actions (CAPA)** | Sidebar → Corrective Actions | `/api/capas` |
+| **Production** | Sidebar → Production | `/api/production` |
 
 ---
 
 ## What it does
 
-- Displays active, expiring, and expired warranty orders pulled from a Quickbase report
-- Calculates a composite risk score per order (claims, QC defect entries, urgency, order value)
-- **Configurable KPI cards** — users can edit title, source field, aggregation type, filter condition, icon, color, and number format from the dashboard; no code changes needed
-- **Configurable charts** — users can edit chart type, group-by field, metrics, filter, sort, and color palette from the dashboard
-- Dashboard edit mode with add / duplicate / hide / reset-to-defaults controls
-- Drag-and-drop reordering for KPI cards and chart cards in edit mode
-- Dashboard configuration persists in localStorage and is synced via `/api/settings` for shared layouts when server storage is configured
-- Filter by PM, warranty status, brand, risk level, or free-text search
-- Filter dropdown labels now stay synchronized with customized Order Detail column titles (including Quickbase-backed columns)
-- Leaflet map view showing installation locations with status-color pins
-- Multi-module header navigation: Warranty, Installation, and Quality Risk & RCA
-- Shared `AppHeader` component keeps top-level branding and module tabs consistent across Warranty, Installation, and Quality Risk pages
-- Multi-source connections (separate claims and costs QB tables merged by order number)
-- Connection settings stored in the browser — credentials never leave the server
+### Platform-wide
+- Collapsible dark sidebar navigation — switches between all QMS modules without a page reload
+- Each module stores its own QB connection (table ID + report ID) independently in `localStorage`
+- Cross-device settings sync via Vercel KV (`/api/settings`) — layout, connections, and configs persist across browsers when KV is configured
+- Full enterprise design system: deep blue primary (`#1D4ED8`), cool slate grays, teal QC accent — all tokens in `lib/tokens.js`
+
+### Warranty module
+- Displays active, expiring, and expired warranty orders from Quickbase
+- Composite risk score per order (claims, QC defect entries, urgency, order value)
+- Configurable KPI cards and charts — edit title, field, aggregation, filter, color, icon, format without code changes
+- Dashboard edit mode with add / duplicate / hide / reset-to-defaults and drag-and-drop reorder
+- Filter by PM, status, brand, risk level, or free-text search
+- Leaflet map showing installation locations with status-color pins
+
+### Inspections module
+- QC inspection records: pass/fail/rework per order and product line
+- Visual breakdown bar (pass/rework/fail proportions)
+- Inspector assignment, defect counts, and notes per record
+- QB-ready: shows sample data until a QB table/report is connected
+
+### Non-Conformances (NCR) module
+- Leverages existing case management components (`CaseTable`, `CaseDetailPanel`, `CreateCaseModal`)
+- Tabbed filter: All / Open / High Risk / Field Impact / Closed
+- Risk score and level automatically derived per case
+- KB-ready; loads sample data from `qualityRiskDataSource.js` until live QB is wired
+
+### Corrective Actions (CAPA) module
+- Pipeline view across all CAPA status stages (Open → Containment → RCA → CAPA → Verification → Closed)
+- Action items table with overdue flagging (past due date highlighted)
+- Case drill-in via `CaseDetailPanel` slide-out
+- QB-ready with same sample data source as NCR module
+
+### Production & Batch Tracking module
+- Per-line yield statistics (Line A / B / C)
+- Batch records with inline yield progress bars and defect counts
+- Filterable by status (All / In Progress / Complete)
+- QB-ready: shows sample batches until QB report is connected
 
 ---
 
@@ -32,7 +68,7 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 | Charts | Recharts 2 |
 | Map | Leaflet 1.9 (CDN-loaded at runtime) |
 | Geocoding | Nominatim (OpenStreetMap), rate-limited with local coordinate cache |
-| Data source | Quickbase REST API v1 — report run endpoint |
+| Data source | Quickbase REST API v1 — report run endpoint (one proxy route per module) |
 | Hosting | Vercel |
 | Credentials | Server-side only via Vercel environment variables |
 
@@ -42,96 +78,113 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 
 ```
 awnex-warranty-V1/
-├── WarrantyDashboard.jsx         Main orchestrator — data fetch, state, layout
-│
-├── lib/                          Platform-wide pure utilities (no React)
-│   ├── tokens.js                 Design tokens: all colors, shadows, STATUS_CFG, RISK_CFG
-│   ├── qbUtils.js                QB field parsing, mapQBResponse, mapClaimsResponse, risk scoring
-│   ├── dashboardMetrics.js       Filter, aggregate, computeKpiValue, computeChartData helpers
-│   ├── dashboardDefaults.js      Default KPI/chart configs, KPI_THEMES, COLOR_PALETTES
-│   ├── dashboardStorage.js       localStorage load/save helpers for all config keys
-│   ├── installationData.js       Installation status pipeline + Quickbase dynamic field mapping
-│   ├── installationHelpers.js    Installation grouping/filter/KPI helpers
-│   └── qualityRiskDataSource.js  Quality Risk data provider (mock/live switch point)
-│
-├── components/
-│   ├── ui/                       Platform-wide presentational components
-│   │   ├── Icon.jsx              SVG icon registry — Icon({ name, size, color })
-│   │   ├── Badge.jsx             StatusBadge, RiskBadge
-│   │   ├── Modal.jsx             Generic modal wrapper + Btn + formStyles
-│   │   ├── Tag.jsx               ProductTag
-│   │   ├── StateScreens.jsx      EmptyState, LoadingState, ErrorState
-│   │   └── SortIcon.jsx          Column sort direction indicator
-│   ├── AwnexLogo.jsx             Awnex SVG branding mark
-│   ├── AppHeader.jsx             Shared module header (logo, title, module tabs)
-│   ├── SettingsModal.jsx         Quickbase connection configuration modal
-│   ├── MapView.jsx               Leaflet map with geocoding and status pins
-│   └── dashboard/                Configurable dashboard components
-│       ├── KpiCard.jsx           KPI display card with edit-mode controls
-│       ├── KpiEditor.jsx         KPI editor modal with live preview
-│       ├── ChartCard.jsx         Chart wrapper with edit-mode controls + CustomTooltip
-│       ├── ChartEditor.jsx       Chart editor modal with live preview
-│       ├── ConfigurableChart.jsx Renders bar / hbar / donut / line / stacked from config
-│       └── DashboardEditToolbar.jsx  Edit mode toolbar (add, reset, exit)
-│
-├── src/components/installation/
-│   ├── InstallationDashboard.jsx  Installation module shell (KPI/filters/view switch)
-│   ├── InstallationKanban.jsx     Status-pipeline board (Scheduled → Complete)
-│   ├── InstallationMap.jsx        Installation map wrapper over shared MapView
-│   ├── JobCard.jsx                Job summary card + quick actions
-│   └── JobDetailPanel.jsx         Slide-out detail drawer
 │
 ├── pages/
-│   ├── _app.jsx                  App wrapper (viewport meta, CSS reset)
-│   ├── index.jsx                 Entry page — mounts WarrantyDashboard
-│   ├── quality-risk.jsx          Quality Risk & RCA route entry
+│   ├── _app.jsx                  App wrapper (viewport meta, Google Fonts, CSS reset)
+│   ├── index.jsx                 Entry — mounts QMSShell
+│   ├── quality-risk.jsx          Legacy Quality Risk & RCA standalone route
 │   └── api/
-│       ├── warranty-orders.js    Server-side proxy to Quickbase API
-│       └── settings.js           Dashboard config sync endpoint (KV when configured)
+│       ├── warranty-orders.js    QB proxy — Warranty module
+│       ├── inspections.js        QB proxy — Inspections module
+│       ├── ncrs.js               QB proxy — Non-Conformances module
+│       ├── capas.js              QB proxy — Corrective Actions module
+│       ├── production.js         QB proxy — Production & Batch module
+│       └── settings.js           Cross-device KV settings sync
 │
-├── ARCHITECTURE.md               Full system design, component contracts, extension guide
-├── API_REFERENCE.md              /api/warranty-orders endpoint documentation
-├── DEPLOY.md                     GitHub + Vercel deployment guide
-└── CLAUDE.md                     Claude Code guidance for AI-assisted development
+├── components/
+│   ├── QMSShell.jsx              Root layout — sidebar + scrollable content pane
+│   ├── QMSSidebar.jsx            Collapsible dark sidebar with module nav
+│   ├── AwnexLogo.jsx             Awnex branding logo
+│   ├── SettingsModal.jsx         QB connection configuration modal (URL auto-parse)
+│   ├── MapView.jsx               Leaflet map with geocoding and status pins
+│   │
+│   ├── modules/                  One file per QMS module
+│   │   ├── QMSOverview.jsx       Home dashboard — cross-module KPI strip + module cards
+│   │   ├── InspectionsModule.jsx Inspections pass/fail dashboard
+│   │   ├── NcrModule.jsx         Non-Conformances (integrates quality case components)
+│   │   ├── CapaModule.jsx        Corrective Actions pipeline and action items
+│   │   └── ProductionModule.jsx  Batch tracking with yield metrics
+│   │
+│   ├── dashboard/                Configurable dashboard building blocks (used by Warranty)
+│   │   ├── KpiCard.jsx
+│   │   ├── KpiEditor.jsx
+│   │   ├── ChartCard.jsx
+│   │   ├── ChartEditor.jsx
+│   │   ├── ConfigurableChart.jsx
+│   │   ├── DashboardEditToolbar.jsx
+│   │   └── ColumnEditor.jsx
+│   │
+│   └── ui/                       Shared presentational components
+│       ├── Icon.jsx              SVG icon registry
+│       ├── Badge.jsx             StatusBadge, RiskBadge
+│       ├── Modal.jsx             Modal wrapper + Btn + formStyles
+│       ├── Tag.jsx               ProductTag
+│       ├── StateScreens.jsx      EmptyState, LoadingState, ErrorState
+│       └── SortIcon.jsx          Column sort indicator
+│
+├── src/
+│   ├── WarrantyDashboard.jsx     Warranty module orchestrator (data fetch, KPIs, charts, table)
+│   ├── components/
+│   │   ├── AppHeader.jsx         Legacy top-bar header (used by quality-risk page)
+│   │   ├── ContentViewer.jsx     Inline document/URL viewer
+│   │   ├── quality/              Quality case management components
+│   │   │   ├── CaseTable.jsx
+│   │   │   ├── CaseCard.jsx
+│   │   │   ├── CaseDetailPanel.jsx
+│   │   │   ├── CreateCaseModal.jsx
+│   │   │   ├── CapaTab.jsx
+│   │   │   ├── RootCauseTab.jsx
+│   │   │   └── ... (10 more tab/panel components)
+│   │   └── installation/         Installation module components
+│   │       ├── InstallationDashboard.jsx
+│   │       ├── InstallationKanban.jsx
+│   │       ├── InstallationMap.jsx
+│   │       ├── JobCard.jsx
+│   │       └── JobDetailPanel.jsx
+│   ├── lib/
+│   │   ├── qualityRiskDataSource.js  Case/trend data provider (mock/live switch)
+│   │   └── qualityRiskUtils.js       Risk scoring, status advancement rules
+│   └── pages/
+│       └── QualityRiskDashboard.jsx  Legacy Quality Risk & RCA page component
+│
+├── lib/                          Platform-wide pure utilities
+│   ├── tokens.js                 Enterprise design tokens (blues/grays palette)
+│   ├── qbUtils.js                QB field parsing, mapQBResponse, risk scoring
+│   ├── dashboardMetrics.js       Filter, aggregate, KPI/chart compute helpers
+│   ├── dashboardDefaults.js      Default KPI/chart configs, palettes, themes
+│   ├── dashboardStorage.js       localStorage helpers — all module connection keys
+│   ├── installationData.js       Installation Quickbase field normalization
+│   └── installationHelpers.js    Installation KPI/filter helpers
+│
+├── ARCHITECTURE.md
+├── API_REFERENCE.md
+├── DEPLOY.md
+└── CLAUDE.md
 ```
 
 ---
-
-## Recent updates
-
-- Added `src/lib/qualityRiskDataSource.js` with a clear `USE_MOCK_QUALITY_RISK_DATA` switch and `getQualityRiskDashboardData()` provider to make swapping from mock data to live API data low-risk and centralized.
-- Quality Risk **Trends** tab now renders mock-backed trend cards (department, severity, recurring categories) instead of placeholder text.
-- Added shared `src/components/AppHeader.jsx` and wired Warranty + Quality Risk pages to use the same top-of-page header and module navigation.
-- Fixed deployment-blocking JSX regressions in `src/components/installation/InstallationDashboard.jsx` and `src/components/installation/JobCard.jsx` (syntax now validated by `npm run build`).
-- Warranty filter dropdown labels now derive from configured `columnSpecs` titles so renamed columns update corresponding filter labels immediately.
-- Filter field derivation is now based on visible `columnSpecs` (deduped by key), preserving consistent behavior with user-customized columns.
-
 
 ## Local development
 
 ### Prerequisites
 
 - Node.js 18 or later
-- A Quickbase user token with read access to the Orders table
-- The Quickbase table ID and a saved report ID
+- A Quickbase user token with read access to the relevant tables
+- Table ID and report ID for each module you want to connect
 
 ### Setup
 
 ```bash
-# 1. Install dependencies
 npm install
 
-# 2. Create environment file
+# Create environment file
 echo "QB_REALM=awnexinc.quickbase.com" > .env.local
 echo "QB_TOKEN=your_quickbase_user_token" >> .env.local
 
-# 3. Start the dev server
 npm run dev
 ```
 
-Open `http://localhost:3000`. On first load you'll see the **Connect to Quickbase** screen. Click **Configure Connection** and enter your Table ID and Report ID.
-
-Settings persist in `localStorage`. Data loads immediately after saving.
+Open `http://localhost:3000`. The QMS Overview page loads immediately. Click any module in the sidebar, then click **Configure QB** to enter the table ID and report ID for that module.
 
 ---
 
@@ -141,64 +194,42 @@ Settings persist in `localStorage`. Data loads immediately after saving.
 |---|---|---|
 | `QB_REALM` | Yes | Quickbase realm hostname, e.g. `awnexinc.quickbase.com` |
 | `QB_TOKEN` | Yes | Quickbase user token |
-| `QB_TABLE_ID` | Optional | Default table ID (overridden by the settings modal) |
-| `QB_REPORT_ID` | Optional | Default report ID (overridden by the settings modal) |
+| `QB_TABLE_ID` | Optional | Default Warranty table ID (overridden by settings modal) |
+| `QB_REPORT_ID` | Optional | Default Warranty report ID (overridden by settings modal) |
+| `QB_INSPECTIONS_TABLE_ID` | Optional | Default Inspections table ID |
+| `QB_INSPECTIONS_REPORT_ID` | Optional | Default Inspections report ID |
+| `QB_NCRS_TABLE_ID` | Optional | Default NCR table ID |
+| `QB_NCRS_REPORT_ID` | Optional | Default NCR report ID |
+| `QB_CAPAS_TABLE_ID` | Optional | Default CAPA table ID |
+| `QB_CAPAS_REPORT_ID` | Optional | Default CAPA report ID |
+| `QB_PRODUCTION_TABLE_ID` | Optional | Default Production table ID |
+| `QB_PRODUCTION_REPORT_ID` | Optional | Default Production report ID |
+| `KV_REST_API_URL` | Optional | Vercel KV URL for cross-device settings sync |
+| `KV_REST_API_TOKEN` | Optional | Vercel KV token |
 
 `QB_REALM` and `QB_TOKEN` are server-side only — never exposed to the browser.
 
 ---
 
-## Quickbase report requirements
-
-The report must include these fields. Labels must match exactly (case-sensitive).
-
-| QB Field Label | Used for |
-|---|---|
-| `Order Number w/Series` | Order number and direct QB record link |
-| `Order Name (Formula)` | Brand, location, and customer name extraction |
-| `Project Manager` | PM name |
-| `Product Scope` | Semicolon-separated product list |
-| `NEW Final Color Approval` | Color specification |
-| `# of Warranty Claims` | Claim count — primary risk signal |
-| `# of QC Entries for Peeling Powder` | QC defect leading indicator |
-| `# of QC Entries for Powder Failure` | QC defect leading indicator |
-| `Order Posted $` | Order value for KPI totals and risk weighting |
-| `Installation Complete Date` | Warranty end calculation (preferred) |
-| `Shipping Complete Date` | Warranty end fallback |
-
-Two optional fields improve map performance significantly — add them to your QB report and they will be used automatically:
-
-| QB Field Label | Purpose |
-|---|---|
-| `Latitude` | Decimal latitude of the installation site |
-| `Longitude` | Decimal longitude of the installation site |
-
-When these fields are present, the map places pins instantly without any Nominatim geocoding calls. Records missing them fall back to the existing Nominatim + localStorage-cache flow.
-
-Extra QB fields not listed above are captured in `_qbFields` on each order and exposed in the configurable field picker, so they can be used in custom KPI and chart configurations without any code changes. QB formula fields that return HTML strings (e.g. styled status badges) are detected automatically and rendered as HTML in the order table.
-
----
-
 ## localStorage keys
 
-| Key | Stores |
-|---|---|
-| `awntrak_warranty_table_id` | QB table ID from Settings modal |
-| `awntrak_warranty_report_id` | QB report ID from Settings modal |
-| `awntrak_kpi_configs` | JSON array of KPI configuration objects |
-| `awntrak_chart_configs` | JSON array of chart configuration objects |
-
----
-
-## Dashboard edit mode
-
-Click the **Edit Layout** button in the top-right header to enter edit mode. While active:
-
-- A dark toolbar appears at the top with **Add KPI**, **Add Chart**, and **Reset to Defaults** actions
-- KPI and chart cards display a **Drag** badge and can be reordered via click-drag-drop
-- Every KPI card and chart card shows inline **Edit**, **Duplicate**, and **Hide/Show** buttons
-- Clicking **Edit** opens the respective editor modal with a live preview
-- Clicking **Done Editing** exits edit mode; changes remain persisted and sync to shared settings when `/api/settings` storage is enabled
+| Key | Module | Stores |
+|---|---|---|
+| `awntrak_warranty_table_id` | Warranty | QB table ID |
+| `awntrak_warranty_report_id` | Warranty | QB report ID |
+| `awntrak_inspections_table_id` | Inspections | QB table ID |
+| `awntrak_inspections_report_id` | Inspections | QB report ID |
+| `awntrak_ncrs_table_id` | Non-Conformances | QB table ID |
+| `awntrak_ncrs_report_id` | Non-Conformances | QB report ID |
+| `awntrak_capas_table_id` | Corrective Actions | QB table ID |
+| `awntrak_capas_report_id` | Corrective Actions | QB report ID |
+| `awntrak_production_table_id` | Production | QB table ID |
+| `awntrak_production_report_id` | Production | QB report ID |
+| `awntrak_kpi_configs` | Warranty | JSON array of KPI configs |
+| `awntrak_chart_configs` | Warranty | JSON array of chart configs |
+| `awntrak_column_titles` | Warranty | Custom column display titles |
+| `awntrak_column_order` | Warranty | Column display order |
+| `awntrak_geocache` | Map | Nominatim geocoding cache |
 
 ---
 
@@ -210,39 +241,7 @@ See [DEPLOY.md](DEPLOY.md) for the full GitHub + Vercel deployment guide.
 
 ## Related docs
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — Component contracts, config schemas, data flow, extension guide
-- [API_REFERENCE.md](API_REFERENCE.md) — `/api/warranty-orders` endpoint reference
+- [ARCHITECTURE.md](ARCHITECTURE.md) — System design, component contracts, data flow, extension guide
+- [API_REFERENCE.md](API_REFERENCE.md) — All API proxy endpoints
 - [DEPLOY.md](DEPLOY.md) — GitHub and Vercel deployment
 - [CLAUDE.md](CLAUDE.md) — Claude Code guidance for AI-assisted development
-
-
-## Module routing
-
-- Main dashboard route: `/`
-- Quality Risk route: `/quality-risk`
-- Deep link into Installation module from other screens: `/?module=installation`
-
-`src/WarrantyDashboard.jsx` reads the `module` query param and activates the Installation module when present.
-
----
-
-## Quality Risk data source (mock to live)
-
-The Quality Risk dashboard now reads cases and trends from a provider function in `src/lib/qualityRiskDataSource.js`.
-
-- Entry point used by the page: `getQualityRiskDashboardData()`
-- Toggle: `USE_MOCK_QUALITY_RISK_DATA`
-- Current return shape:
-
-```ts
-{
-  cases: CaseRecord[];
-  trends: {
-    byDepartment: Array<{ label: string; value: number }>;
-    bySeverity: Array<{ label: string; value: number }>;
-    recurringCategories: Array<{ label: string; value: number }>;
-  };
-}
-```
-
-To switch to live data, replace `fetchLiveQualityRiskData()` in that file and set `USE_MOCK_QUALITY_RISK_DATA = false`.

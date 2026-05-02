@@ -1,141 +1,137 @@
-# Deploying awntrak-warranty to GitHub + Vercel
-
-## Step 1 - Create the GitHub repository
-
-1. Go to https://github.com/new
-2. Repository name: `awntrak-warranty`
-3. Set visibility to **Private**
-4. Do NOT check any of the "Initialize" options (no README, no .gitignore, no license)
-5. Click **Create repository**
-6. Copy the repository URL shown on the next page - it will look like:
-   `https://github.com/nicklaborde/awntrak-warranty.git`
+# Deploying Awnex QMS to GitHub + Vercel
 
 ---
 
-## Step 2 - Push the code from Terminal
+## Step 1 — Create the GitHub repository
 
-Open Terminal and run these commands one at a time.
-Replace `YOUR_GITHUB_USERNAME` with your actual GitHub username and `PATH_TO_PROJECT` with the local path to the project folder.
+1. Go to https://github.com/new
+2. Repository name: `awnex-warranty-V1` (or your preferred name)
+3. Set visibility to **Private**
+4. Do NOT check any "Initialize" options
+5. Click **Create repository**
+
+---
+
+## Step 2 — Push the code
 
 ```bash
-# Navigate to the project folder
-cd "PATH_TO_PROJECT"
+cd path/to/awnex-warranty-V1
 
-# Initialize git
 git init
-
-# Stage all files (.gitignore will automatically exclude node_modules, .env, etc.)
 git add .
-
-# Make the first commit
-git commit -m "Initial commit - Awntrak Warranty Dashboard"
-
-# Set the branch name to main
+git commit -m "Initial commit - Awnex QMS"
 git branch -M main
-
-# Connect to your GitHub repo (replace YOUR_GITHUB_USERNAME)
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/awntrak-warranty.git
-
-# Push to GitHub
+git remote add origin https://github.com/YOUR_GITHUB_USERNAME/awnex-warranty-V1.git
 git push -u origin main
 ```
 
-If prompted for credentials, use your GitHub username and a Personal Access Token
-(not your password). Create one at: https://github.com/settings/tokens
-Select scope: **repo** (full control of private repositories).
+If prompted for credentials, use your GitHub username and a Personal Access Token (scope: **repo**). Create one at https://github.com/settings/tokens.
 
 ---
 
-## Step 3 - Connect to Vercel
+## Step 3 — Connect to Vercel
 
-1. Go to https://vercel.com and sign in (use "Continue with GitHub")
+1. Go to https://vercel.com and sign in with GitHub
 2. Click **Add New Project**
-3. Find `awntrak-warranty` in the list and click **Import**
-4. Vercel will auto-detect Next.js - leave all build settings as-is
-5. Click **Deploy** (the first deploy will fail - that is expected because env vars are not set yet)
+3. Find your repository and click **Import**
+4. Vercel auto-detects Next.js — leave all build settings as-is
+5. Click **Deploy** (first deploy will fail until env vars are set — that is expected)
 
 ---
 
-## Step 4 - Create a Vercel KV store (cross-device settings sync)
+## Step 4 — Create a Vercel KV store (optional — cross-device settings sync)
 
-Dashboard settings (KPI layout, charts, column order) are synced across devices via Vercel KV.
+KV sync lets QMS layout and connection settings persist across devices. Without it, the app falls back silently to localStorage.
 
 1. In your Vercel project, go to the **Storage** tab
 2. Click **Create Database** → select **KV**
-3. Name it anything (e.g. `awntrak-settings`) and click **Create**
-4. On the next screen click **Connect to Project** and select your project
-5. Vercel automatically adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` to your project environment variables — no manual copy needed
+3. Name it (e.g. `awnex-qms-settings`) and click **Create**
+4. Click **Connect to Project** and select your project
 
-> **Local development:** copy `KV_REST_API_URL` and `KV_REST_API_TOKEN` from the KV store's **`.env.local`** tab and paste them into your local `.env.local` file. Without them the app falls back to localStorage silently.
+Vercel automatically adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` to your project environment variables.
+
+For local development, copy those two values from the KV store's **`.env.local`** tab into your local `.env.local` file.
 
 ---
 
-## Step 5 - Add Quickbase environment variables in Vercel
+## Step 5 — Add Quickbase environment variables
 
-1. In your Vercel project, go to **Settings > Environment Variables**
-2. Add these two variables:
+In your Vercel project go to **Settings → Environment Variables** and add:
+
+### Required (all modules)
 
 | Name | Value |
-|------|-------|
+|---|---|
 | `QB_REALM` | `awnexinc.quickbase.com` |
 | `QB_TOKEN` | your Quickbase user token |
 
-3. Set both to apply to **Production**, **Preview**, and **Development**
-4. Click **Save**
+### Optional — per-module defaults
+
+If you set these, the module uses them when no table/report ID has been saved in the browser yet. The settings modal always overrides them.
+
+| Name | Module |
+|---|---|
+| `QB_TABLE_ID` / `QB_REPORT_ID` | Warranty |
+| `QB_INSPECTIONS_TABLE_ID` / `QB_INSPECTIONS_REPORT_ID` | Inspections |
+| `QB_NCRS_TABLE_ID` / `QB_NCRS_REPORT_ID` | Non-Conformances |
+| `QB_CAPAS_TABLE_ID` / `QB_CAPAS_REPORT_ID` | Corrective Actions |
+| `QB_PRODUCTION_TABLE_ID` / `QB_PRODUCTION_REPORT_ID` | Production |
+
+Set all variables for **Production**, **Preview**, and **Development** environments, then click **Save**.
 
 ---
 
-## Step 6 - Redeploy
+## Step 6 — Redeploy
 
-1. Go to the **Deployments** tab in Vercel
+1. Go to the **Deployments** tab
 2. Click the three-dot menu on the most recent deployment
 3. Click **Redeploy**
-4. Wait for it to finish - your live URL will appear at the top of the page
+4. Your live QMS URL appears at the top when the build completes
 
 ---
 
-## Step 7 - Configure the connection in the dashboard
+## Step 7 — Configure module connections in the app
 
-1. Open your live Vercel URL
-2. You will see the "Connect to Quickbase" screen
-3. Click **Configure Connection**
-4. Enter:
-   - **Table ID**: `bkvhg2rwk`
-   - **Report ID**: the ID of the saved report you want to load
-5. Click **Save and Connect** - data will load immediately
+1. Open your live Vercel URL — the QMS Overview page loads immediately
+2. Click a module in the sidebar (e.g. **Warranty**)
+3. Click **Configure QB** in the module header
+4. Enter the Table ID and Report ID for that module
+5. Click **Save and Connect** — data loads immediately
 
-The Table ID and Report ID are saved in your browser. You can change them anytime
-using the gear icon in the top-right corner of the dashboard.
+Repeat for each module you want to wire up. Settings are saved in `localStorage` and synced to KV automatically.
 
 ---
 
-## Future updates
+## Ongoing deployments
 
-Any time you make changes to the code, push them with:
+Any push to `main` triggers an automatic Vercel redeploy:
 
 ```bash
 git add .
-git commit -m "describe your change here"
+git commit -m "describe your change"
 git push
 ```
 
-Vercel automatically redeploys on every push to `main`.
+---
 
+## Build troubleshooting
 
-## Build troubleshooting (common)
+### JSX parse errors
 
-If Vercel fails during `next build` with parser errors like `Unexpected token` or `Unexpected eof` in JSX files:
+If Vercel fails with `Unexpected token` or `Unexpected eof` in JSX files:
 
-1. Check for unresolved Git conflict markers in source files:
-   - `<<<<<<<`
-   - `=======`
-   - `>>>>>>>`
-2. Resolve the conflict and keep one valid JSX tree only.
-3. Run local verification before pushing:
+1. Check for unresolved Git conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+2. Resolve and keep only one valid JSX tree
+3. Verify locally before pushing:
 
 ```bash
 npm run build
 ```
 
-For recent installation-module fixes, ensure `src/components/installation/InstallationDashboard.jsx` and `src/components/installation/JobCard.jsx` contain a single valid component declaration each.
+### Missing credentials error on first load
 
+Verify `QB_REALM` and `QB_TOKEN` are set for all three environments (Production, Preview, Development) in Vercel → Settings → Environment Variables. After adding variables, redeploy.
+
+### KV sync not working locally
+
+Copy `KV_REST_API_URL` and `KV_REST_API_TOKEN` from the Vercel KV store's `.env.local` tab and add them to your local `.env.local`. Without them the app uses localStorage only — this is not an error, just a feature that requires the KV credentials to activate.

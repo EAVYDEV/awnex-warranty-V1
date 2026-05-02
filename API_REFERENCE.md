@@ -1,47 +1,73 @@
-# API Reference - Warranty Orders
+# API Reference — Awnex QMS Proxy Routes
 
-## Overview
-
-The `/api/warranty-orders` endpoint is a server-side proxy that calls the Quickbase Report Run API and forwards the response to the browser. Quickbase credentials (`QB_REALM` and `QB_TOKEN`) are stored as Vercel environment variables and never exposed to the client.
-
-The raw QB payload is returned unchanged. Client-side transformation happens in `lib/qbUtils.js → mapQBResponse()`, which builds a `labelToId` index from the `fields[]` array and extracts typed values by field label. Extra report columns not in the core field mapping are captured in `order._qbFields` and made available to the configurable KPI and chart system.
+All API routes are server-side Quickbase proxies. Credentials (`QB_REALM`, `QB_TOKEN`) live in Vercel environment variables and are never sent to the browser.
 
 ---
 
-## Endpoint
+## Common pattern
+
+Every module proxy follows the same structure:
 
 ```
-GET /api/warranty-orders
+GET /api/{module}?tableId={tableId}&reportId={reportId}
 ```
+
+- `tableId` — Quickbase table ID (e.g. `bkvhg2rwk`). Found in QB app URL after `/db/` or `/table/`.
+- `reportId` — Quickbase report ID. Found in the report URL as `rid=`, `qid=`, or `/report/{id}`.
+
+Both params can be omitted if the corresponding environment variable fallback is set (see table below). The query param always takes precedence over the env var.
+
+The settings modal in each module writes `tableId` and `reportId` to `localStorage` and appends them to every API call automatically.
 
 ---
 
-## Query parameters
+## Endpoints
 
-| Parameter | Required | Description |
-|---|---|---|
-| `tableId` | Yes (if `QB_TABLE_ID` env var is not set) | Quickbase table ID, e.g. `bkvhg2rwk`. Found in the QB app URL after `/db/`. |
-| `reportId` | Yes (if `QB_REPORT_ID` env var is not set) | Quickbase report ID. Found in the report URL as `rid=` or on the report settings page. |
+### `GET /api/warranty-orders`
 
-If `QB_TABLE_ID` and `QB_REPORT_ID` are set as environment variables, those are used as fallbacks when the query params are absent. Parameters passed in the query string always take precedence.
+Warranty module data source. Returns a Quickbase Report Run v1 payload.
 
-The settings modal in the dashboard writes `tableId` and `reportId` to `localStorage` and appends them to every API call automatically.
+**Env var fallbacks:** `QB_TABLE_ID`, `QB_REPORT_ID`
+
+### `GET /api/inspections`
+
+Inspections module data source.
+
+**Env var fallbacks:** `QB_INSPECTIONS_TABLE_ID`, `QB_INSPECTIONS_REPORT_ID`
+
+### `GET /api/ncrs`
+
+Non-Conformances module data source.
+
+**Env var fallbacks:** `QB_NCRS_TABLE_ID`, `QB_NCRS_REPORT_ID`
+
+### `GET /api/capas`
+
+Corrective Actions (CAPA) module data source.
+
+**Env var fallbacks:** `QB_CAPAS_TABLE_ID`, `QB_CAPAS_REPORT_ID`
+
+### `GET /api/production`
+
+Production & Batch Tracking module data source.
+
+**Env var fallbacks:** `QB_PRODUCTION_TABLE_ID`, `QB_PRODUCTION_REPORT_ID`
+
+### `GET /api/settings`
+
+Reads persisted dashboard settings from Vercel KV. Returns a JSON object with all stored keys (`warrantyTableId`, `warrantyReportId`, `inspectionsTableId`, etc. plus KPI/chart configs).
+
+Returns `{}` when KV is not configured — the app silently falls back to localStorage.
+
+### `POST /api/settings`
+
+Writes dashboard settings to Vercel KV. Accepts a partial JSON body; keys are merged into the stored object.
 
 ---
 
-## Request example
+## Successful response (all module proxies)
 
-```
-GET /api/warranty-orders?tableId=bkvhg2rwk&reportId=1
-```
-
-No request body is required. The endpoint only accepts `GET` requests.
-
----
-
-## Successful response
-
-Returns the raw Quickbase report payload as JSON, forwarded unchanged. The client-side `mapQBResponse()` in `lib/qbUtils.js` transforms this into the internal order shape. Extra report columns beyond the core field mapping are stored in `order._qbFields` and exposed to the configurable KPI and chart system.
+Raw Quickbase Report Run v1 payload forwarded unchanged. Client-side mappers transform this into typed records.
 
 **HTTP 200**
 
@@ -50,16 +76,14 @@ Returns the raw Quickbase report payload as JSON, forwarded unchanged. The clien
   "data": [
     {
       "3":  { "value": 1042 },
-      "6":  { "value": "<a href=\"https://awnexinc.quickbase.com/db/bkvhg2rwk?a=dr&rid=1042\">80886</a>" },
-      "7":  { "value": "MCDS-McDonald's-80886-San Antonio Texas-123 Main St" },
-      ...
+      "6":  { "value": "<a href=\"...\">80886</a>" },
+      "7":  { "value": "BRAND-Customer-ID-City State-Address" }
     }
   ],
   "fields": [
     { "id": 3,  "label": "Record ID#",            "type": "recordid" },
     { "id": 6,  "label": "Order Number w/Series", "type": "text" },
-    { "id": 7,  "label": "Order Name (Formula)",  "type": "formula" },
-    ...
+    { "id": 7,  "label": "Order Name (Formula)",  "type": "formula" }
   ],
   "metadata": {
     "numFields": 10,
@@ -70,75 +94,82 @@ Returns the raw Quickbase report payload as JSON, forwarded unchanged. The clien
 }
 ```
 
-The `fields` array maps field IDs to labels. The `data` array contains one object per record, keyed by field ID. This structure is standard for Quickbase Report Run API v1 responses.
+The `fields` array maps field IDs to labels. The `data` array contains one record per object, keyed by field ID. This is the standard Quickbase Report Run API v1 shape.
 
 ---
 
 ## Error responses
 
-### 400 - Missing table or report ID
+All module proxies return the same error shapes:
 
-Returned when neither the query params nor environment variable fallbacks supply a table ID or report ID.
-
-```json
-{
-  "error": "Table ID and Report ID are required. Enter them in the dashboard settings modal, or set QB_TABLE_ID and QB_REPORT_ID in Vercel."
-}
-```
-
-### 405 - Method not allowed
-
-Returned for any non-GET request.
+### 400 — Missing or invalid IDs
 
 ```json
-{
-  "error": "Method not allowed"
-}
+{ "error": "Table ID and Report ID are required. Configure them in the <Module> module settings." }
 ```
 
-### 503 - Missing credentials
-
-Returned when `QB_REALM` or `QB_TOKEN` are not set in the Vercel environment.
+Also returned when `tableId` or `reportId` contain characters outside `[A-Za-z0-9_-]` (SSRF prevention).
 
 ```json
-{
-  "error": "Quickbase credentials not configured. Set QB_REALM and QB_TOKEN in your Vercel environment variables."
-}
+{ "error": "Invalid Table ID or Report ID format." }
 ```
 
-### Quickbase error passthrough
-
-If Quickbase itself returns a non-2xx status, the endpoint passes the status and QB error body back to the client:
+### 405 — Method not allowed
 
 ```json
-{
-  "error": "Quickbase returned 401: Unauthorized",
-  "detail": { ... }
-}
+{ "error": "Method not allowed" }
 ```
 
-### 500 - Network or unexpected error
+### 503 — Missing credentials
 
 ```json
-{
-  "error": "<error message string>"
-}
+{ "error": "Quickbase credentials not configured. Set QB_REALM and QB_TOKEN in your environment." }
 ```
+
+### 502 — Quickbase error
+
+Returned when Quickbase itself responds with a non-2xx status.
+
+```json
+{ "error": "Failed to fetch <module> data from Quickbase." }
+```
+
+### 500 — Unexpected error
+
+```json
+{ "error": "An unexpected error occurred." }
+```
+
+---
+
+## Security
+
+- `QB_REALM` and `QB_TOKEN` are server-side only — validated in the handler before use and never returned to the client.
+- `tableId` and `reportId` are validated with `/^[A-Za-z0-9_-]+$/` before being interpolated into the Quickbase URL, preventing path traversal and SSRF via crafted IDs.
+- All routes reject non-GET methods.
 
 ---
 
 ## Environment variables
 
-| Variable | Required | Where to set |
+| Variable | Required | Module |
 |---|---|---|
-| `QB_REALM` | Yes | Vercel project settings - Environment Variables |
-| `QB_TOKEN` | Yes | Vercel project settings - Environment Variables |
-| `QB_TABLE_ID` | Optional | Vercel project settings - Environment Variables |
-| `QB_REPORT_ID` | Optional | Vercel project settings - Environment Variables |
+| `QB_REALM` | Yes (all) | Quickbase realm hostname |
+| `QB_TOKEN` | Yes (all) | Quickbase user token |
+| `QB_TABLE_ID` | Optional | Warranty — default table |
+| `QB_REPORT_ID` | Optional | Warranty — default report |
+| `QB_INSPECTIONS_TABLE_ID` | Optional | Inspections — default table |
+| `QB_INSPECTIONS_REPORT_ID` | Optional | Inspections — default report |
+| `QB_NCRS_TABLE_ID` | Optional | NCRs — default table |
+| `QB_NCRS_REPORT_ID` | Optional | NCRs — default report |
+| `QB_CAPAS_TABLE_ID` | Optional | CAPAs — default table |
+| `QB_CAPAS_REPORT_ID` | Optional | CAPAs — default report |
+| `QB_PRODUCTION_TABLE_ID` | Optional | Production — default table |
+| `QB_PRODUCTION_REPORT_ID` | Optional | Production — default report |
+| `KV_REST_API_URL` | Optional | Vercel KV URL for `/api/settings` |
+| `KV_REST_API_TOKEN` | Optional | Vercel KV token for `/api/settings` |
 
-All four should be set for Production, Preview, and Development environments in Vercel.
-
-For local development, create a `.env.local` file in the project root:
+For local development, set the required vars in `.env.local`:
 
 ```
 QB_REALM=awnexinc.quickbase.com
@@ -147,33 +178,32 @@ QB_TOKEN=your_user_token
 
 ---
 
-## App Router alternative
-
-The file includes a commented-out App Router equivalent (`app/api/warranty-orders/route.js`) for if the project is migrated from Pages Router to App Router in a future Next.js upgrade. The logic is identical; only the handler signature changes.
-
----
-
-## Multi-source usage
-
-The dashboard supports optional `sources` prop for connecting multiple QB tables (e.g., a separate claims table or costs table). Each source calls its own API route. Additional routes should follow the same server-side proxy pattern as `warranty-orders.js`:
-
-- Accept `tableId` and `reportId` as query params
-- Keep credentials server-side only
-- Return the raw QB Report Run payload
-
-See `ARCHITECTURE.md` for the full multi-source configuration reference and component contracts.
-
----
-
 ## Quickbase API reference
 
-This endpoint wraps the Quickbase REST API v1 Report Run operation:
+Each module proxy wraps this Quickbase REST API v1 operation:
 
 ```
 POST https://api.quickbase.com/v1/reports/{reportId}/run?tableId={tableId}
 ```
 
 Headers sent to Quickbase:
-- `QB-Realm-Hostname: {QB_REALM}`
-- `Authorization: QB-USER-TOKEN {QB_TOKEN}`
-- `Content-Type: application/json`
+
+```
+QB-Realm-Hostname: {QB_REALM}
+Authorization: QB-USER-TOKEN {QB_TOKEN}
+Content-Type: application/json
+```
+
+Body: `{}`
+
+---
+
+## Adding a new module proxy
+
+Copy any existing proxy file (e.g. `pages/api/inspections.js`) and:
+
+1. Update the env var names (`QB_YOURMODULE_TABLE_ID`, `QB_YOURMODULE_REPORT_ID`)
+2. Update the error message strings to name your module
+3. The Quickbase call itself is identical — no other changes needed
+
+Register the new route in `lib/dashboardStorage.js` (add a key to `MODULE_QB_KEYS`) and in `components/QMSShell.jsx` (add an entry to `MODULE_COMPONENTS`).

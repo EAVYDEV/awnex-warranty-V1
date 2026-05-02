@@ -1,278 +1,285 @@
-# Awntrak Warranty Dashboard — Architecture
+# Awnex QMS — Architecture
 
-Full system design, component contracts, config schemas, and extension guide.
+Full system design, component contracts, config schemas, data flow, and extension guide.
 
 ---
 
-## Implementation status
+## System overview
 
-### Completed
+The Awnex QMS is a Next.js 14 (Pages Router) application. A single collapsible sidebar shell (`QMSShell`) hosts five independently-connected QMS modules. Each module has its own Quickbase table/report connection stored in `localStorage` (per-module keys) and synced to Vercel KV for cross-device persistence.
 
-| File | Status | Description |
-|---|---|---|
-| `lib/tokens.js` | ✅ Done | Design tokens — all colors, shadows, STATUS_CFG, RISK_CFG, CHART_PALETTE |
-| `lib/qbUtils.js` | ✅ Done | QB field parsing, mapQBResponse (with _qbFields capture), mapClaimsResponse, buildReportFields, risk scoring, date/format helpers |
-| `lib/dashboardMetrics.js` | ✅ Done | BUILTIN_FIELDS, buildAvailableFields, applyFilter, aggregateField, computeKpiValue, formatKpiValue, computeChartData, genId, truncateLabel |
-| `lib/dashboardDefaults.js` | ✅ Done | KPI_THEMES, COLOR_PALETTES, DEFAULT_KPI_CONFIGS (9 KPIs), DEFAULT_CHART_CONFIGS (4 charts), blankKpiConfig, blankChartConfig |
-| `lib/dashboardStorage.js` | ✅ Done | localStorage helpers for connection settings, KPI configs, chart configs, resetAllConfigs |
-| `components/ui/Icon.jsx` | ✅ Done | 35-icon SVG registry, Icon({ name, size, color, strokeWidth }), ICON_NAMES |
-| `components/ui/Badge.jsx` | ✅ Done | StatusBadge, RiskBadge |
-| `components/ui/Modal.jsx` | ✅ Done | Modal wrapper (scroll-lock, Escape key, backdrop click), Btn variants, formStyles |
-| `components/ui/Tag.jsx` | ✅ Done | ProductTag |
-| `components/ui/StateScreens.jsx` | ✅ Done | EmptyState, LoadingState (shimmer skeleton), ErrorState |
-| `components/ui/SortIcon.jsx` | ✅ Done | Column sort direction indicator |
-| `components/AwnexLogo.jsx` | ✅ Done | Awnex SVG branding mark |
-| `src/components/AppHeader.jsx` | ✅ Done | Shared top-level module header (logo, title/subtitle, route-aware module tabs) |
-| `components/SettingsModal.jsx` | ✅ Done | QB connection modal (URL auto-parse, table ID + report ID inputs) |
-| `components/MapView.jsx` | ✅ Done | Leaflet CDN loader, geocoding with rate-limit, status-colored pins, popup detail |
-| `components/dashboard/KpiCard.jsx` | ✅ Done | Display card, edit-mode controls (edit/duplicate/hide) + drag affordance badge |
-| `components/dashboard/KpiEditor.jsx` | ✅ Done | Full KPI editor: aggregation, field, filter, subtitle, icon picker, color themes, custom colors, format, decimals, live preview |
-| `components/dashboard/ChartCard.jsx` | ✅ Done | Chart wrapper, edit-mode controls + drag affordance badge, CustomTooltip |
-| `components/dashboard/ChartEditor.jsx` | ✅ Done | Full chart editor: type picker, group field, stack field, up to 3 metrics, filter, sort, palette, live preview (category count) |
-| `components/dashboard/ConfigurableChart.jsx` | ✅ Done | Renders bar / hbar / donut / line / stacked from config; truncated tick labels, semantic colors for status/risk fields |
-| `components/dashboard/DashboardEditToolbar.jsx` | ✅ Done | Add KPI, Add Chart, Reset to Defaults (with confirmation), Done Editing |
-| `lib/installationData.js` | ✅ Done | Installation field alias map, fixed status pipeline, Quickbase payload normalization |
-| `lib/installationHelpers.js` | ✅ Done | Installation grouping/filter helpers + KPI metric derivation |
-| `src/lib/qualityRiskDataSource.js` | ✅ Done | Quality Risk data provider abstraction with mock/live switch and standard `{ cases, trends }` shape |
-| `src/components/installation/*` | ✅ Done | Installation Kanban/Table/Map UI, job card, and detail panel |
+```
+pages/index.jsx
+  └── <QMSShell>
+        ├── <QMSSidebar>   (collapsible dark nav — 240px expanded / 64px collapsed)
+        └── <main>          (scrollable content pane)
+              ├── QMSOverview      (activeModule === "overview")
+              ├── WarrantyDashboard standalone={false}  (activeModule === "warranty")
+              ├── InspectionsModule  (activeModule === "inspections")
+              ├── NcrModule          (activeModule === "ncrs")
+              ├── CapaModule         (activeModule === "capas")
+              └── ProductionModule   (activeModule === "production")
+```
 
-### In progress / remaining
+---
 
-| File | Status | Notes |
-|---|---|---|
-| `src/WarrantyDashboard.jsx` | ✅ Done | Orchestrator for Warranty + Installation modules, shared Quickbase fetch/settings flow, query-based module activation (`?module=installation`) |
-| `src/pages/QualityRiskDashboard.jsx` | ✅ Updated | Reads case/trend data through provider (`getQualityRiskDashboardData`) and renders Trends cards from structured data |
-| `src/WarrantyDashboard.jsx` (filters) | ✅ Updated | Filter dropdowns are built from visible `columnSpecs`; labels use `columnSpecs.title` so custom column names propagate to filters. |
+## File map
+
+| Need to change | File |
+|---|---|
+| Colors, shadows, status/risk configs | `lib/tokens.js` |
+| QMS shell layout (sidebar + content) | `components/QMSShell.jsx` |
+| Sidebar nav items, icons, collapse | `components/QMSSidebar.jsx` |
+| QMS home overview dashboard | `components/modules/QMSOverview.jsx` |
+| Inspections module | `components/modules/InspectionsModule.jsx` |
+| NCR module | `components/modules/NcrModule.jsx` |
+| CAPA module | `components/modules/CapaModule.jsx` |
+| Production module | `components/modules/ProductionModule.jsx` |
+| QB field parsing, risk scoring, column spec builder | `lib/qbUtils.js` |
+| Filter, aggregate, KPI/chart compute helpers | `lib/dashboardMetrics.js` |
+| Default KPI/chart configs, palettes, themes | `lib/dashboardDefaults.js` |
+| localStorage keys and load/save helpers | `lib/dashboardStorage.js` |
+| SVG icon set | `components/ui/Icon.jsx` |
+| StatusBadge, RiskBadge | `components/ui/Badge.jsx` |
+| Generic modal wrapper, Btn, formStyles | `components/ui/Modal.jsx` |
+| EmptyState, LoadingState, ErrorState | `components/ui/StateScreens.jsx` |
+| Awnex branding logo | `components/AwnexLogo.jsx` |
+| QB connection settings modal | `components/SettingsModal.jsx` |
+| Leaflet map + geocoding | `components/MapView.jsx` |
+| KPI display card | `components/dashboard/KpiCard.jsx` |
+| KPI editor modal | `components/dashboard/KpiEditor.jsx` |
+| Chart wrapper + CustomTooltip | `components/dashboard/ChartCard.jsx` |
+| Chart editor modal | `components/dashboard/ChartEditor.jsx` |
+| Recharts rendering for all chart types | `components/dashboard/ConfigurableChart.jsx` |
+| Edit mode toolbar | `components/dashboard/DashboardEditToolbar.jsx` |
+| Column title editor modal | `components/dashboard/ColumnEditor.jsx` |
+| Warranty orchestrator (state, fetch, layout) | `src/WarrantyDashboard.jsx` |
+| Quality case components (NCR / CAPA reuse) | `src/components/quality/` |
+| Case/trend data provider (mock/live switch) | `src/lib/qualityRiskDataSource.js` |
+| QB API proxies | `pages/api/{warranty-orders,inspections,ncrs,capas,production}.js` |
 
 ---
 
 ## Data flow
 
-```
-pages/index.jsx
-  └── <WarrantyDashboard apiRoute="/api/warranty-orders" />
-        │
-        ├── fetch()  →  pages/api/warranty-orders.js
-        │                  └── QB Report Run API (server-side, credentials injected)
-        │                        returns { fields[], data[], metadata }
-        │
-        ├── lib/qbUtils.js → mapQBResponse()
-        │     • builds labelToId index from fields[]
-        │     • extracts typed values by QB field label
-        │     • extra columns stored in order._qbFields (raw, may include HTML)
-        │     returns order[]
-        │
-        ├── useMemo (enriched)
-        │     • daysFromToday, warrantyStatus
-        │     • computeRiskScore, riskLevel
-        │     • infer openClaims / closedClaims if no claims source
-        │     returns enrichedOrder[]
-        │
-        ├── lib/dashboardMetrics.js → computeKpiValue(enriched, kpiConfig)
-        │     → per-card: applyFilter → aggregateField → formatKpiValue
-        │     renders via components/dashboard/KpiCard.jsx
-        │
-        └── lib/dashboardMetrics.js → computeChartData(enriched, chartConfig)
-              → applyFilter → groupBy → aggregate per metric
-              renders via components/dashboard/ConfigurableChart.jsx
+### QMS shell navigation
 
-pages/quality-risk.jsx
-  └── <QualityRiskDashboard />
-        ├── getQualityRiskDashboardData()  → src/lib/qualityRiskDataSource.js
-        │     • uses mock records today (toggleable)
-        │     • same shape can be served by a future API adapter
-        ├── hydrateCase()
-        │     • calculateRiskScore, calculateRiskLevel
-        │     • containment/field impact derived flags
-        └── Trends tab
-              • renders cards from trends.byDepartment / bySeverity / recurringCategories
+```
+QMSShell
+  activeModule (useState, default "overview")
+  ├── QMSSidebar → onModuleChange(id) → setActiveModule(id)
+  └── renders MODULE_COMPONENTS[activeModule]
+```
+
+### Per-module QB fetch (Warranty pattern — others follow same shape)
+
+```
+WarrantyDashboard  (standalone={false} when inside QMSShell)
+  → GET /api/warranty-orders?tableId=…&reportId=…
+      → pages/api/warranty-orders.js  (server-side proxy)
+          → POST https://api.quickbase.com/v1/reports/{reportId}/run?tableId={tableId}
+              (QB_REALM + QB_TOKEN auth headers injected server-side)
+  ← raw QB payload { fields[], data[] }
+  ← lib/qbUtils.js → mapQBResponse() → typed order objects (+ _qbFields for extra columns)
+  ← enriched with status, riskScore, open/closed claims via useMemo
+  ← lib/dashboardMetrics.js → computeKpiValue() / computeChartData() → KPI values + chart arrays
+  ← components/dashboard/* renders KPI cards, charts, map, table
+```
+
+### NCR / CAPA module data flow
+
+```
+NcrModule / CapaModule
+  → getQualityRiskDashboardData()   (src/lib/qualityRiskDataSource.js)
+      • returns { cases[], trends{} } — mock today, toggle USE_MOCK_QUALITY_RISK_DATA to go live
+  → hydrateCase()
+      • calculateRiskScore, calculateRiskLevel (src/lib/qualityRiskUtils.js)
+  ← src/components/quality/CaseTable      (tabular case list)
+  ← src/components/quality/CaseDetailPanel (slide-out detail / CAPA workflow)
+  ← src/components/quality/CreateCaseModal (new NCR form)
 ```
 
 ---
 
-## Component contracts
+## Module component contracts
 
-### `KpiCard`
+### QMSShell
 
 ```jsx
-<KpiCard
-  label={string}       // displayed above the value
-  value={string}       // pre-formatted string (from formatKpiValue)
-  sub={string}         // optional subtitle below value
-  color={string}       // hex — value text color
-  bg={string}          // hex — icon background
-  iconName={string}    // key in Icon PATHS map
-  editMode={boolean}
-  hidden={boolean}
-  onEdit={fn}
-  onDuplicate={fn}
-  onToggleHide={fn}
+<QMSShell />
+// No props. Manages activeModule state internally.
+// Each module component receives: onNavigate(moduleId: string)
+```
+
+### QMSSidebar
+
+```jsx
+<QMSSidebar
+  activeModule={string}           // current active module ID
+  onModuleChange={fn(id)}         // called when user clicks a nav item
+  collapsed={boolean}             // 64px icon-only vs 240px full
+  onToggleCollapse={fn}
 />
 ```
 
-### `KpiEditor`
+### Module components (all follow same interface)
 
 ```jsx
-<KpiEditor
-  config={kpiConfigObject}          // full draft config (copied before opening)
-  enrichedOrders={enrichedOrder[]}  // for live preview
-  availableFields={fieldDef[]}      // from buildAvailableFields()
-  onSave={fn(updatedConfig)}
-  onClose={fn}
-  onDelete={fn}
-  onDuplicate={fn}
+<InspectionsModule onNavigate={fn} />
+<NcrModule         onNavigate={fn} />
+<CapaModule        onNavigate={fn} />
+<ProductionModule  onNavigate={fn} />
+<QMSOverview       onNavigate={fn} />
+```
+
+### WarrantyDashboard (embedded)
+
+```jsx
+<WarrantyDashboard
+  apiRoute="/api/warranty-orders"
+  standalone={false}    // suppresses AppHeader and full-viewport min-height
 />
 ```
 
-### `ChartCard`
-
-```jsx
-<ChartCard
-  title={string}
-  editMode={boolean}
-  hidden={boolean}
-  onEdit={fn}
-  onDuplicate={fn}
-  onToggleHide={fn}
->
-  <ConfigurableChart config={chartConfig} records={enrichedOrders} />
-</ChartCard>
-```
-
-### `ChartEditor`
-
-```jsx
-<ChartEditor
-  config={chartConfigObject}
-  enrichedOrders={enrichedOrder[]}
-  availableFields={fieldDef[]}
-  onSave={fn(updatedConfig)}
-  onClose={fn}
-  onDelete={fn}
-  onDuplicate={fn}
-/>
-```
-
-### `ConfigurableChart`
-
-```jsx
-<ConfigurableChart
-  config={chartConfigObject}   // full chart config
-  records={enrichedOrder[]}    // enriched orders array
-/>
-```
-
-Renders one of: `BarChart`, `BarChart layout="vertical"`, `PieChart` (donut), `LineChart`, stacked `BarChart`. Handles empty state, label truncation, and semantic colors for `status` and `risk` group fields.
-
-### `DashboardEditToolbar`
-
-```jsx
-<DashboardEditToolbar
-  onAddKpi={fn}
-  onAddChart={fn}
-  onResetAll={fn}
-  onExit={fn}
-/>
-```
+When `standalone={false}`, WarrantyDashboard renders an inline module header (title + subtitle bar with brand accent) instead of the `AppHeader` tab-bar component.
 
 ---
 
-## Config schemas
+## QB API proxy contracts
 
-### KPI config
+All five proxy routes follow an identical pattern. New modules should copy the same structure.
+
+```
+GET /api/{module}?tableId={id}&reportId={id}
+
+Request:  GET only, no body
+Response: Raw Quickbase Report Run v1 payload — { fields[], data[], metadata }
+
+Error responses:
+  400  Missing or invalid tableId / reportId
+  405  Non-GET method
+  503  QB_REALM or QB_TOKEN not set
+  502  Quickbase returned non-2xx
+  500  Unexpected network error
+```
+
+Security: tableId and reportId are validated against `/^[A-Za-z0-9_-]+$/` before use in the QB URL to prevent SSRF/path traversal.
+
+Optional env var fallbacks per module:
+
+| Module | Table env var | Report env var |
+|---|---|---|
+| Warranty | `QB_TABLE_ID` | `QB_REPORT_ID` |
+| Inspections | `QB_INSPECTIONS_TABLE_ID` | `QB_INSPECTIONS_REPORT_ID` |
+| NCRs | `QB_NCRS_TABLE_ID` | `QB_NCRS_REPORT_ID` |
+| CAPAs | `QB_CAPAS_TABLE_ID` | `QB_CAPAS_REPORT_ID` |
+| Production | `QB_PRODUCTION_TABLE_ID` | `QB_PRODUCTION_REPORT_ID` |
+
+---
+
+## Design system tokens (`lib/tokens.js`)
+
+### Enterprise color palette
+
+| Token | Value | Usage |
+|---|---|---|
+| `brand` | `#1D4ED8` | Primary blue — nav active state, buttons, links |
+| `brandDark` | `#1E40AF` | Button hover |
+| `brandDeep` | `#1E3A8A` | Heavy headings |
+| `accent` | `#0891B2` | Teal — Inspections module accent |
+| `success` | `#14532D` | Text on success backgrounds |
+| `successFill` | `#16A34A` | Badge dot, progress fill |
+| `danger` | `#DC2626` | NCR accent, fail states |
+| `text1` | `#0F172A` | Primary body text (slate-900) |
+| `text2` | `#475569` | Secondary text (slate-600) |
+| `text3` | `#94A3B8` | Muted / label text (slate-400) |
+| `bg` | `#F1F5F9` | Page background (slate-100) |
+| `card` | `#FFFFFF` | Card / panel background |
+| `borderLight` | `#E2E8F0` | Default border (slate-200) |
+| `sidebar` | `#0F172A` | Sidebar background (slate-900) |
+| `sidebarActive` | `#1D4ED8` | Active nav item |
+| `sidebarText` | `#CBD5E1` | Sidebar text (slate-300) |
+| `sidebarMuted` | `#64748B` | Sidebar group labels (slate-500) |
+
+Radius scale: cards `16px`, widgets `14px`, inputs `8px`, buttons `6px` — more enterprise-compact than the previous warm/rounded scale.
+
+---
+
+## Storage schema
+
+### Per-module QB connection (`lib/dashboardStorage.js`)
+
+```js
+loadModuleSettings("warranty")     // → { tableId, reportId }
+saveModuleSettings("inspections", { tableId, reportId })
+// module keys: "warranty" | "installation" | "quality" | "inspections" | "ncrs" | "capas" | "production"
+```
+
+localStorage key pattern: `awntrak_{module}_table_id` / `awntrak_{module}_report_id`
+
+### Vercel KV sync
+
+All module connection settings plus KPI/chart configs are synced as a single JSON blob under key `awntrak_settings` via `GET /api/settings` (read on mount) and `POST /api/settings` (debounced 800ms after any change). When `KV_REST_API_URL` / `KV_REST_API_TOKEN` are absent, the app runs on localStorage only with no error.
+
+---
+
+## Configurable dashboard system (Warranty module)
+
+### KPI config shape
 
 ```ts
 {
-  id:          string;                                         // unique, e.g. "kpi-open-claims"
+  id:          string;
   title:       string;
   aggregation: "count" | "sum" | "avg" | "min" | "max";
-  field:       string | null;                                  // enriched order field key; null = count records
-  filter:      { field: string; op: FilterOp; value: any } | null;
+  field:       string | null;        // enriched order field key; null = count records
+  filter:      { field, op, value } | null;
   subtitle:    string;
-  icon:        string;                                         // key in Icon.jsx PATHS
-  color:       string;                                         // hex
-  bg:          string;                                         // hex
+  icon:        string;               // key in components/ui/Icon.jsx PATHS
+  color:       string;               // hex
+  bg:          string;               // hex
   format:      "number" | "currency" | "percent" | "text";
-  decimals:    number;                                         // 0–4
+  decimals:    number;
   hidden:      boolean;
 }
 ```
 
-**Filter operators (`FilterOp`):** `eq | neq | gt | gte | lt | lte | in | notin | contains | isempty | isnotempty`
-
-For `in` / `notin`, `value` may be a comma-separated string or an array of strings.
-
-### Chart config
+### Chart config shape
 
 ```ts
 {
   id:             string;
   title:          string;
   type:           "bar" | "hbar" | "donut" | "line" | "stacked";
-  groupField:     string;                                       // category / X-axis field key
-  stackField:     string | null;                                // "stacked" type only
-  metrics: Array<{
-    field:        string | null;                                // null = count records
-    aggregation:  "count" | "sum" | "avg" | "min" | "max";
-    label:        string;                                       // series display name
-    color:        string | null;                                // hex or null (use palette)
-  }>;
-  filter:         { field: string; op: FilterOp; value: any } | null;
+  groupField:     string;
+  stackField:     string | null;
+  metrics: Array<{ field, aggregation, label, color }>;
+  filter:         { field, op, value } | null;
   sortDir:        "asc" | "desc";
-  maxCategories:  number | null;                                // null = show all
+  maxCategories:  number | null;
   showLegend:     boolean;
   showAxisLabels: boolean;
-  palette:        "default" | "warm" | "cool" | "earth" | "mono";
+  palette:        string;
   hidden:         boolean;
-}
-```
-
-### Available field definition
-
-```ts
-{
-  key:    string;   // used as record property key (e.g. "claims", "orderValue", "qb_12")
-  label:  string;   // displayed in dropdowns (e.g. "# Warranty Claims")
-  type:   "text" | "text_array" | "number" | "currency" | "date";
-  source: "builtin" | "qb";   // "qb" = from QB report fields not in core mapping
-  qbId?:  number;             // QB field ID, present when source === "qb"
 }
 ```
 
 ---
 
-## Enriched order object
-
-After `mapQBResponse()` + enrichment in `WarrantyDashboard.jsx`:
+## Enriched order object (Warranty module)
 
 ```ts
 {
-  // From mapQBResponse
-  orderNum:    string;
-  qbRid:       string;
-  qbUrl:       string | null;
-  brand:       string;
-  location:    string;
-  customer:    string;
-  pm:          string;
-  warrantyEnd: string;            // "YYYY-MM-DD"
-  products:    string[];
-  colors:      string;
-  claims:      number;
-  qcPeeling:   number;
-  qcPowder:    number;
-  orderValue:  number;
-  _qbFields:   Record<string, any>;  // extra QB columns keyed by field label; values may be HTML strings from QB formula fields
-                                     // special keys read by MapView: "Latitude", "Longitude" (numeric) — skips Nominatim when present
+  // From mapQBResponse()
+  orderNum, qbRid, qbUrl, brand, location, customer, pm,
+  warrantyEnd, products, colors, claims, qcPeeling, qcPowder,
+  orderValue, _qbFields   // extra QB columns keyed by label; may contain HTML
 
-  // Added during enrichment
-  days:        number;            // days until/since warrantyEnd (negative = expired)
-  status:      "active" | "expiring" | "expired";
-  openClaims:  number;
-  closedClaims:number;
-  claimCost:   number;
-  riskScore:   number;            // 0–100
-  risk:        "critical" | "high" | "medium" | "low";
+  // Enrichment in WarrantyDashboard
+  days, status,           // "active" | "expiring" | "expired"
+  openClaims, closedClaims, claimCost,
+  riskScore,              // 0–100
+  risk,                   // "critical" | "high" | "medium" | "low"
 }
 ```
 
@@ -296,49 +303,44 @@ Thresholds: **≥60** = critical · **≥35** = high · **≥15** = medium · **
 
 ## Extending the platform
 
+### Add a new QMS module
+
+1. Create `components/modules/YourModule.jsx` — accept `{ onNavigate }` prop
+2. Add a nav entry to `NAV_ITEMS` in `components/QMSSidebar.jsx`
+3. Add a QB proxy at `pages/api/your-module.js` (copy any existing proxy — keep the security pattern)
+4. Add a module key to `MODULE_QB_KEYS` in `lib/dashboardStorage.js`
+5. Import and register the component in `components/QMSShell.jsx` `MODULE_COMPONENTS`
+
 ### Add a new QB-connected API route
 
-Copy `pages/api/warranty-orders.js` and update the QB endpoint call. Keep `QB_REALM` / `QB_TOKEN` server-side. Accept `tableId` and `reportId` as query params.
+Copy any file from `pages/api/` and update the endpoint call. Keep `QB_REALM` / `QB_TOKEN` server-side. Accept `tableId` and `reportId` as query params. Validate both with the `/^[A-Za-z0-9_-]+$/` regex before using in URLs.
 
 ### Add a new icon
 
-Add an entry to the `PATHS` object in `components/ui/Icon.jsx`. The key becomes available immediately everywhere icons are used.
+Add an entry to the `PATHS` object in `components/ui/Icon.jsx`. The key becomes available everywhere icons are used.
 
-### Add a new color palette
+### Add a new chart color palette
 
-Add a key + hex array to `COLOR_PALETTES` in `lib/dashboardDefaults.js`. It will appear in the chart editor palette picker automatically.
+Add a key + hex array to `COLOR_PALETTES` in `lib/dashboardDefaults.js`. It appears in the chart editor automatically.
+
+### Switch NCR / CAPA modules from mock to live QB data
+
+1. Edit `src/lib/qualityRiskDataSource.js`
+2. Set `USE_MOCK_QUALITY_RISK_DATA = false`
+3. Implement `fetchLiveQualityRiskData()` to call your QB proxy and return `{ cases[], trends{} }`
 
 ### Persist configs to Quickbase instead of localStorage
 
-Replace the read/write calls in `lib/dashboardStorage.js` with QB API calls. The config JSON schema is portable — no changes needed to the dashboard components.
-
-### Module navigation and deep links
-
-- `/?module=installation` activates the Installation module within `src/WarrantyDashboard.jsx`.
-- `/quality-risk` hosts the RCA workflow and includes nav links back to Warranty and Installation.
-
-### Add a second dashboard module (e.g. QC Module)
-
-All `lib/` utilities and `components/` are framework-agnostic and importable from any Next.js page. Create a new page, import the shared components, define new default configs, and you have a second configurable dashboard with no code duplication.
+Replace read/write calls in `lib/dashboardStorage.js` with QB API calls. The config JSON schema is portable — no changes needed to dashboard components.
 
 ---
 
 ## Future improvements
 
-- Per-row KPI grouping (currently all KPIs render in a single auto-fit grid)
-- Trend line overlay on bar charts
+- Overview module: pull live aggregate KPIs from connected modules instead of placeholder dashes
+- Inspections module: wire QB response through a mapper (analogous to `mapQBResponse`) to populate live records
+- NCR / CAPA modules: map QB report fields to the `CaseRecord` shape in `qualityRiskDataSource.js`
+- Production module: map QB batch fields and replace sample data
+- Role-based edit-mode access (read-only for shop floor / leadership displays)
 - Date range filter for time-series line charts
-- Export dashboard config to JSON / import from JSON
-- Save configs to Quickbase or SharePoint instead of localStorage
-- Role-based edit-mode access (read-only view for shop floor / leadership displays)
-
-
-### Filter-label synchronization (column rename support)
-
-`WarrantyDashboard.jsx` now derives `filterableFields` from `columnSpecs` instead of raw report-field metadata. This ensures:
-
-- Filter labels always use the active display title (`columnSpecs.title`).
-- Renaming a column via Column Editor updates the corresponding filter label immediately.
-- Quickbase-backed fields and computed fields remain aligned via `qbId`/`key` matching.
-
-Implementation reference: `filterableFields` memo around line ~366 in `src/WarrantyDashboard.jsx`.
+- Export / import dashboard config as JSON
