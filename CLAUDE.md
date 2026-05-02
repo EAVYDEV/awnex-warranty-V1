@@ -31,12 +31,22 @@ Optional env var fallbacks (override via the settings modal):
 
 ## Architecture overview
 
-The app has been refactored from a single 1,500-line file into a modular structure. All logic is split across `lib/` (pure utilities) and `components/` (React components). `WarrantyDashboard.jsx` is the main orchestrator.
+The app is a Quality Management System (QMS) shell with a sidebar that switches between modules: Overview, Warranty, Inspections, NCRs, CAPAs, Production. A separate `pages/quality-risk.jsx` route hosts the Quality Risk & RCA dashboard.
 
-### Data flow
+Source layout:
+
+- **`lib/`** — pure utilities (tokens, QB parsing, dashboard metrics, storage helpers). No React.
+- **`components/`** — shared UI: shell, sidebar, modals, map, badges, dashboard widgets, per-module containers.
+- **`src/`** — the larger Warranty dashboard (`src/WarrantyDashboard.jsx`) plus its private subcomponents (`src/components/AppHeader.jsx`, `ContentViewer.jsx`, `installation/*`), the Quality Risk page (`src/pages/QualityRiskDashboard.jsx`), and quality-case UI (`src/components/quality/*`). Quality-risk-specific logic and mock data live in `src/lib/qualityRisk*`.
+- **`pages/`** — Next.js Pages Router. `pages/index.jsx` mounts `QMSShell`; `pages/api/*.js` are QB proxies + the KV settings store.
+- **`WarrantyDashboard.jsx`** at the repo root is a 1-line re-export shim for `src/WarrantyDashboard.jsx`.
+
+`WarrantyDashboard.jsx` is the largest component (~960 lines) and orchestrates all warranty-side state, fetching, and rendering.
+
+### Data flow (Warranty)
 
 ```
-Browser (WarrantyDashboard.jsx)
+Browser (src/WarrantyDashboard.jsx)
   → GET /api/warranty-orders?tableId=…&reportId=…
       → pages/api/warranty-orders.js  (server-side proxy)
           → POST https://api.quickbase.com/v1/reports/{reportId}/run?tableId={tableId}
@@ -45,25 +55,30 @@ Browser (WarrantyDashboard.jsx)
   ← lib/qbUtils.js → mapQBResponse() → typed order objects (+ _qbFields for extra columns)
   ← enriched with status, riskScore, open/closed claims via useMemo
   ← lib/dashboardMetrics.js → computeKpiValue() / computeChartData() → KPI values + chart arrays
-  ← components/dashboard/* renders KPI cards, charts, map, table
+  ← components/dashboard/* renders KPI cards, charts, table; components/MapView.jsx renders map
 ```
 
 ### File map — where to find things
 
 | Need to change | File |
 |---|---|
-| Colors, shadows, status/risk color configs | `lib/tokens.js` |
+| Colors, shadows, status/risk color configs, design tokens (`T`, `colors`) | `lib/tokens.js` |
 | QB field parsing, order mapping, risk scoring, column spec builder | `lib/qbUtils.js` |
 | Filter, aggregate, KPI/chart compute helpers | `lib/dashboardMetrics.js` |
 | Default KPI/chart configs, palettes, themes | `lib/dashboardDefaults.js` |
-| localStorage keys and load/save helpers | `lib/dashboardStorage.js` |
+| localStorage keys and per-module load/save helpers | `lib/dashboardStorage.js` |
+| Installation mock data + helpers | `lib/installationData.js`, `lib/installationHelpers.js` |
 | SVG icon set | `components/ui/Icon.jsx` |
 | StatusBadge, RiskBadge | `components/ui/Badge.jsx` |
 | Generic modal wrapper, Btn, formStyles | `components/ui/Modal.jsx` |
 | EmptyState, LoadingState, ErrorState | `components/ui/StateScreens.jsx` |
+| ProductTag chip | `components/ui/Tag.jsx` |
+| Sortable column header arrow | `components/ui/SortIcon.jsx` |
 | Awnex branding logo | `components/AwnexLogo.jsx` |
-| QB connection settings modal | `components/SettingsModal.jsx` |
-| Leaflet map + geocoding | `components/MapView.jsx` |
+| QMS shell (sidebar + module switcher) | `components/QMSShell.jsx`, `components/QMSSidebar.jsx` |
+| Per-module containers (Inspections, NCRs, CAPAs, Production, Overview) | `components/modules/*.jsx` |
+| QB connection settings modal (canonical, used everywhere) | `components/SettingsModal.jsx` |
+| Leaflet map + clustering + geocoding | `components/MapView.jsx` |
 | KPI display card | `components/dashboard/KpiCard.jsx` |
 | KPI editor modal | `components/dashboard/KpiEditor.jsx` |
 | Chart wrapper + CustomTooltip | `components/dashboard/ChartCard.jsx` |
@@ -71,8 +86,15 @@ Browser (WarrantyDashboard.jsx)
 | Recharts rendering for all chart types | `components/dashboard/ConfigurableChart.jsx` |
 | Edit mode toolbar | `components/dashboard/DashboardEditToolbar.jsx` |
 | Column title editor modal | `components/dashboard/ColumnEditor.jsx` |
-| All state, data fetch, layout orchestration | `WarrantyDashboard.jsx` |
-| QB API proxy | `pages/api/warranty-orders.js` |
+| Warranty dashboard orchestration (state, fetch, layout, cell render) | `src/WarrantyDashboard.jsx` |
+| Shared header used by Warranty + Quality Risk pages | `src/components/AppHeader.jsx` |
+| In-app iframe content viewer | `src/components/ContentViewer.jsx` |
+| Installation sub-dashboard (Kanban + Map view, mock data) | `src/components/installation/*.jsx` |
+| Quality Risk & RCA dashboard page | `src/pages/QualityRiskDashboard.jsx` |
+| Quality case UI (table, detail panel, tabs) | `src/components/quality/*.jsx` |
+| Quality Risk mock data + helpers (`USE_MOCK_QUALITY_RISK_DATA = true`) | `src/lib/qualityRiskDataSource.js`, `src/lib/qualityRiskUtils.js` |
+| QB API proxies (one per module) | `pages/api/{warranty-orders,inspections,ncrs,capas,production}.js` |
+| Vercel KV settings store | `pages/api/settings.js` |
 
 ### Quickbase field mapping
 
@@ -232,12 +254,18 @@ localStorage is used as an immediate read/write cache. All keys are also synced 
 
 | Key | Purpose |
 |---|---|
-| `awntrak_warranty_table_id` | QB table ID |
-| `awntrak_warranty_report_id` | QB report ID |
+| `awntrak_warranty_table_id` / `awntrak_warranty_report_id` | Warranty module QB connection |
+| `awntrak_installation_table_id` / `awntrak_installation_report_id` | Installation module QB connection |
+| `awntrak_quality_table_id` / `awntrak_quality_report_id` | Quality Risk module QB connection |
+| `awntrak_inspections_table_id` / `awntrak_inspections_report_id` | Inspections module QB connection |
+| `awntrak_ncrs_table_id` / `awntrak_ncrs_report_id` | NCR module QB connection |
+| `awntrak_capas_table_id` / `awntrak_capas_report_id` | CAPA module QB connection |
+| `awntrak_production_table_id` / `awntrak_production_report_id` | Production module QB connection |
 | `awntrak_kpi_configs` | JSON array of KPI configuration objects |
 | `awntrak_chart_configs` | JSON array of chart configuration objects |
 | `awntrak_column_titles` | `{ [colId]: string }` map of custom column display titles |
 | `awntrak_column_order` | `string[]` ordered array of column IDs |
+| `awntrak_filter_fields` | `string[]` of column IDs picked for the table filter row |
 | `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
 
-All dashboard keys (excluding geocache) are managed through `lib/dashboardStorage.js`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.
+Per-module connection helpers are `loadModuleSettings(module)` / `saveModuleSettings(module, …)` in `lib/dashboardStorage.js`; the warranty pair has compat aliases `loadConnectionSettings` / `saveConnectionSettings`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.

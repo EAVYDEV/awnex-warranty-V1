@@ -5,7 +5,7 @@ import CaseTable from "../components/quality/CaseTable";
 import CaseCard from "../components/quality/CaseCard";
 import CreateCaseModal from "../components/quality/CreateCaseModal";
 import CaseDetailPanel from "../components/quality/CaseDetailPanel";
-import { SettingsModal } from "../components/SettingsModal";
+import { SettingsModal } from "../../components/SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage";
 import {
   calculateRiskLevel,
