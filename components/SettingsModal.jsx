@@ -36,7 +36,7 @@ function parseQbUrl(raw) {
   return { tableId, reportId };
 }
 
-export function SettingsModal({ onClose, onSave, onClear, initialTableId = "", initialReportId = "" }) {
+export function SettingsModal({ onClose, onSave, onClear, initialTableId = "", initialReportId = "", dashboardLabel = "" }) {
   const [tableId,     setTableId]     = useState(initialTableId);
   const [reportId,    setReportId]    = useState(initialReportId);
   const [qbUrl,       setQbUrl]       = useState("");
@@ -79,7 +79,7 @@ export function SettingsModal({ onClose, onSave, onClear, initialTableId = "", i
 
   return (
     <Modal
-      title="Quickbase Connection"
+      title={dashboardLabel ? `${dashboardLabel} — Quickbase Connection` : "Quickbase Connection"}
       subtitle="Configure which table and report to load"
       onClose={onClose}
       width={480}
