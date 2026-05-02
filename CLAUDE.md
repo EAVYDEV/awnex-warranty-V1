@@ -23,7 +23,7 @@ QB_REALM=awnexinc.quickbase.com
 QB_TOKEN=your_quickbase_user_token
 ```
 
-`QB_REALM` and `QB_TOKEN` are **server-side only** and never sent to the browser. After starting the dev server, open the dashboard and click **Configure Connection** to enter a Table ID and Report ID — these are stored in `localStorage` and appended as query params to every API call.
+`QB_REALM` and `QB_TOKEN` are **server-side only** and never sent to the browser. Each dashboard tab has its own QB connection. Open any tab and click the gear icon (⚙) to enter that tab's Table ID and Report ID — these are stored in `localStorage` under per-module keys and appended as query params to every API call.
 
 Optional env var fallbacks (override via the settings modal):
 - `QB_TABLE_ID` — default table ID
@@ -31,13 +31,24 @@ Optional env var fallbacks (override via the settings modal):
 
 ## Architecture overview
 
-The app has been refactored from a single 1,500-line file into a modular structure. All logic is split across `lib/` (pure utilities) and `components/` (React components). `WarrantyDashboard.jsx` is the main orchestrator.
+The app has been refactored from a single 1,500-line file into a modular structure. All logic is split across `lib/` (pure utilities) and `components/` (React components). `WarrantyDashboard.jsx` is the main orchestrator for the Warranty and Installation tabs; `QualityRiskDashboard.jsx` is the orchestrator for the Quality Risk & RCA tab.
+
+### Dashboard tabs
+
+| Tab | Route | Orchestrator | QB config key prefix |
+|---|---|---|---|
+| Warranty | `/` | `src/WarrantyDashboard.jsx` | `awntrak_warranty_` |
+| Installation | `/?module=installation` | `src/WarrantyDashboard.jsx` | `awntrak_installation_` |
+| Quality Risk & RCA | `/quality-risk` | `src/pages/QualityRiskDashboard.jsx` | `awntrak_quality_` |
+
+Each tab stores and loads its own Quickbase table ID and report ID independently. Changing the connection on one tab has no effect on the others.
 
 ### Data flow
 
+**Warranty tab:**
 ```
-Browser (WarrantyDashboard.jsx)
-  → GET /api/warranty-orders?tableId=…&reportId=…
+Browser (WarrantyDashboard.jsx — activeModule = "warranty")
+  → GET /api/warranty-orders?tableId=…&reportId=…   (warrantySettings)
       → pages/api/warranty-orders.js  (server-side proxy)
           → POST https://api.quickbase.com/v1/reports/{reportId}/run?tableId={tableId}
               (QB_REALM + QB_TOKEN auth headers injected server-side)
@@ -48,6 +59,22 @@ Browser (WarrantyDashboard.jsx)
   ← components/dashboard/* renders KPI cards, charts, map, table
 ```
 
+**Installation tab:**
+```
+Browser (WarrantyDashboard.jsx — activeModule = "installation")
+  → GET /api/warranty-orders?tableId=…&reportId=…   (installationSettings — independent)
+  ← raw QB payload
+  ← lib/installationData.js → mapInstallationData() → installation job objects
+  ← src/components/installation/InstallationDashboard renders kanban/table/map
+```
+
+**Quality Risk & RCA tab:**
+```
+Browser (QualityRiskDashboard.jsx)
+  ← src/lib/qualityRiskDataSource.js → getQualityRiskDashboardData() (local data)
+  ← qualitySettings stored in awntrak_quality_table_id / report_id (QB fetch not yet wired)
+```
+
 ### File map — where to find things
 
 | Need to change | File |
@@ -56,13 +83,14 @@ Browser (WarrantyDashboard.jsx)
 | QB field parsing, order mapping, risk scoring, column spec builder | `lib/qbUtils.js` |
 | Filter, aggregate, KPI/chart compute helpers | `lib/dashboardMetrics.js` |
 | Default KPI/chart configs, palettes, themes | `lib/dashboardDefaults.js` |
-| localStorage keys and load/save helpers | `lib/dashboardStorage.js` |
+| Per-module localStorage keys, load/save helpers | `lib/dashboardStorage.js` |
 | SVG icon set | `components/ui/Icon.jsx` |
 | StatusBadge, RiskBadge | `components/ui/Badge.jsx` |
 | Generic modal wrapper, Btn, formStyles | `components/ui/Modal.jsx` |
-| EmptyState, LoadingState, ErrorState | `components/ui/StateScreens.jsx` |
+| EmptyState, LoadingState, ErrorState | `src/components/StateScreens.jsx` |
 | Awnex branding logo | `components/AwnexLogo.jsx` |
-| QB connection settings modal | `components/SettingsModal.jsx` |
+| QB connection settings modal (shared by all tabs) | `src/components/SettingsModal.jsx` |
+| Tab navigation header | `src/components/AppHeader.jsx` |
 | Leaflet map + geocoding | `components/MapView.jsx` |
 | KPI display card | `components/dashboard/KpiCard.jsx` |
 | KPI editor modal | `components/dashboard/KpiEditor.jsx` |
@@ -71,8 +99,32 @@ Browser (WarrantyDashboard.jsx)
 | Recharts rendering for all chart types | `components/dashboard/ConfigurableChart.jsx` |
 | Edit mode toolbar | `components/dashboard/DashboardEditToolbar.jsx` |
 | Column title editor modal | `components/dashboard/ColumnEditor.jsx` |
-| All state, data fetch, layout orchestration | `WarrantyDashboard.jsx` |
+| Warranty + Installation state, data fetch, layout | `src/WarrantyDashboard.jsx` |
+| Installation kanban / table / map views | `src/components/installation/InstallationDashboard.jsx` |
+| Quality Risk & RCA dashboard | `src/pages/QualityRiskDashboard.jsx` |
 | QB API proxy | `pages/api/warranty-orders.js` |
+| Cross-device settings sync (Vercel KV) | `pages/api/settings.js` |
+
+### Per-module QB connection
+
+`lib/dashboardStorage.js` exposes two generic helpers used throughout the app:
+
+```js
+loadModuleSettings(module)               // → { tableId, reportId }
+saveModuleSettings(module, { tableId, reportId })
+```
+
+`module` is one of `"warranty"`, `"installation"`, or `"quality"`. The helpers read/write these localStorage keys:
+
+| Module | localStorage table key | localStorage report key |
+|---|---|---|
+| `warranty` | `awntrak_warranty_table_id` | `awntrak_warranty_report_id` |
+| `installation` | `awntrak_installation_table_id` | `awntrak_installation_report_id` |
+| `quality` | `awntrak_quality_table_id` | `awntrak_quality_report_id` |
+
+`loadConnectionSettings()` / `saveConnectionSettings()` remain as aliases for `"warranty"` for backward compatibility.
+
+The `SettingsModal` component accepts a `dashboardLabel` prop (e.g. `"Warranty"`, `"Installation"`, `"Quality Risk & RCA"`) that is displayed in the modal title. Storage is handled entirely by the parent — `SettingsModal` calls `onSave({ tableId, reportId })` and the parent writes to the correct module key.
 
 ### Quickbase field mapping
 
@@ -228,16 +280,27 @@ Computed columns derived from QB fields (Risk, Warranty Status, Location) are in
 
 ### LocalStorage keys
 
-localStorage is used as an immediate read/write cache. All keys are also synced to Vercel KV via `GET /api/settings` (on mount) and `POST /api/settings` (debounced, 800 ms after any change) so settings persist across devices.
+localStorage is used as an immediate read/write cache. Warranty and Installation keys are also synced to Vercel KV via `GET /api/settings` (on mount) and `POST /api/settings` (debounced, 800 ms after any change) so settings persist across devices. Quality Risk settings are synced to KV immediately on save.
+
+**QB connection (per module):**
 
 | Key | Purpose |
 |---|---|
-| `awntrak_warranty_table_id` | QB table ID |
-| `awntrak_warranty_report_id` | QB report ID |
+| `awntrak_warranty_table_id` | Warranty tab QB table ID |
+| `awntrak_warranty_report_id` | Warranty tab QB report ID |
+| `awntrak_installation_table_id` | Installation tab QB table ID |
+| `awntrak_installation_report_id` | Installation tab QB report ID |
+| `awntrak_quality_table_id` | Quality Risk tab QB table ID |
+| `awntrak_quality_report_id` | Quality Risk tab QB report ID |
+
+**Dashboard configuration (Warranty tab):**
+
+| Key | Purpose |
+|---|---|
 | `awntrak_kpi_configs` | JSON array of KPI configuration objects |
 | `awntrak_chart_configs` | JSON array of chart configuration objects |
 | `awntrak_column_titles` | `{ [colId]: string }` map of custom column display titles |
 | `awntrak_column_order` | `string[]` ordered array of column IDs |
 | `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
 
-All dashboard keys (excluding geocache) are managed through `lib/dashboardStorage.js`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.
+All dashboard keys (excluding geocache) are managed through `lib/dashboardStorage.js`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single merged JSON object. `POST /api/settings` merges incoming fields into the existing stored object rather than replacing it, so each dashboard can write only its own keys. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.
