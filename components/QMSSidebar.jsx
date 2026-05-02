@@ -125,22 +125,6 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
           <AwnexLogo height={28} />
         </div>
 
-        {/* Brand text — fades and slides away when collapsed */}
-        <div style={{
-          overflow: "hidden",
-          opacity: collapsed ? 0 : 1,
-          maxWidth: collapsed ? 0 : 200,
-          transition: `opacity ${TRANSITION}, max-width ${TRANSITION}`,
-          whiteSpace: "nowrap",
-          paddingLeft: collapsed ? 0 : 8,
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.25 }}>
-            Quality Management
-          </div>
-          <div style={{ fontSize: 10, color: C.sidebarMuted, fontWeight: 500, marginTop: 1, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Awnex QMS
-          </div>
-        </div>
 
         {/* Collapse toggle — pinned to the right edge, fades in when expanded */}
         <button
@@ -254,34 +238,6 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
         })}
       </nav>
 
-      {/* ── Bottom: expand label when collapsed ────────────────────────────── */}
-      <div style={{
-        padding: "12px 8px",
-        borderTop: `1px solid ${C.sidebarBorder}`,
-        overflow: "hidden",
-      }}>
-        {/* When collapsed: just a small expand hint */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          gap: 8,
-          padding: "6px 10px",
-          opacity: 0.4,
-          fontSize: 11,
-          color: C.sidebarText,
-        }}>
-          <span style={{
-            overflow: "hidden",
-            opacity: collapsed ? 0 : 1,
-            maxWidth: collapsed ? 0 : 160,
-            whiteSpace: "nowrap",
-            transition: `opacity ${TRANSITION}, max-width ${TRANSITION}`,
-          }}>
-            Awnex QMS v1
-          </span>
-        </div>
-      </div>
     </aside>
   );
 }
