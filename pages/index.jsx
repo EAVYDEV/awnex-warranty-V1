@@ -1,14 +1,14 @@
 import Head from "next/head";
-import { WarrantyDashboard } from "../src/WarrantyDashboard";
+import { QMSShell } from "../components/QMSShell.jsx";
 
 export default function Home() {
   return (
     <>
       <Head>
-        <title>Warranty Management - Awntrak</title>
-        <meta name="description" content="Awntrak Warranty Management Dashboard" />
+        <title>Quality Management System — Awnex</title>
+        <meta name="description" content="Awnex Manufacturing Quality Management System" />
       </Head>
-      <WarrantyDashboard apiRoute="/api/warranty-orders" />
+      <QMSShell />
     </>
   );
 }

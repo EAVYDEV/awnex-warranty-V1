@@ -47,9 +47,10 @@ import { mapInstallationData } from "../lib/installationData";
 
 // ─── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 export function WarrantyDashboard({
-  apiRoute  = "/api/warranty-orders",
+  apiRoute   = "/api/warranty-orders",
   orders: ordersProp = null,
-  sources   = null,
+  sources    = null,
+  standalone = true,
 }) {
   // ── Connection settings ────────────────────────────────────────────────────
   const [settings, setSettings]                           = useState({ tableId: "", reportId: "" });
@@ -558,7 +559,7 @@ export function WarrantyDashboard({
   );
 
   const wrap = children => (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh", padding: "24px 24px 48px" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: standalone ? "100vh" : "auto", padding: "24px 24px 48px" }}>
       {settingsModals}
       <ContentViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />
       {children}
@@ -577,7 +578,7 @@ export function WarrantyDashboard({
 
   // ── Full render ────────────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh", padding: "24px 24px 48px" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: standalone ? "100vh" : "auto", padding: "24px 24px 48px" }}>
 
       {/* Modals */}
       {settingsModals}
@@ -615,7 +616,18 @@ export function WarrantyDashboard({
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <AppHeader />
+          {standalone && <AppHeader />}
+          {!standalone && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 4, height: 28, borderRadius: 2, background: T.brand }} />
+                <div>
+                  <h1 style={{ fontSize: 22, fontWeight: 800, color: T.text1, margin: 0 }}>Warranty Management</h1>
+                  <p style={{ fontSize: 12, color: T.text2, margin: 0 }}>Order warranties, claim risk scores &amp; expiration tracking</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {/* Sync status */}
