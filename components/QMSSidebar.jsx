@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { AwnexLogo } from "./AwnexLogo.jsx";
 import { colors } from "../lib/tokens.js";
 
@@ -57,10 +56,12 @@ function IconProduction() {
   );
 }
 
-function IconChevron() {
+// Panel-left collapse / expand icon
+function IconPanelLeft() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6"/>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="9" y1="3" x2="9" y2="21"/>
     </svg>
   );
 }
@@ -68,25 +69,20 @@ function IconChevron() {
 // ─── NAV ITEMS CONFIG ─────────────────────────────────────────────────────────
 
 export const NAV_ITEMS = [
-  { id: "overview",    label: "Overview",             icon: IconOverview,    group: "main" },
-  { id: "warranty",    label: "Warranty",             icon: IconWarranty,    group: "modules" },
-  { id: "inspections", label: "Inspections",          icon: IconInspections, group: "modules" },
-  { id: "ncrs",        label: "Non-Conformances",     icon: IconNCR,         group: "modules" },
-  { id: "capas",       label: "Corrective Actions",   icon: IconCAPA,        group: "modules" },
-  { id: "production",  label: "Production",           icon: IconProduction,  group: "modules" },
+  { id: "overview",    label: "Overview",           icon: IconOverview,    group: "main"    },
+  { id: "warranty",    label: "Warranty",           icon: IconWarranty,    group: "modules" },
+  { id: "inspections", label: "Inspections",        icon: IconInspections, group: "modules" },
+  { id: "ncrs",        label: "Non-Conformances",   icon: IconNCR,         group: "modules" },
+  { id: "capas",       label: "Corrective Actions", icon: IconCAPA,        group: "modules" },
+  { id: "production",  label: "Production",         icon: IconProduction,  group: "modules" },
 ];
 
-const GROUP_LABELS = {
-  main:    null,
-  modules: "MODULES",
-};
+const TRANSITION = "200ms cubic-bezier(0.2,0,0,1)";
 
 // ─── SIDEBAR COMPONENT ────────────────────────────────────────────────────────
 
 export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCollapse }) {
   const W = collapsed ? 64 : 240;
-
-  const groups = ["main", "modules"];
 
   return (
     <aside style={{
@@ -100,56 +96,114 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
       borderRight: `1px solid ${C.sidebarBorder}`,
       display: "flex",
       flexDirection: "column",
-      transition: "width 200ms cubic-bezier(0.2,0,0,1), min-width 200ms cubic-bezier(0.2,0,0,1), max-width 200ms cubic-bezier(0.2,0,0,1)",
+      transition: `width ${TRANSITION}, min-width ${TRANSITION}, max-width ${TRANSITION}`,
       overflow: "hidden",
       flexShrink: 0,
       zIndex: 100,
     }}>
 
-      {/* ── Logo area ──────────────────────────────────────────────────────── */}
+      {/* ── Logo + collapse toggle ──────────────────────────────────────────── */}
       <div style={{
-        padding: collapsed ? "20px 0" : "20px 16px",
+        height: 64,
+        flexShrink: 0,
         borderBottom: `1px solid ${C.sidebarBorder}`,
         display: "flex",
         alignItems: "center",
-        gap: 10,
-        justifyContent: collapsed ? "center" : "flex-start",
-        minHeight: 72,
+        padding: "0 12px",
+        gap: 0,
+        position: "relative",
+        overflow: "hidden",
       }}>
-        <div style={{ flexShrink: 0 }}>
-          <AwnexLogo height={32} />
+        {/* Logo mark — always visible, fixed position */}
+        <div style={{
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 40,
+        }}>
+          <AwnexLogo height={28} />
         </div>
-        {!collapsed && (
-          <div style={{ overflow: "hidden" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, whiteSpace: "nowrap" }}>
-              Quality Management
-            </div>
-            <div style={{ fontSize: 10, color: C.sidebarMuted, fontWeight: 500, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
-              Awnex QMS Platform
-            </div>
+
+        {/* Brand text — fades and slides away when collapsed */}
+        <div style={{
+          overflow: "hidden",
+          opacity: collapsed ? 0 : 1,
+          maxWidth: collapsed ? 0 : 200,
+          transition: `opacity ${TRANSITION}, max-width ${TRANSITION}`,
+          whiteSpace: "nowrap",
+          paddingLeft: collapsed ? 0 : 8,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.25 }}>
+            Quality Management
           </div>
-        )}
+          <div style={{ fontSize: 10, color: C.sidebarMuted, fontWeight: 500, marginTop: 1, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            Awnex QMS
+          </div>
+        </div>
+
+        {/* Collapse toggle — pinned to the right edge, fades in when expanded */}
+        <button
+          onClick={onToggleCollapse}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          style={{
+            position: "absolute",
+            right: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: 6,
+            border: "none",
+            background: "transparent",
+            color: collapsed ? C.sidebarText : C.sidebarMuted,
+            cursor: "pointer",
+            opacity: collapsed ? 1 : 0.6,
+            transition: `opacity ${TRANSITION}, background ${TRANSITION}, color ${TRANSITION}`,
+            flexShrink: 0,
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = C.sidebarHover;
+            e.currentTarget.style.opacity = "1";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.opacity = collapsed ? "1" : "0.6";
+          }}
+        >
+          <IconPanelLeft />
+        </button>
       </div>
 
       {/* ── Nav items ──────────────────────────────────────────────────────── */}
-      <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto", overflowX: "hidden" }}>
-        {groups.map((group) => {
+      <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto", overflowX: "hidden" }}>
+        {["main", "modules"].map((group) => {
           const items = NAV_ITEMS.filter(i => i.group === group);
-          const label = GROUP_LABELS[group];
+          const hasLabel = group === "modules";
           return (
             <div key={group} style={{ marginBottom: 4 }}>
-              {!collapsed && label && (
+              {/* Group label — fades out when collapsed */}
+              {hasLabel && (
                 <div style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: C.sidebarMuted,
-                  letterSpacing: "0.1em",
-                  padding: "10px 8px 4px",
+                  overflow: "hidden",
+                  opacity: collapsed ? 0 : 1,
+                  maxHeight: collapsed ? 0 : 28,
+                  transition: `opacity ${TRANSITION}, max-height ${TRANSITION}`,
                 }}>
-                  {label}
+                  <div style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: C.sidebarMuted,
+                    letterSpacing: "0.1em",
+                    padding: "10px 8px 4px",
+                    whiteSpace: "nowrap",
+                  }}>
+                    MODULES
+                  </div>
                 </div>
               )}
-              {collapsed && label && <div style={{ height: 12 }} />}
+
               {items.map((item) => {
                 const isActive = activeModule === item.id;
                 const Icon = item.icon;
@@ -163,7 +217,7 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
                       display: "flex",
                       alignItems: "center",
                       gap: 10,
-                      padding: collapsed ? "9px 0" : "9px 10px",
+                      padding: "8px 10px",
                       borderRadius: 8,
                       border: "none",
                       cursor: "pointer",
@@ -173,22 +227,25 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
                       color: isActive ? "#FFFFFF" : C.sidebarText,
                       fontSize: 13,
                       fontWeight: isActive ? 600 : 400,
-                      transition: "background 150ms, color 150ms",
+                      transition: `background ${TRANSITION}, color ${TRANSITION}, justify-content ${TRANSITION}`,
                       textAlign: "left",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
                     }}
                     onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = C.sidebarHover; }}
                     onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                   >
-                    <span style={{ flexShrink: 0, opacity: isActive ? 1 : 0.7 }}>
+                    <span style={{ flexShrink: 0, opacity: isActive ? 1 : 0.75, display: "flex" }}>
                       <Icon />
                     </span>
-                    {!collapsed && (
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {item.label}
-                      </span>
-                    )}
+                    {/* Nav label — fades and collapses width */}
+                    <span style={{
+                      overflow: "hidden",
+                      opacity: collapsed ? 0 : 1,
+                      maxWidth: collapsed ? 0 : 180,
+                      whiteSpace: "nowrap",
+                      transition: `opacity ${TRANSITION}, max-width ${TRANSITION}`,
+                    }}>
+                      {item.label}
+                    </span>
                   </button>
                 );
               })}
@@ -197,34 +254,33 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
         })}
       </nav>
 
-      {/* ── Collapse toggle ────────────────────────────────────────────────── */}
-      <div style={{ padding: "12px 8px", borderTop: `1px solid ${C.sidebarBorder}` }}>
-        <button
-          onClick={onToggleCollapse}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: collapsed ? "center" : "flex-start",
-            gap: 10,
-            padding: collapsed ? "8px 0" : "8px 10px",
-            borderRadius: 8,
-            border: "none",
-            background: "transparent",
-            color: C.sidebarMuted,
-            cursor: "pointer",
-            fontSize: 12,
-            transition: "background 150ms",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.sidebarHover; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <span style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 200ms", display: "flex" }}>
-            <IconChevron />
+      {/* ── Bottom: expand label when collapsed ────────────────────────────── */}
+      <div style={{
+        padding: "12px 8px",
+        borderTop: `1px solid ${C.sidebarBorder}`,
+        overflow: "hidden",
+      }}>
+        {/* When collapsed: just a small expand hint */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          gap: 8,
+          padding: "6px 10px",
+          opacity: 0.4,
+          fontSize: 11,
+          color: C.sidebarText,
+        }}>
+          <span style={{
+            overflow: "hidden",
+            opacity: collapsed ? 0 : 1,
+            maxWidth: collapsed ? 0 : 160,
+            whiteSpace: "nowrap",
+            transition: `opacity ${TRANSITION}, max-width ${TRANSITION}`,
+          }}>
+            Awnex QMS v1
           </span>
-          {!collapsed && <span>Collapse</span>}
-        </button>
+        </div>
       </div>
     </aside>
   );
