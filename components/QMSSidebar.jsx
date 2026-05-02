@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AwnexLogo } from "./AwnexLogo.jsx";
 import { colors } from "../lib/tokens.js";
+import { ThemeSwitcher } from "./ui/ThemeSwitcher.jsx";
 
 const C = colors;
 
@@ -197,8 +198,9 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
         })}
       </nav>
 
-      {/* ── Collapse toggle ────────────────────────────────────────────────── */}
+      {/* ── Footer: theme switcher + collapse toggle ───────────────────────── */}
       <div style={{ padding: "12px 8px", borderTop: `1px solid ${C.sidebarBorder}` }}>
+        <ThemeSwitcher variant="sidebar" collapsed={collapsed} />
         <button
           onClick={onToggleCollapse}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}

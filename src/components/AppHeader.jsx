@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { T } from "../../lib/tokens";
 import { AwnexLogo } from "../../components/AwnexLogo";
+import { ThemeSwitcher } from "../../components/ui/ThemeSwitcher.jsx";
 
 export default function AppHeader() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function AppHeader() {
   });
 
   return (
-    <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+    <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <AwnexLogo />
@@ -33,6 +34,9 @@ export default function AppHeader() {
           <Link href="/?module=installation" style={tabStyle(isInstallation)}>Installation</Link>
           <Link href="/quality-risk" style={tabStyle(router.pathname === "/quality-risk")}>Quality Risk & RCA</Link>
         </div>
+      </div>
+      <div style={{ paddingTop: 4 }}>
+        <ThemeSwitcher variant="default" />
       </div>
     </div>
   );
