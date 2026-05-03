@@ -1,4 +1,4 @@
-import { colors } from "../../lib/tokens.js";
+import { colors, T } from "../../lib/tokens.js";
 
 const C = colors;
 
@@ -9,9 +9,9 @@ function KpiCard({ label, value, sub, accent, icon }) {
     <div style={{
       background: C.card,
       border: `1px solid ${C.borderLight}`,
-      borderRadius: 12,
+      borderRadius: T.radiusContainer,
       padding: "20px 22px",
-      boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+      boxShadow: T.cardShadow,
       borderLeft: `4px solid ${accent}`,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -31,20 +31,20 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
       style={{
         background: C.card,
         border: `1px solid ${C.borderLight}`,
-        borderRadius: 12,
+        borderRadius: T.radiusContainer,
         padding: "20px",
-        boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+        boxShadow: T.cardShadow,
         cursor: "pointer",
         textAlign: "left",
         width: "100%",
         transition: "box-shadow 150ms, border-color 150ms",
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(15,23,42,0.10)"; e.currentTarget.style.borderColor = accentColor; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 3px rgba(15,23,42,0.06)"; e.currentTarget.style.borderColor = C.borderLight; }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--t-shadow-elevated)"; e.currentTarget.style.borderColor = accentColor; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "var(--t-shadow-card)"; e.currentTarget.style.borderColor = C.borderLight; }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10,
+          width: 40, height: 40, borderRadius: T.radiusItem,
           background: accentColor + "18",
           display: "flex", alignItems: "center", justifyContent: "center",
           color: accentColor, flexShrink: 0,
