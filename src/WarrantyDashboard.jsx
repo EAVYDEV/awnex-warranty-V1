@@ -39,11 +39,15 @@ import { ConfigurableChart }     from "../components/dashboard/ConfigurableChart
 import { DashboardEditToolbar }  from "../components/dashboard/DashboardEditToolbar.jsx";
 import { ColumnEditor }          from "../components/dashboard/ColumnEditor.jsx";
 import { StatusBadge, RiskBadge } from "../components/ui/Badge.jsx";
+import { Sparkline }             from "../components/ui/Sparkline.jsx";
+import { AlertsPanel }           from "../components/alerts/AlertsPanel.jsx";
 import { ProductTag }            from "../components/ui/Tag.jsx";
 import { SortIcon }              from "../components/ui/SortIcon.jsx";
 import { EmptyState, LoadingState, ErrorState } from "../components/ui/StateScreens.jsx";
 import { InstallationDashboard } from "./components/installation/InstallationDashboard.jsx";
-import { mapInstallationData } from "../lib/installationData";
+import { mapInstallationData }   from "../lib/installationData";
+import { loadRiskHistory, saveRiskSnapshot, isRisingRisk } from "../lib/riskHistory.js";
+import { loadAlertThresholds, saveAlertThresholds, loadWatchedOrders, saveWatchedOrders } from "../lib/alertsStorage.js";
 
 // ─── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 export function WarrantyDashboard({
@@ -209,6 +213,29 @@ export function WarrantyDashboard({
     setViewerOpen(true);
   }, []);
 
+  // ── Alerts + watchlist state ───────────────────────────────────────────────
+  const [watchedOrders,   setWatchedOrders]   = useState(() => loadWatchedOrders());
+  const [alertThresholds, setAlertThresholds] = useState(() => loadAlertThresholds());
+  const [showAlerts,      setShowAlerts]      = useState(false);
+  const [riskHistory,     setRiskHistory]     = useState(() => {
+    try { return typeof window !== "undefined" ? loadRiskHistory() : {}; } catch { return {}; }
+  });
+  const [showRisingRisk,  setShowRisingRisk]  = useState(false);
+
+  function handleToggleWatch(orderNum) {
+    setWatchedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderNum)) next.delete(orderNum); else next.add(orderNum);
+      saveWatchedOrders(next);
+      return next;
+    });
+  }
+
+  function handleThresholdsChange(t) {
+    setAlertThresholds(t);
+    saveAlertThresholds(t);
+  }
+
   // ── Edit mode state ────────────────────────────────────────────────────────
   const [editMode, setEditMode]           = useState(false);
   const [kpiConfigs, setKpiConfigs]       = useState(() => loadKpiConfigs());
@@ -358,6 +385,27 @@ export function WarrantyDashboard({
     setShowSettings(false);
   }
 
+  // ── Risk history snapshot (runs after every successful fetch or prop load) ──
+  useEffect(() => {
+    if (orders.length === 0) return;
+    saveRiskSnapshot(orders);
+    setRiskHistory(loadRiskHistory());
+  }, [orders]);
+
+  // ── Alert badge count (unique orders matching any alert condition) ──────────
+  const alertCount = useMemo(() => {
+    const set = new Set();
+    enriched.forEach(o => {
+      if (watchedOrders.has(o.orderNum)) set.add(o.orderNum);
+      if (o.days != null && o.days >= 0 && o.days <= alertThresholds.expiryDays) set.add(o.orderNum);
+      if ((o.riskScore || 0) >= alertThresholds.riskScore) set.add(o.orderNum);
+      if ((o.openClaims || 0) > 0) set.add(o.orderNum);
+    });
+    return set.size;
+  // enriched is derived from orders which is the same dep
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, watchedOrders, alertThresholds]);
+
   // ── Enrichment ─────────────────────────────────────────────────────────────
   const enriched = useMemo(() => orders, [orders]);
 
@@ -367,19 +415,48 @@ export function WarrantyDashboard({
   );
 
   const columnSpecs = useMemo(() => {
-    const specs  = buildColumnSpecs(qbReportFields, columnTitles);
-    if (!columnOrder.length) return specs;
-    // Apply saved order: sort by position in columnOrder; unknown cols go before qbLink
-    const orderMap = Object.fromEntries(columnOrder.map((id, i) => [id, i]));
-    const link     = specs.find(c => c.renderAs === "qbLink");
-    const rest     = specs.filter(c => c.renderAs !== "qbLink");
-    rest.sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999));
-    return link ? [...rest, link] : rest;
+    const specs = buildColumnSpecs(qbReportFields, columnTitles);
+
+    // Inject sparkline column immediately after the risk column
+    const sparklineCol = {
+      id: "col_sparkline", renderAs: "sparkline", key: "riskScore",
+      defaultTitle: "Trend", title: columnTitles["col_sparkline"] || "Trend",
+      sortable: false, qbId: null,
+    };
+    const riskIdx = specs.findIndex(s => s.renderAs === "risk");
+    if (riskIdx >= 0) specs.splice(riskIdx + 1, 0, sparklineCol);
+    else specs.push(sparklineCol);
+
+    let ordered;
+    if (!columnOrder.length) {
+      ordered = specs;
+    } else {
+      // Apply saved order: sort by position in columnOrder; unknown cols go before qbLink
+      const orderMap = Object.fromEntries(columnOrder.map((id, i) => [id, i]));
+      const link     = specs.find(c => c.renderAs === "qbLink");
+      const rest     = specs.filter(c => c.renderAs !== "qbLink");
+      rest.sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999));
+      ordered = link ? [...rest, link] : rest;
+    }
+
+    // Watch (star) column is always pinned at the left edge
+    const watchCol = {
+      id: "col_watch", renderAs: "watch", key: "orderNum",
+      defaultTitle: "", title: "", sortable: false, qbId: null,
+    };
+    return [watchCol, ...ordered];
   }, [qbReportFields, columnTitles, columnOrder]);
+
+  // ── Rising risk count (used for filter chip label) ────────────────────────
+  const risingRiskCount = useMemo(
+    () => enriched.filter(o => isRisingRisk(riskHistory[o.orderNum])).length,
+    [enriched, riskHistory],
+  );
 
   // ── Table filter + sort ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let r = enriched;
+    if (showRisingRisk) r = r.filter(o => isRisingRisk(riskHistory[o.orderNum]));
     if (search) {
       const q = search.toLowerCase();
       r = r.filter(o => Object.values(o).some(v => String(v ?? "").toLowerCase().includes(q)));
@@ -401,14 +478,14 @@ export function WarrantyDashboard({
         ? av - bv : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [enriched, search, fieldFilters, sortCol, sortDir]);
+  }, [enriched, search, fieldFilters, sortCol, sortDir, showRisingRisk, riskHistory]);
 
   const filterableFields = useMemo(() => {
-    const availableByKey = new Map(availableFields.map((f) => [f.key, f]));
+    const availableByKey  = new Map(availableFields.map((f) => [f.key, f]));
     const availableByQbId = new Map(availableFields.filter((f) => f.qbId != null).map((f) => [f.qbId, f]));
     const seen = new Set();
     const candidates = columnSpecs
-      .filter((c) => c.renderAs !== "qbLink")
+      .filter((c) => c.renderAs !== "qbLink" && c.renderAs !== "watch" && c.renderAs !== "sparkline")
       .map((c) => {
         const source = availableByQbId.get(c.qbId) || availableByKey.get(c.key);
         return {
@@ -433,7 +510,7 @@ export function WarrantyDashboard({
       .slice(0, 4);
   }, [availableFields, columnSpecs, selectedFilterFieldIds]);
   const filterOptions = useMemo(() => Object.fromEntries(filterableFields.map(f => [f.key, [...new Set(enriched.map(o => String(o[f.key] ?? "")).filter(Boolean))].slice(0,200)])), [filterableFields, enriched]);
-  const hasFilters   = search || Object.values(fieldFilters).some(v => v && v !== "all");
+  const hasFilters   = search || Object.values(fieldFilters).some(v => v && v !== "all") || showRisingRisk;
   useEffect(() => {
     const allowed = new Set(filterableFields.map((f) => f.key));
     setFieldFilters((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => allowed.has(k))));
@@ -459,6 +536,32 @@ export function WarrantyDashboard({
   // ── Table cell renderer ────────────────────────────────────────────────────
   function renderCell(o, spec, td) {
     switch (spec.renderAs) {
+      case "watch": {
+        const isWatched = watchedOrders.has(o.orderNum);
+        return (
+          <td key={spec.id} style={{ ...td, width: 32, padding: "10px 4px 10px 10px" }} onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => handleToggleWatch(o.orderNum)}
+              title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
+              style={{ width: 24, height: 24, border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 4 }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24"
+                fill={isWatched ? T.warningText : "none"}
+                stroke={isWatched ? T.warningText : T.text3}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+          </td>
+        );
+      }
+      case "sparkline":
+        return (
+          <td key={spec.id} style={{ ...td, padding: "10px 12px", minWidth: 72 }}>
+            <Sparkline points={riskHistory[o.orderNum] || []} />
+          </td>
+        );
       case "orderNum":
         return <td key={spec.id} style={{ ...td, fontWeight: 700, color: T.brand }}>{o.orderNum}</td>;
       case "customer":
@@ -613,6 +716,18 @@ export function WarrantyDashboard({
         />
       )}
 
+      {/* ── Alerts panel ─────────────────────────────────────────────────── */}
+      {showAlerts && (
+        <AlertsPanel
+          orders={enriched}
+          watchedOrders={watchedOrders}
+          onToggleWatch={handleToggleWatch}
+          thresholds={alertThresholds}
+          onThresholdsChange={handleThresholdsChange}
+          onClose={() => setShowAlerts(false)}
+        />
+      )}
+
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -649,6 +764,25 @@ export function WarrantyDashboard({
               {id}
             </div>
           ))}
+
+          {/* Alerts bell */}
+          {activeModule === "warranty" && (
+            <button
+              onClick={() => setShowAlerts(v => !v)}
+              title="View alerts and watchlist"
+              style={{ position: "relative", width: 34, height: 34, borderRadius: 10, border: `1px solid ${showAlerts ? T.brand : T.borderLight}`, background: showAlerts ? T.brandSubtle : T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showAlerts ? T.brand : T.text2, boxShadow: T.cardShadow }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 01-3.46 0"/>
+              </svg>
+              {alertCount > 0 && (
+                <span style={{ position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 999, background: T.danger, color: T.card, fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px", lineHeight: 1 }}>
+                  {alertCount > 99 ? "99+" : alertCount}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Settings gear — opens module-specific QB connection modal */}
           <button
@@ -764,6 +898,19 @@ export function WarrantyDashboard({
             {filterOptions[f.key]?.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         ))}
+        {/* Rising Risk quick-filter chip */}
+        <button
+          onClick={() => setShowRisingRisk(v => !v)}
+          title="Show only orders with an upward risk trend"
+          style={{ padding: "7px 12px", borderRadius: 14, border: `1px solid ${showRisingRisk ? T.danger : T.borderLight}`, background: showRisingRisk ? T.dangerSubtle : T.card, color: showRisingRisk ? T.dangerText : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", flexShrink: 0 }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+          Rising Risk{risingRiskCount > 0 ? ` (${risingRiskCount})` : ""}
+        </button>
+
         {editMode && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", borderLeft: `1px solid ${T.borderLight}`, paddingLeft: 10 }}>
             <span style={{ fontSize: 11, color: T.text3, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>Edit Filters</span>
@@ -786,14 +933,14 @@ export function WarrantyDashboard({
               >
                 <option value="">Filter {slot + 1}…</option>
                 {columnSpecs
-                  .filter((c) => c.renderAs !== "qbLink")
+                  .filter((c) => c.renderAs !== "qbLink" && c.renderAs !== "watch" && c.renderAs !== "sparkline")
                   .map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
             ))}
           </div>
         )}
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setFieldFilters({}); }} style={{ padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button onClick={() => { setSearch(""); setFieldFilters({}); setShowRisingRisk(false); }} style={{ padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
             Clear Filters
           </button>
         )}
@@ -857,7 +1004,7 @@ export function WarrantyDashboard({
         <div style={{ background: T.card, borderRadius: 24, boxShadow: T.cardShadow, overflow: "hidden" }}>
           {showColumnEditor && (
             <ColumnEditor
-              columns={columnSpecs}
+              columns={columnSpecs.filter(c => c.renderAs !== "watch" && c.renderAs !== "sparkline")}
               onSave={(customTitles, newOrder) => {
                 setColumnTitles(customTitles);
                 saveColumnTitles(customTitles);
