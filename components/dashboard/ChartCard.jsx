@@ -10,7 +10,8 @@ export function ChartCard({
   return (
     <div style={{
       background: T.card,
-      borderRadius: 24,
+      borderRadius: 8,
+      border: `1px solid ${T.borderLight}`,
       padding: "16px 20px 12px",
       boxShadow: T.cardShadow,
       position: "relative",
@@ -118,7 +119,7 @@ export function CustomTooltip({ active, payload, label }) {
     <div style={{
       background: T.card,
       border: `1px solid ${T.borderLight}`,
-      borderRadius: 14,
+      borderRadius: 8,
       padding: "8px 12px",
       boxShadow: T.cardShadow,
     }}>

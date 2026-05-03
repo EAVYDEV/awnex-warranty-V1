@@ -27,10 +27,10 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
     >
       <div style={{
         background: T.card,
-        borderRadius: 24,
+        borderRadius: 12,
         width: "100%",
         maxWidth: width,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.28)",
+        boxShadow: "0 8px 32px rgba(15,23,42,0.18)",
         display: "flex",
         flexDirection: "column",
         maxHeight: "90vh",
@@ -101,7 +101,7 @@ export const formStyles = {
   input: {
     width: "100%",
     padding: "8px 11px",
-    borderRadius: 16,
+    borderRadius: 6,
     border: `1px solid ${T.borderLight}`,
     fontSize: 13,
     color: T.text1,
@@ -113,7 +113,7 @@ export const formStyles = {
   select: {
     width: "100%",
     padding: "8px 11px",
-    borderRadius: 14,
+    borderRadius: 6,
     border: `1px solid ${T.borderLight}`,
     fontSize: 13,
     color: T.text1,
@@ -139,7 +139,7 @@ export const formStyles = {
 
 export function Btn({ onClick, disabled, variant = "ghost", children, style = {} }) {
   const base = {
-    padding: "8px 16px", borderRadius: 12, fontSize: 13,
+    padding: "8px 16px", borderRadius: 8, fontSize: 13,
     fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer",
     border: "none", display: "inline-flex", alignItems: "center", gap: 6,
     transition: "background 0.15s", opacity: disabled ? 0.5 : 1,

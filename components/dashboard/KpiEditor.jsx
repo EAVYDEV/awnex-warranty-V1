@@ -213,7 +213,7 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
         {/* Live preview */}
         <div style={{
           background: T.bg, border: `1px solid ${T.borderLight}`,
-          borderRadius: 14, padding: "14px 18px",
+          borderRadius: 8, padding: "14px 18px",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
         }}>
           <div>
@@ -260,7 +260,7 @@ function FilterRow({ filter, fields, onToggle, onChange }) {
           id="filter-toggle"
           onClick={onToggle}
           style={{
-            marginBottom: 6, padding: "2px 10px", borderRadius: 20,
+            marginBottom: 6, padding: "2px 10px", borderRadius: 6,
             border: `1px solid ${filter ? T.brand : T.borderLight}`,
             background: filter ? T.brandSubtle : T.bg,
             color: filter ? T.brand : T.text2,

@@ -255,7 +255,7 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
         {/* Live preview info */}
         <div style={{
           background: T.bg, border: `1px solid ${T.borderLight}`,
-          borderRadius: 14, padding: "12px 16px",
+          borderRadius: 8, padding: "12px 16px",
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <Icon name="info" size={15} color={T.brand} />
@@ -299,7 +299,7 @@ function MetricRow({ metric, index, numericFields, onChange, onRemove }) {
     <div style={{
       display: "flex", gap: 8, alignItems: "flex-end",
       padding: "10px 12px",
-      background: T.bg, borderRadius: 14,
+      background: T.bg, borderRadius: 8,
       border: `1px solid ${T.borderLight}`,
     }}>
       {/* Field */}
@@ -378,7 +378,7 @@ function FilterRow({ filter, fields, onToggle, onChange }) {
         <button
           onClick={onToggle}
           style={{
-            marginBottom: 6, padding: "2px 10px", borderRadius: 20,
+            marginBottom: 6, padding: "2px 10px", borderRadius: 6,
             border: `1px solid ${filter ? T.brand : T.borderLight}`,
             background: filter ? T.brandSubtle : T.bg,
             color: filter ? T.brand : T.text2,

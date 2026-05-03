@@ -768,7 +768,7 @@ export function WarrantyDashboard({
             <button
               onClick={() => setShowAlerts(v => !v)}
               title="View alerts and watchlist"
-              style={{ position: "relative", width: 34, height: 34, borderRadius: 10, border: `1px solid ${showAlerts ? T.brand : T.borderLight}`, background: showAlerts ? T.brandSubtle : T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showAlerts ? T.brand : T.text2, boxShadow: T.cardShadow }}
+              style={{ position: "relative", width: 34, height: 34, borderRadius: 8, border: `1px solid ${showAlerts ? T.brand : T.borderLight}`, background: showAlerts ? T.brandSubtle : T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showAlerts ? T.brand : T.text2, boxShadow: T.cardShadow }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -786,7 +786,7 @@ export function WarrantyDashboard({
           <button
             onClick={() => activeModule === "installation" ? setShowInstallationSettings(true) : setShowSettings(true)}
             title="Configure Quickbase connection"
-            style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}
+            style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
@@ -797,14 +797,14 @@ export function WarrantyDashboard({
           <button
             onClick={() => setEditMode(e => !e)}
             title={editMode ? "Exit edit mode" : "Customise dashboard"}
-            style={{ padding: "7px 14px", borderRadius: 10, border: `1px solid ${editMode ? T.brand : T.borderLight}`, background: editMode ? T.brandSubtle : T.card, color: editMode ? T.brand : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, boxShadow: T.cardShadow }}
+            style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${editMode ? T.brand : T.borderLight}`, background: editMode ? T.brandSubtle : T.card, color: editMode ? T.brand : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, boxShadow: T.cardShadow }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             {editMode ? "Editing…" : "Edit"}
           </button>
 
           {/* View toggle */}
-          <div style={{ display: "flex", background: T.card, border: `1px solid ${T.borderLight}`, borderRadius: 10, overflow: "hidden", boxShadow: T.cardShadow }}>
+          <div style={{ display: "flex", background: T.card, border: `1px solid ${T.borderLight}`, borderRadius: 8, overflow: "hidden", boxShadow: T.cardShadow }}>
             {[["table","Table"],["map","Map"]].map(([v, label]) => (
               <button key={v} onClick={() => setActiveView(v)} style={{ padding: "7px 14px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: activeView === v ? T.brand : "transparent", color: activeView === v ? T.card : T.text2, transition: "background 0.15s, color 0.15s" }}>
                 {label}
@@ -883,15 +883,15 @@ export function WarrantyDashboard({
       </div>
 
       {/* ── Filter bar ───────────────────────────────────────────────────── */}
-      <div style={{ background: T.card, borderRadius: 20, padding: "12px 16px", marginBottom: 20, boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div style={{ background: T.card, borderRadius: 8, border: `1px solid ${T.borderLight}`, padding: "12px 16px", marginBottom: 20, boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: "1 1 220px" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.text3} strokeWidth="2" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input placeholder="Search order, customer, location…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px 8px 30px", borderRadius: 16, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.bg, outline: "none", boxSizing: "border-box" }} />
+          <input placeholder="Search order, customer, location…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px 8px 30px", borderRadius: 6, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.bg, outline: "none", boxSizing: "border-box" }} />
         </div>
         {filterableFields.map((f) => (
-          <select key={f.key} value={fieldFilters[f.key] || "all"} onChange={e => setFieldFilters(prev => ({ ...prev, [f.key]: e.target.value }))} style={{ padding: "8px 12px", borderRadius: 14, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.card, cursor: "pointer", flexShrink: 0 }}>
+          <select key={f.key} value={fieldFilters[f.key] || "all"} onChange={e => setFieldFilters(prev => ({ ...prev, [f.key]: e.target.value }))} style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.card, cursor: "pointer", flexShrink: 0 }}>
             <option value="all">All {f.label}</option>
             {filterOptions[f.key]?.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
@@ -900,7 +900,7 @@ export function WarrantyDashboard({
         <button
           onClick={() => setShowRisingRisk(v => !v)}
           title="Show only orders with an upward risk trend"
-          style={{ padding: "7px 12px", borderRadius: 14, border: `1px solid ${showRisingRisk ? T.danger : T.borderLight}`, background: showRisingRisk ? T.dangerSubtle : T.card, color: showRisingRisk ? T.dangerText : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", flexShrink: 0 }}
+          style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${showRisingRisk ? T.danger : T.borderLight}`, background: showRisingRisk ? T.dangerSubtle : T.card, color: showRisingRisk ? T.dangerText : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", flexShrink: 0 }}
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
@@ -927,7 +927,7 @@ export function WarrantyDashboard({
                     return deduped;
                   });
                 }}
-                style={{ padding: "7px 9px", borderRadius: 10, border: `1px solid ${T.borderLight}`, fontSize: 12, color: T.text2, background: T.bg }}
+                style={{ padding: "7px 9px", borderRadius: 6, border: `1px solid ${T.borderLight}`, fontSize: 12, color: T.text2, background: T.bg }}
               >
                 <option value="">Filter {slot + 1}…</option>
                 {columnSpecs
@@ -938,7 +938,7 @@ export function WarrantyDashboard({
           </div>
         )}
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setFieldFilters({}); setShowRisingRisk(false); }} style={{ padding: "8px 12px", borderRadius: 12, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button onClick={() => { setSearch(""); setFieldFilters({}); setShowRisingRisk(false); }} style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
             Clear Filters
           </button>
         )}
@@ -999,7 +999,7 @@ export function WarrantyDashboard({
 
       {/* ── Order detail table (table view only) ─────────────────────────── */}
       {activeView === "table" && (
-        <div style={{ background: T.card, borderRadius: 24, boxShadow: T.cardShadow, overflow: "hidden" }}>
+        <div style={{ background: T.card, borderRadius: 8, border: `1px solid ${T.borderLight}`, boxShadow: T.cardShadow, overflow: "hidden" }}>
           {showColumnEditor && (
             <ColumnEditor
               columns={columnSpecs.filter(c => c.renderAs !== "watch" && c.renderAs !== "sparkline")}

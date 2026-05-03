@@ -12,7 +12,8 @@ export function KpiCard({
   return (
     <div style={{
       background: T.card,
-      borderRadius: 24,
+      borderRadius: 8,
+      border: `1px solid ${T.borderLight}`,
       padding: "16px 18px",
       boxShadow: T.cardShadow,
       display: "flex",

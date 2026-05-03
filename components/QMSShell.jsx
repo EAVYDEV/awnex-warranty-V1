@@ -35,7 +35,7 @@ export function QMSShell() {
       height: "100vh",
       overflow: "hidden",
       background: C.bg,
-      fontFamily: '"DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
+      fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif',
     }}>
       <QMSSidebar
         activeModule={activeModule}

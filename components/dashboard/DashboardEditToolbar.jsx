@@ -15,7 +15,7 @@ export function DashboardEditToolbar({ onAddKpi, onAddChart, onResetAll, onExit 
   return (
     <div style={{
       background: T.brandDeep,
-      borderRadius: 14,
+      borderRadius: 8,
       padding: "10px 16px",
       marginBottom: 16,
       display: "flex",

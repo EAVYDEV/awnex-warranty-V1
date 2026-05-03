@@ -106,7 +106,7 @@ export function SettingsModal({ onClose, onSave, onClear, initialTableId = "", i
       {/* Info banner */}
       <div style={{
         background: T.brandSubtle, border: `1px solid ${T.brandSoft}`,
-        borderRadius: 14, padding: "12px 14px", marginBottom: 22,
+        borderRadius: 8, padding: "12px 14px", marginBottom: 22,
         fontSize: 12, color: T.brandDark, lineHeight: 1.6,
       }}>
         <strong>QB_REALM</strong> and <strong>QB_TOKEN</strong> are server-side environment

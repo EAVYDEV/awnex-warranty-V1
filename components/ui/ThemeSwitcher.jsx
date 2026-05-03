@@ -82,7 +82,7 @@ function ThemeMenu({ themeId, setTheme, onClose, position = 'bottom', sidebarCol
         width: 248,
         background: 'var(--t-card)',
         border: '1px solid var(--t-border)',
-        borderRadius: 14,
+        borderRadius: 8,
         boxShadow: 'var(--t-shadow-card)',
         zIndex: 1000,
         padding: 10,

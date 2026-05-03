@@ -9,14 +9,16 @@ export default function AppHeader() {
   const isInstallation = router.pathname === "/" && router.query.module === "installation";
 
   const tabStyle = (active) => ({
-    padding: "6px 10px",
-    borderRadius: 8,
-    border: `1px solid ${T.borderLight}`,
+    padding: "6px 14px",
+    borderRadius: 6,
+    border: `1px solid ${active ? T.brand : T.borderLight}`,
     background: active ? T.brandSubtle : T.card,
     color: active ? T.brand : T.text2,
     fontSize: 12,
     fontWeight: 600,
     textDecoration: "none",
+    letterSpacing: "0.01em",
+    transition: "background 150ms, border-color 150ms, color 150ms",
   });
 
   return (

@@ -154,7 +154,7 @@ export default function QualityRiskDashboard() {
         {activeTab === "Overview" && (
           <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             {[ ["Open Cases", kpi.open], ["Critical Issues", kpi.critical], ["Field Impact Cases", kpi.fieldImpact], ["Average Days Open", kpi.avgDaysOpen] ].map(([label, value]) => (
-              <div key={label} style={{ borderRadius: 20, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}><p style={{ fontSize: 11, color: T.text3, margin: 0, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p><p style={{ fontSize: 40, margin: "4px 0 0", fontWeight: 700, color: T.text1 }}>{value}</p></div>
+              <div key={label} style={{ borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}><p style={{ fontSize: 11, color: T.text3, margin: 0, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p><p style={{ fontSize: 40, margin: "4px 0 0", fontWeight: 700, color: T.text1 }}>{value}</p></div>
             ))}
           </div>
         )}
@@ -166,7 +166,7 @@ export default function QualityRiskDashboard() {
               { title: "Cases by Severity", rows: trendData.bySeverity },
               { title: "Recurring Issue Categories", rows: trendData.recurringCategories },
             ].map((card) => (
-              <div key={card.title} style={{ borderRadius: 16, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}>
+              <div key={card.title} style={{ borderRadius: 8, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}>
                 <h3 style={{ margin: 0, color: T.text1, fontSize: 36, fontWeight: 700 }}>{card.title}</h3>
                 <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
                   {card.rows.map((item) => (
