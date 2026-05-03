@@ -131,7 +131,7 @@ function SidebarThemeSwitcher({ collapsed }) {
                   }} />
                   {theme.name}
                   {isActive && (
-                    <span style={{ marginLeft: 'auto', color: '#60A5FA' }}>
+                    <span style={{ marginLeft: 'auto', color: THEME_SWATCHES[theme.id] }}>
                       <CheckIcon />
                     </span>
                   )}
