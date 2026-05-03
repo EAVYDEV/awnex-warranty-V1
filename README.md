@@ -83,7 +83,7 @@ awnex-warranty-V1/
 │
 ├── pages/
 │   ├── _app.jsx                  App wrapper (viewport meta, CSS reset)
-│   ├── index.jsx                 Entry page — mounts WarrantyDashboard
+│   ├── index.jsx                 Entry page — mounts QMSShell
 │   ├── quality-risk.jsx          Quality Risk & RCA route entry
 │   └── api/
 │       ├── warranty-orders.js    Server-side proxy to Quickbase API
