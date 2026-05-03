@@ -10,7 +10,7 @@ export function ChartCard({
   return (
     <div style={{
       background: T.card,
-      borderRadius: 24,
+      borderRadius: T.radiusCard,
       padding: "16px 20px 12px",
       boxShadow: T.cardShadow,
       position: "relative",
@@ -81,7 +81,7 @@ export function ChartCard({
         <div style={{
           position: "absolute", bottom: 8, left: 12,
           background: T.bg, border: `1px solid ${T.borderLight}`,
-          borderRadius: 6, padding: "1px 6px",
+          borderRadius: T.radiusSm, padding: "1px 6px",
           fontSize: 10, fontWeight: 700, color: T.text3,
           textTransform: "uppercase", letterSpacing: "0.04em",
         }}>
@@ -98,7 +98,7 @@ function EditBtn({ onClick, title, children }) {
       title={title}
       onClick={e => { e.stopPropagation(); onClick?.(); }}
       style={{
-        width: 26, height: 26, borderRadius: 8,
+        width: 26, height: 26, borderRadius: T.radiusInput,
         border: `1px solid ${T.borderLight}`,
         background: T.card,
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -118,7 +118,7 @@ export function CustomTooltip({ active, payload, label }) {
     <div style={{
       background: T.card,
       border: `1px solid ${T.borderLight}`,
-      borderRadius: 14,
+      borderRadius: T.radiusWidget,
       padding: "8px 12px",
       boxShadow: T.cardShadow,
     }}>

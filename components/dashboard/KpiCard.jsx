@@ -12,7 +12,7 @@ export function KpiCard({
   return (
     <div style={{
       background: T.card,
-      borderRadius: 24,
+      borderRadius: T.radiusCard,
       padding: "16px 18px",
       boxShadow: T.cardShadow,
       display: "flex",
@@ -84,7 +84,7 @@ export function KpiCard({
         </span>
         {iconName && !editMode && (
           <div style={{
-            width: 32, height: 32, borderRadius: 10,
+            width: 32, height: 32, borderRadius: T.radiusItem,
             background: bg || T.brandSubtle,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
@@ -117,7 +117,7 @@ export function KpiCard({
         <div style={{
           position: "absolute", bottom: 8, left: 8,
           background: T.bg, border: `1px solid ${T.borderLight}`,
-          borderRadius: 6, padding: "1px 6px",
+          borderRadius: T.radiusSm, padding: "1px 6px",
           fontSize: 10, fontWeight: 700, color: T.text3,
           textTransform: "uppercase", letterSpacing: "0.04em",
         }}>
@@ -134,7 +134,7 @@ function EditBtn({ onClick, title, children }) {
       title={title}
       onClick={e => { e.stopPropagation(); onClick?.(); }}
       style={{
-        width: 24, height: 24, borderRadius: 8,
+        width: 24, height: 24, borderRadius: T.radiusInput,
         border: `1px solid ${T.borderLight}`,
         background: T.card,
         display: "flex", alignItems: "center", justifyContent: "center",

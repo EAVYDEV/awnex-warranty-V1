@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTheme } from '../../lib/ThemeContext.jsx';
 import { THEMES, THEME_SWATCHES } from '../../lib/themes.js';
-import { colors } from '../../lib/tokens.js';
+import { colors, T } from '../../lib/tokens.js';
 
 function PaletteIcon() {
   return (
@@ -37,7 +37,7 @@ function SidebarThemeSwitcher({ collapsed }) {
     justifyContent: collapsed ? 'center' : 'flex-start',
     gap: 8,
     padding: collapsed ? '8px 0' : '8px 10px',
-    borderRadius: 8,
+    borderRadius: T.radiusInput,
     border: 'none',
     background: open ? colors.sidebarHover : 'transparent',
     color: colors.sidebarMuted,
@@ -88,7 +88,7 @@ function SidebarThemeSwitcher({ collapsed }) {
             marginLeft: collapsed ? 8 : 0,
             background: '#1E293B',
             border: '1px solid #334155',
-            borderRadius: 10,
+            borderRadius: T.radiusItem,
             boxShadow: '0 -4px 16px rgba(0,0,0,0.4)',
             minWidth: 140,
             zIndex: 1000,
@@ -162,7 +162,7 @@ function DefaultThemeSwitcher() {
           alignItems: 'center',
           gap: 6,
           padding: '5px 10px',
-          borderRadius: 8,
+          borderRadius: T.radiusInput,
           border: `1px solid ${colors.borderLight}`,
           background: colors.surface,
           color: colors.text2,
@@ -194,7 +194,7 @@ function DefaultThemeSwitcher() {
             marginTop: 6,
             background: colors.card,
             border: `1px solid ${colors.borderLight}`,
-            borderRadius: 10,
+            borderRadius: T.radiusItem,
             boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
             minWidth: 148,
             zIndex: 1000,
