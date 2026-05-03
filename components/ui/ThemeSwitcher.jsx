@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from '../../lib/ThemeContext.jsx';
-import { THEMES, THEME_SWATCHES } from '../../lib/themes.js';
+import { THEMES } from '../../lib/themes.js';
 import { colors } from '../../lib/tokens.js';
 
 function PaletteIcon() {
@@ -15,138 +15,100 @@ function PaletteIcon() {
   );
 }
 
-function CheckIcon() {
+function themeCardStyle(theme, isActive) {
+  const v = theme.vars;
+  return {
+    width: '100%',
+    borderRadius: 12,
+    border: `1px solid ${isActive ? v['--t-brand'] : v['--t-border']}`,
+    background: v['--t-card'],
+    padding: 10,
+    cursor: 'pointer',
+    boxShadow: isActive ? `0 0 0 2px ${v['--t-brand-soft']}` : 'none',
+    textAlign: 'left',
+  };
+}
+
+function ThemePreview({ theme, isActive, onSelect }) {
+  const v = theme.vars;
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
+    <button onClick={onSelect} style={themeCardStyle(theme, isActive)}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: v['--t-text1'] }}>{theme.name}</span>
+        {isActive && <span style={{ fontSize: 10, fontWeight: 700, color: v['--t-brand'] }}>ACTIVE</span>}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+        <span style={{ height: 12, borderRadius: 99, background: v['--t-brand'] }} />
+        <span style={{ height: 12, borderRadius: 99, background: v['--t-accent'] }} />
+        <span style={{ height: 12, borderRadius: 99, background: v['--t-success'] }} />
+        <span style={{ height: 12, borderRadius: 99, background: v['--t-warning'] }} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 6, marginTop: 8 }}>
+        <span style={{ height: 20, borderRadius: 6, background: v['--t-sidebar'] }} />
+        <span style={{ height: 20, borderRadius: 6, background: v['--t-bg'], border: `1px solid ${v['--t-border']}` }} />
+      </div>
+    </button>
   );
 }
 
-// ─── SIDEBAR VARIANT ──────────────────────────────────────────────────────────
-// Dark background, sidebar token colors, dropdown opens upward.
+function ThemeMenu({ themeId, setTheme, onClose, position = 'bottom' }) {
+  return (
+    <>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={onClose} />
+      <div style={{
+        position: 'absolute',
+        [position === 'bottom' ? 'top' : 'bottom']: '100%',
+        right: position === 'bottom' ? 0 : 'auto',
+        left: position === 'top' ? 0 : 'auto',
+        marginTop: position === 'bottom' ? 8 : 0,
+        marginBottom: position === 'top' ? 8 : 0,
+        width: 248,
+        background: colors.card,
+        border: `1px solid ${colors.borderLight}`,
+        borderRadius: 14,
+        boxShadow: colors.shadowCard,
+        zIndex: 1000,
+        padding: 10,
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: colors.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+          Visual Themes
+        </div>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {Object.values(THEMES).map(theme => (
+            <ThemePreview
+              key={theme.id}
+              theme={theme}
+              isActive={theme.id === themeId}
+              onSelect={() => { setTheme(theme.id); onClose(); }}
+            />
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
 
 function SidebarThemeSwitcher({ collapsed }) {
   const { themeId, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
 
-  const btnStyle = {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: collapsed ? 'center' : 'flex-start',
-    gap: 8,
-    padding: collapsed ? '8px 0' : '8px 10px',
-    borderRadius: 8,
-    border: 'none',
-    background: open ? colors.sidebarHover : 'transparent',
-    color: colors.sidebarMuted,
-    cursor: 'pointer',
-    fontSize: 12,
-    transition: 'background 150ms',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-  };
-
   return (
     <div style={{ position: 'relative', marginBottom: 4 }}>
       <button
-        style={btnStyle}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+          gap: 8, padding: collapsed ? '8px 0' : '8px 10px', borderRadius: 10, border: '1px solid transparent',
+          background: open ? colors.sidebarHover : 'transparent', color: colors.sidebarMuted, cursor: 'pointer', fontSize: 12,
+        }}
         onClick={() => setOpen(v => !v)}
-        title={collapsed ? `Theme: ${THEMES[themeId].name}` : 'Switch theme'}
-        onMouseEnter={e => { if (!open) e.currentTarget.style.background = colors.sidebarHover; }}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.background = 'transparent'; }}
       >
-        <span style={{
-          width: 10,
-          height: 10,
-          borderRadius: '50%',
-          background: THEME_SWATCHES[themeId],
-          display: 'inline-block',
-          flexShrink: 0,
-          boxShadow: '0 0 0 2px rgba(255,255,255,0.15)',
-        }} />
-        {!collapsed && (
-          <>
-            <span style={{ flex: 1, textAlign: 'left' }}>Theme</span>
-            <span style={{ opacity: 0.5, fontSize: 10, marginLeft: 'auto' }}>▲</span>
-          </>
-        )}
+        <span style={{ color: colors.sidebarText, display: 'flex' }}><PaletteIcon /></span>
+        {!collapsed && <span style={{ flex: 1, textAlign: 'left' }}>{THEMES[themeId].name} Theme</span>}
       </button>
-
-      {open && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 999 }}
-            onClick={() => setOpen(false)}
-          />
-          <div style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: collapsed ? '100%' : 0,
-            marginBottom: collapsed ? 0 : 6,
-            marginLeft: collapsed ? 8 : 0,
-            background: '#1E293B',
-            border: '1px solid #334155',
-            borderRadius: 10,
-            boxShadow: '0 -4px 16px rgba(0,0,0,0.4)',
-            minWidth: 140,
-            zIndex: 1000,
-            overflow: 'hidden',
-          }}>
-            <div style={{ padding: '8px 12px 6px', fontSize: 10, fontWeight: 700, color: '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Theme
-            </div>
-            {Object.values(THEMES).map(theme => {
-              const isActive = theme.id === themeId;
-              return (
-                <button
-                  key={theme.id}
-                  onClick={() => { setTheme(theme.id); setOpen(false); }}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
-                    border: 'none',
-                    background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                    color: isActive ? '#F1F5F9' : '#CBD5E1',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: isActive ? 600 : 400,
-                    textAlign: 'left',
-                    transition: 'background 120ms',
-                  }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <span style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    background: THEME_SWATCHES[theme.id],
-                    flexShrink: 0,
-                    boxShadow: isActive ? `0 0 0 2px rgba(255,255,255,0.3)` : 'none',
-                  }} />
-                  {theme.name}
-                  {isActive && (
-                    <span style={{ marginLeft: 'auto', color: '#60A5FA' }}>
-                      <CheckIcon />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+      {open && <ThemeMenu themeId={themeId} setTheme={setTheme} onClose={() => setOpen(false)} position="top" />}
     </div>
   );
 }
-
-// ─── DEFAULT VARIANT ──────────────────────────────────────────────────────────
-// Light-surface button for use in AppHeader; dropdown opens downward.
 
 function DefaultThemeSwitcher() {
   const { themeId, setTheme } = useTheme();
@@ -154,104 +116,17 @@ function DefaultThemeSwitcher() {
 
   return (
     <div style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        title="Switch theme"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '5px 10px',
-          borderRadius: 8,
-          border: `1px solid ${colors.borderLight}`,
-          background: colors.surface,
-          color: colors.text2,
-          cursor: 'pointer',
-          fontSize: 12,
-          fontWeight: 500,
-          transition: 'background 120ms, border-color 120ms',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = colors.surfaceWarm; }}
-        onMouseLeave={e => { e.currentTarget.style.background = colors.surface; }}
-      >
-        <span style={{ color: colors.text3, display: 'flex' }}>
-          <PaletteIcon />
-        </span>
-        <span>{THEMES[themeId].name}</span>
-        <span style={{ opacity: 0.45, fontSize: 10 }}>▼</span>
+      <button onClick={() => setOpen(v => !v)} style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 10,
+        border: `1px solid ${colors.borderLight}`, background: colors.card, color: colors.text2, cursor: 'pointer',
+      }}>
+        <span style={{ color: colors.text3, display: 'flex' }}><PaletteIcon /></span>
+        <span style={{ fontSize: 12, fontWeight: 600 }}>{THEMES[themeId].name} Theme</span>
       </button>
-
-      {open && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 999 }}
-            onClick={() => setOpen(false)}
-          />
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            marginTop: 6,
-            background: colors.card,
-            border: `1px solid ${colors.borderLight}`,
-            borderRadius: 10,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-            minWidth: 148,
-            zIndex: 1000,
-            overflow: 'hidden',
-          }}>
-            <div style={{ padding: '8px 12px 6px', fontSize: 10, fontWeight: 700, color: colors.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Theme
-            </div>
-            {Object.values(THEMES).map(theme => {
-              const isActive = theme.id === themeId;
-              return (
-                <button
-                  key={theme.id}
-                  onClick={() => { setTheme(theme.id); setOpen(false); }}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
-                    border: 'none',
-                    background: isActive ? colors.brandSubtle : 'transparent',
-                    color: isActive ? colors.brand : colors.text1,
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: isActive ? 600 : 400,
-                    textAlign: 'left',
-                    transition: 'background 120ms',
-                  }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = colors.surface; }}
-                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <span style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    background: THEME_SWATCHES[theme.id],
-                    flexShrink: 0,
-                    boxShadow: isActive ? `0 0 0 2px ${colors.brandSoft}` : 'none',
-                  }} />
-                  {theme.name}
-                  {isActive && (
-                    <span style={{ marginLeft: 'auto', color: colors.brand }}>
-                      <CheckIcon />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+      {open && <ThemeMenu themeId={themeId} setTheme={setTheme} onClose={() => setOpen(false)} position="bottom" />}
     </div>
   );
 }
-
-// ─── PUBLIC EXPORT ────────────────────────────────────────────────────────────
 
 export function ThemeSwitcher({ variant = 'default', collapsed = false }) {
   if (variant === 'sidebar') return <SidebarThemeSwitcher collapsed={collapsed} />;
