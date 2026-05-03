@@ -31,7 +31,7 @@ Optional env var fallbacks (override via the settings modal):
 
 ## Architecture overview
 
-The app is a Quality Management System (QMS) shell with a sidebar that switches between modules: Overview, Warranty, Inspections, NCRs, CAPAs, Production. A separate `pages/quality-risk.jsx` route hosts the Quality Risk & RCA dashboard.
+The app is a Quality Management System (QMS) shell with a sidebar that switches between modules: Overview, Warranty, Inspections, NCRs, CAPAs, Production, and Settings. A separate `pages/quality-risk.jsx` route hosts the Quality Risk & RCA dashboard.
 
 Source layout:
 
@@ -77,6 +77,7 @@ Browser (src/WarrantyDashboard.jsx)
 | Awnex branding logo | `components/AwnexLogo.jsx` |
 | QMS shell (sidebar + module switcher) | `components/QMSShell.jsx`, `components/QMSSidebar.jsx` |
 | Per-module containers (Inspections, NCRs, CAPAs, Production, Overview) | `components/modules/*.jsx` |
+| Settings page (theme, QB connections, branding, data management) | `components/modules/SettingsModule.jsx` |
 | QB connection settings modal (canonical, used everywhere) | `components/SettingsModal.jsx` |
 | Leaflet map + clustering + geocoding | `components/MapView.jsx` |
 | KPI display card | `components/dashboard/KpiCard.jsx` |
@@ -95,6 +96,19 @@ Browser (src/WarrantyDashboard.jsx)
 | Quality Risk mock data + helpers (`USE_MOCK_QUALITY_RISK_DATA = true`) | `src/lib/qualityRiskDataSource.js`, `src/lib/qualityRiskUtils.js` |
 | QB API proxies (one per module) | `pages/api/{warranty-orders,inspections,ncrs,capas,production}.js` |
 | Vercel KV settings store | `pages/api/settings.js` |
+
+### Settings page
+
+The Settings module (`components/modules/SettingsModule.jsx`) is registered as module ID `"settings"` in `QMSShell` and appears under a **SYSTEM** nav group at the bottom of the sidebar. It provides four sections:
+
+| Section | What it does |
+|---|---|
+| **Appearance** | Theme picker — clicking a card calls `setTheme(id)` from `useTheme()`, persists to `localStorage.awntrak_theme` |
+| **Quickbase Connections** | Per-module QB table ID + report ID fields with URL auto-parse (same parser as `SettingsModal`); calls `saveModuleSettings(moduleId, { tableId, reportId })` |
+| **Dashboard Branding** | Dashboard title and subtitle inputs; calls `saveDashboardTitle` / `saveDashboardSubtitle` from `dashboardStorage` |
+| **Data Management** | Two-step confirm buttons for `resetAllConfigs()` (keeps QB connections) and `clearAllData()` (full wipe) |
+
+Adding a new QB-connected module requires adding an entry to the `QB_MODULES` array in `SettingsModule.jsx` (id, label, accent) and a corresponding key in `MODULE_QB_KEYS` in `lib/dashboardStorage.js`.
 
 ### Quickbase field mapping
 

@@ -58,6 +58,15 @@ function IconProduction() {
   );
 }
 
+function IconSettings() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </svg>
+  );
+}
+
 function IconChevron() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -69,17 +78,19 @@ function IconChevron() {
 // ─── NAV ITEMS CONFIG ─────────────────────────────────────────────────────────
 
 export const NAV_ITEMS = [
-  { id: "overview",    label: "Overview",             icon: IconOverview,    group: "main" },
+  { id: "overview",    label: "Overview",             icon: IconOverview,    group: "main"    },
   { id: "warranty",    label: "Warranty",             icon: IconWarranty,    group: "modules" },
   { id: "inspections", label: "Inspections",          icon: IconInspections, group: "modules" },
   { id: "ncrs",        label: "Non-Conformances",     icon: IconNCR,         group: "modules" },
   { id: "capas",       label: "Corrective Actions",   icon: IconCAPA,        group: "modules" },
   { id: "production",  label: "Production",           icon: IconProduction,  group: "modules" },
+  { id: "settings",    label: "Settings",             icon: IconSettings,    group: "system"  },
 ];
 
 const GROUP_LABELS = {
   main:    null,
   modules: "MODULES",
+  system:  "SYSTEM",
 };
 
 // ─── SIDEBAR COMPONENT ────────────────────────────────────────────────────────
@@ -87,7 +98,7 @@ const GROUP_LABELS = {
 export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCollapse }) {
   const W = collapsed ? 64 : 240;
 
-  const groups = ["main", "modules"];
+  const groups = ["main", "modules", "system"];
 
   return (
     <aside style={{

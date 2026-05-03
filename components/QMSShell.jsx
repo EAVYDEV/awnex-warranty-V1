@@ -5,6 +5,7 @@ import { InspectionsModule } from "./modules/InspectionsModule.jsx";
 import { NcrModule } from "./modules/NcrModule.jsx";
 import { CapaModule } from "./modules/CapaModule.jsx";
 import { ProductionModule } from "./modules/ProductionModule.jsx";
+import { SettingsModule } from "./modules/SettingsModule.jsx";
 import { WarrantyDashboard } from "../src/WarrantyDashboard.jsx";
 import { colors } from "../lib/tokens.js";
 
@@ -17,6 +18,7 @@ const MODULE_COMPONENTS = {
   ncrs:        NcrModule,
   capas:       CapaModule,
   production:  ProductionModule,
+  settings:    SettingsModule,
 };
 
 export function QMSShell() {
