@@ -112,16 +112,17 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
         padding: collapsed ? "20px 0" : "20px 16px",
         borderBottom: `1px solid ${C.sidebarBorder}`,
         display: "flex",
-        alignItems: "center",
-        gap: 10,
-        justifyContent: collapsed ? "center" : "flex-start",
-        minHeight: 72,
+        flexDirection: collapsed ? "row" : "column",
+        alignItems: collapsed ? "center" : "flex-start",
+        gap: collapsed ? 0 : 8,
+        justifyContent: "center",
+        minHeight: collapsed ? 72 : 104,
       }}>
         <div style={{ flexShrink: 0 }}>
-          <AwnexLogo height={32} />
+          <AwnexLogo height={collapsed ? 26 : 30} />
         </div>
         {!collapsed && (
-          <div style={{ overflow: "hidden" }}>
+          <div style={{ overflow: "hidden", width: "100%" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, whiteSpace: "nowrap" }}>
               Quality Management
             </div>
