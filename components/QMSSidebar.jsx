@@ -109,23 +109,22 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
 
       {/* ── Logo area ──────────────────────────────────────────────────────── */}
       <div style={{
-        padding: collapsed ? "20px 0" : "20px 16px",
+        padding: collapsed ? "16px 0" : "16px 16px",
         borderBottom: `1px solid ${C.sidebarBorder}`,
         display: "flex",
-        alignItems: "center",
-        gap: 10,
-        justifyContent: collapsed ? "center" : "flex-start",
+        flexDirection: "column",
+        alignItems: collapsed ? "center" : "flex-start",
+        gap: 6,
         minHeight: 72,
+        justifyContent: "center",
       }}>
-        <div style={{ flexShrink: 0 }}>
-          <AwnexLogo height={32} />
-        </div>
+        <AwnexLogo height={28} />
         {!collapsed && (
-          <div style={{ overflow: "hidden" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, whiteSpace: "nowrap" }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2 }}>
               Quality Management
             </div>
-            <div style={{ fontSize: 10, color: C.sidebarMuted, fontWeight: 500, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: 10, color: C.sidebarMuted, fontWeight: 500, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.1em" }}>
               Awnex QMS Platform
             </div>
           </div>
