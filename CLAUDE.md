@@ -41,7 +41,7 @@ Source layout:
 - **`pages/`** — Next.js Pages Router. `pages/index.jsx` mounts `QMSShell`; `pages/api/*.js` are QB proxies + the KV settings store.
 - **`WarrantyDashboard.jsx`** at the repo root is a 1-line re-export shim for `src/WarrantyDashboard.jsx`.
 
-`WarrantyDashboard.jsx` is the largest component (~960 lines) and orchestrates all warranty-side state, fetching, and rendering.
+`WarrantyDashboard.jsx` is the largest component (~1 130 lines) and orchestrates all warranty-side state, fetching, and rendering.
 
 ### Data flow (Warranty)
 
@@ -67,13 +67,17 @@ Browser (src/WarrantyDashboard.jsx)
 | Filter, aggregate, KPI/chart compute helpers | `lib/dashboardMetrics.js` |
 | Default KPI/chart configs, palettes, themes | `lib/dashboardDefaults.js` |
 | localStorage keys and per-module load/save helpers | `lib/dashboardStorage.js` |
+| Rolling risk-score snapshots + trend detection (`isRisingRisk`) | `lib/riskHistory.js` |
+| Alert threshold defaults + watchlist load/save helpers | `lib/alertsStorage.js` |
 | Installation mock data + helpers | `lib/installationData.js`, `lib/installationHelpers.js` |
 | SVG icon set | `components/ui/Icon.jsx` |
 | StatusBadge, RiskBadge | `components/ui/Badge.jsx` |
+| Inline SVG sparkline for risk trend column | `components/ui/Sparkline.jsx` |
 | Generic modal wrapper, Btn, formStyles | `components/ui/Modal.jsx` |
 | EmptyState, LoadingState, ErrorState | `components/ui/StateScreens.jsx` |
 | ProductTag chip | `components/ui/Tag.jsx` |
 | Sortable column header arrow | `components/ui/SortIcon.jsx` |
+| Slide-in alerts & watchlist panel | `components/alerts/AlertsPanel.jsx` |
 | Awnex branding logo | `components/AwnexLogo.jsx` |
 | QMS shell (sidebar + module switcher) | `components/QMSShell.jsx`, `components/QMSSidebar.jsx` |
 | Per-module containers (Inspections, NCRs, CAPAs, Production, Overview) | `components/modules/*.jsx` |
@@ -190,11 +194,13 @@ The full column spec is rebuilt at runtime by `buildColumnSpecs(qbReportFields, 
 
 | renderAs | Output |
 |---|---|
+| `watch` | Star icon toggle — adds/removes order from watchlist (pinned left, excluded from ColumnEditor) |
 | `orderNum` | Bold order number in brand color |
 | `customer` | Semi-bold customer name |
 | `location` | Small gray city/state text |
 | `pm` | Project manager name |
 | `risk` | `RiskBadge` (score/100 + level label) |
+| `sparkline` | `Sparkline` SVG trend line from rolling `riskScore` history; red = rising, green = falling, grey = flat (injected after `risk`, excluded from ColumnEditor) |
 | `status` | `StatusBadge` (Active / Expiring / Expired) |
 | `expires` | Formatted warranty end date |
 | `claims` | Claim count; red + bold when > 1 |
@@ -248,6 +254,13 @@ Computed columns derived from QB fields (Risk, Warranty Status, Location) are in
 | `# of Warranty Claims` | Claims, Risk |
 | `Installation Complete Date` | Expires, Warranty Status |
 
+Two **synthetic columns** are injected by `WarrantyDashboard` after `buildColumnSpecs` runs and are excluded from the `ColumnEditor` (they cannot be reordered or renamed):
+
+| Synthetic column | Position | renderAs |
+|---|---|---|
+| Watch (star) | Always first | `watch` |
+| Trend sparkline | Always immediately after Risk | `sparkline` |
+
 ### LocalStorage keys
 
 localStorage is used as an immediate read/write cache. All keys are also synced to Vercel KV via `GET /api/settings` (on mount) and `POST /api/settings` (debounced, 800 ms after any change) so settings persist across devices.
@@ -267,5 +280,29 @@ localStorage is used as an immediate read/write cache. All keys are also synced 
 | `awntrak_column_order` | `string[]` ordered array of column IDs |
 | `awntrak_filter_fields` | `string[]` of column IDs picked for the table filter row |
 | `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
+| `awntrak_alert_thresholds` | `{ expiryDays: number, riskScore: number }` — thresholds for the alerts panel (defaults: 60 days, score 70) |
+| `awntrak_watched_orders` | `string[]` of order numbers the user has starred in the watchlist |
+| `awntrak_risk_history` | `{ [orderNum]: { ts: number, score: number }[] }` — rolling risk-score snapshots (max 30 per order) used by the Trend sparkline and Rising Risk filter |
 
 Per-module connection helpers are `loadModuleSettings(module)` / `saveModuleSettings(module, …)` in `lib/dashboardStorage.js`; the warranty pair has compat aliases `loadConnectionSettings` / `saveConnectionSettings`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.
+
+### Alerts & watchlist
+
+The bell icon in the warranty header shows a badge count of unique orders matching any alert condition. Clicking it opens `AlertsPanel` (`components/alerts/AlertsPanel.jsx`), a slide-in right-side panel with four sections:
+
+| Section | Condition |
+|---|---|
+| Watching | Order number is in `awntrak_watched_orders` |
+| Expiring Soon | `order.days` is between 0 and `thresholds.expiryDays` (inclusive) |
+| High Risk | `order.riskScore >= thresholds.riskScore` |
+| Open Claims | `order.openClaims > 0` |
+
+Thresholds are user-configurable in the panel footer (expiry window: 30/60/90/180 days; risk cutoff: 50/60/70/80/90). Changes are saved immediately to `awntrak_alert_thresholds` via `lib/alertsStorage.js`.
+
+### Risk trend sparklines
+
+`lib/riskHistory.js` exports `saveRiskSnapshot(orders)`, called by a `useEffect` in `WarrantyDashboard` whenever `orders` changes. Each call appends `{ ts, score }` for every order and trims each series to 30 entries.
+
+`isRisingRisk(snapshots, minPoints?)` compares the mean of the last half of the series to the mean of the first half; returns `true` when the difference exceeds 2 points. Used by:
+- The **Trend sparkline** column (red = rising, green = falling, grey = flat/insufficient data)
+- The **Rising Risk** filter chip in the filter bar, which narrows the table to orders where `isRisingRisk` is true
