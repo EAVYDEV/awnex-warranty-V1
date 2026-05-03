@@ -392,6 +392,9 @@ export function WarrantyDashboard({
     setRiskHistory(loadRiskHistory());
   }, [orders]);
 
+  // ── Enrichment ─────────────────────────────────────────────────────────────
+  const enriched = useMemo(() => orders, [orders]);
+
   // ── Alert badge count (unique orders matching any alert condition) ──────────
   const alertCount = useMemo(() => {
     const set = new Set();
@@ -402,12 +405,7 @@ export function WarrantyDashboard({
       if ((o.openClaims || 0) > 0) set.add(o.orderNum);
     });
     return set.size;
-  // enriched is derived from orders which is the same dep
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders, watchedOrders, alertThresholds]);
-
-  // ── Enrichment ─────────────────────────────────────────────────────────────
-  const enriched = useMemo(() => orders, [orders]);
+  }, [enriched, watchedOrders, alertThresholds]);
 
   const availableFields = useMemo(
     () => buildAvailableFields(qbReportFields),
