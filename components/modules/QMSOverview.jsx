@@ -79,7 +79,7 @@ export function QMSOverview({ onNavigate }) {
   const modules = [
     {
       id: "warranty",
-      title: "Warranty Management",
+      title: "Warranty Operations",
       description: "Track active warranties, claim risk scores, and expiration timelines across all Awnex orders.",
       accentColor: C.brand,
       status: "live",
@@ -103,7 +103,7 @@ export function QMSOverview({ onNavigate }) {
     },
     {
       id: "ncrs",
-      title: "Non-Conformances",
+      title: "Quality Intelligence",
       description: "Log, investigate, and resolve non-conforming product events with root-cause analysis and disposition tracking.",
       accentColor: "#DC2626",
       status: "configure",
@@ -116,7 +116,7 @@ export function QMSOverview({ onNavigate }) {
     },
     {
       id: "capas",
-      title: "Corrective Actions (CAPA)",
+      title: "Field Execution (CAPA)",
       description: "Full CAPA lifecycle — initiation, root-cause, action items, verification, and closure with on-time tracking.",
       accentColor: "#7C3AED",
       status: "configure",
@@ -128,7 +128,7 @@ export function QMSOverview({ onNavigate }) {
     },
     {
       id: "production",
-      title: "Production & Batch Tracking",
+      title: "Production Analytics",
       description: "Monitor production runs, batch quality metrics, yield rates, and line-level defect counts.",
       accentColor: "#D97706",
       status: "configure",

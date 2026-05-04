@@ -70,11 +70,11 @@ function IconChevron() {
 
 export const NAV_ITEMS = [
   { id: "overview",    label: "Overview",             icon: IconOverview,    group: "main" },
-  { id: "warranty",    label: "Warranty",             icon: IconWarranty,    group: "modules" },
+  { id: "warranty",    label: "Warranty Operations",  icon: IconWarranty,    group: "modules" },
   { id: "inspections", label: "Inspections",          icon: IconInspections, group: "modules" },
-  { id: "ncrs",        label: "Non-Conformances",     icon: IconNCR,         group: "modules" },
-  { id: "capas",       label: "Corrective Actions",   icon: IconCAPA,        group: "modules" },
-  { id: "production",  label: "Production",           icon: IconProduction,  group: "modules" },
+  { id: "ncrs",        label: "Quality Intelligence", icon: IconNCR,         group: "modules" },
+  { id: "capas",       label: "Field Execution",      icon: IconCAPA,        group: "modules" },
+  { id: "production",  label: "Production Analytics", icon: IconProduction,  group: "modules" },
 ];
 
 const GROUP_LABELS = {
