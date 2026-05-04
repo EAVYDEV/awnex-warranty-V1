@@ -1,6 +1,6 @@
-# Awntrak Warranty Management Dashboard
+# Awntrak Quality Management System Platform
 
-A Next.js application that pulls live warranty order data from Quickbase and presents it as an interactive, fully configurable dashboard. Part of the **Awntrak Platform** suite built for Awnex, Inc.
+A Next.js application for operating a modular Quality Management System (QMS) platform. It currently includes Warranty Operations, Field Execution, and Quality Intelligence modules, with shared configuration and analytics patterns across modules. Part of the **Awntrak Platform** suite built for Awnex, Inc.
 
 ---
 
@@ -16,7 +16,7 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 - Filter by PM, warranty status, brand, risk level, or free-text search
 - Filter dropdown labels now stay synchronized with customized Order Detail column titles (including Quickbase-backed columns)
 - Leaflet map view showing installation locations with status-color pins
-- Multi-module header navigation: Warranty, Installation, and Quality Risk & RCA
+- Multi-module header navigation: Warranty Operations, Field Execution, and Quality Intelligence
 - Shared `AppHeader` component keeps top-level branding and module tabs consistent across Warranty, Installation, and Quality Risk pages
 - Multi-source connections (separate claims and costs QB tables merged by order number)
 - Connection settings stored in the browser — credentials never leave the server
