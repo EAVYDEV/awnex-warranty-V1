@@ -42,7 +42,7 @@ A Next.js application that pulls live warranty order data from Quickbase and pre
 
 ```
 awnex-warranty-V1/
-├── WarrantyDashboard.jsx         Main orchestrator — data fetch, state, layout
+├── src/WarrantyDashboard.jsx     Main orchestrator — data fetch, state, layout
 │
 ├── lib/                          Platform-wide pure utilities (no React)
 │   ├── tokens.js                 Design tokens: all colors, shadows, STATUS_CFG, RISK_CFG
