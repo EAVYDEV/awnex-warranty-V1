@@ -26,7 +26,7 @@ function hydrateCase(c) {
 function btnStyle(variant) {
   return {
     display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+    padding: "7px 14px", borderRadius: 5, fontSize: 12, fontWeight: 600, cursor: "pointer",
     ...(variant === "primary"
       ? { background: ACCENT, border: "none", color: "#fff" }
       : { background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2 }
@@ -34,19 +34,19 @@ function btnStyle(variant) {
   };
 }
 
-function KpiCard({ label, value, sub, accent }) {
+function KpiCard({ label, value, sub }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.06)", borderTop: `3px solid ${accent}` }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>{label}</p>
-      <p style={{ fontSize: 32, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: C.text2, margin: "6px 0 0" }}>{sub}</p>}
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>{label}</p>
+      <p style={{ fontSize: 26, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
+      {sub && <p style={{ fontSize: 11.5, color: C.text3, fontWeight: 500, margin: "4px 0 0" }}>{sub}</p>}
     </div>
   );
 }
 
 function ConnectBanner({ onSettings }) {
   return (
-    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 6, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <div>
         <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 2px" }}>Showing sample data</p>
         <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live NCR records.</p>
@@ -163,10 +163,10 @@ export function NcrModule() {
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
-        <KpiCard label="Open NCRs"        value={kpi.open}        sub="Require investigation" accent={ACCENT} />
-        <KpiCard label="Critical Issues"  value={kpi.critical}    sub="Immediate attention"   accent={C.danger} />
-        <KpiCard label="Field Impact"     value={kpi.fieldImpact} sub="Installed product risk" accent="#D97706" />
-        <KpiCard label="Closed"           value={kpi.closed}      sub="Resolved this period"  accent={C.success} />
+        <KpiCard label="Open NCRs"       value={kpi.open}        sub="Require investigation" />
+        <KpiCard label="Critical Issues" value={kpi.critical}    sub="Immediate attention" />
+        <KpiCard label="Field Impact"    value={kpi.fieldImpact} sub="Installed product risk" />
+        <KpiCard label="Closed"          value={kpi.closed}      sub="Resolved this period" />
       </div>
 
       {/* Tabs */}
@@ -176,7 +176,7 @@ export function NcrModule() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
-              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+              padding: "6px 14px", borderRadius: 5, fontSize: 12, fontWeight: 600,
               border: `1px solid ${activeTab === tab ? ACCENT : C.borderLight}`,
               background: activeTab === tab ? ACCENT : C.card,
               color: activeTab === tab ? "#fff" : C.text2,

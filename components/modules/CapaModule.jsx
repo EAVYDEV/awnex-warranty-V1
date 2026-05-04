@@ -28,7 +28,7 @@ function hydrateCase(c) {
 function btnStyle(variant) {
   return {
     display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+    padding: "7px 14px", borderRadius: 5, fontSize: 12, fontWeight: 600, cursor: "pointer",
     ...(variant === "primary"
       ? { background: ACCENT, border: "none", color: "#fff" }
       : { background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2 }
@@ -36,12 +36,12 @@ function btnStyle(variant) {
   };
 }
 
-function KpiCard({ label, value, sub, accent }) {
+function KpiCard({ label, value, sub }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.06)", borderTop: `3px solid ${accent}` }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>{label}</p>
-      <p style={{ fontSize: 32, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: C.text2, margin: "6px 0 0" }}>{sub}</p>}
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>{label}</p>
+      <p style={{ fontSize: 26, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
+      {sub && <p style={{ fontSize: 11.5, color: C.text3, fontWeight: 500, margin: "4px 0 0" }}>{sub}</p>}
     </div>
   );
 }
@@ -58,7 +58,7 @@ function StatusBadge({ status }) {
 
 function ConnectBanner({ onSettings }) {
   return (
-    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 6, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <div>
         <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 2px" }}>Showing sample data</p>
         <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live CAPA records.</p>
@@ -75,11 +75,11 @@ function PipelineBar({ cases }) {
     cfg: STATUS_CFG[s],
   }));
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: "0 1px 3px rgba(15,23,42,0.06)" }}>
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "18px 20px", marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>CAPA Pipeline</p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {counts.map(({ status, count, cfg }) => (
-          <div key={status} style={{ flex: "1 1 80px", background: cfg.bg, border: `1px solid ${cfg.dot}30`, borderRadius: 10, padding: "10px 14px" }}>
+          <div key={status} style={{ flex: "1 1 80px", background: cfg.bg, border: `1px solid ${cfg.dot}30`, borderRadius: 6, padding: "10px 14px" }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: cfg.text }}>{count}</div>
             <div style={{ fontSize: 10, fontWeight: 600, color: cfg.text, opacity: 0.8, marginTop: 2 }}>{status}</div>
           </div>
@@ -193,17 +193,17 @@ export function CapaModule() {
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
-        <KpiCard label="Open Cases"      value={kpi.open}         sub="Require action"         accent={ACCENT} />
-        <KpiCard label="In CAPA Phase"   value={kpi.inCapaPhase}  sub="Action items in flight" accent={C.brand} />
-        <KpiCard label="Overdue Actions" value={kpi.overdue}      sub="Past due date"          accent={C.danger} />
-        <KpiCard label="Closed"          value={kpi.closed}       sub="Verified closed"        accent={C.success} />
+        <KpiCard label="Open Cases"      value={kpi.open}        sub="Require action" />
+        <KpiCard label="In CAPA Phase"   value={kpi.inCapaPhase} sub="Action items in flight" />
+        <KpiCard label="Overdue Actions" value={kpi.overdue}     sub="Past due date" />
+        <KpiCard label="Closed"          value={kpi.closed}      sub="Verified closed" />
       </div>
 
       {/* Pipeline */}
       <PipelineBar cases={cases} />
 
       {/* Action items table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: "0 1px 3px rgba(15,23,42,0.06)", overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Action Items</span>
           <span style={{ fontSize: 11, color: C.text3, marginLeft: 4 }}>({allActions.length} total)</span>
@@ -241,7 +241,7 @@ export function CapaModule() {
       </div>
 
       {/* Cases table for drilling in */}
-      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: "0 1px 3px rgba(15,23,42,0.06)", overflow: "hidden" }}>
+      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}` }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Cases</span>
         </div>
