@@ -21,7 +21,6 @@ const MODULE_COMPONENTS = {
 
 export function QMSShell() {
   const [activeModule, setActiveModule] = useState("overview");
-  const [collapsed, setCollapsed]       = useState(false);
 
   const handleModuleChange = useCallback((id) => {
     setActiveModule(id);
@@ -37,12 +36,7 @@ export function QMSShell() {
       background: C.bg,
       fontFamily: '"DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
     }}>
-      <QMSSidebar
-        activeModule={activeModule}
-        onModuleChange={handleModuleChange}
-        collapsed={collapsed}
-        onToggleCollapse={() => setCollapsed(c => !c)}
-      />
+      <QMSSidebar />
       <main style={{
         flex: 1,
         overflow: "auto",
