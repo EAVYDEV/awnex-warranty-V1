@@ -141,7 +141,7 @@ export function QMSShell() {
               width: 34,
               height: 34,
               borderRadius: '50%',
-              background: `linear-gradient(135deg, #1B5FA8, #07244A)`,
+              background: `linear-gradient(135deg, var(--t-brand), var(--t-brand-deep))`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

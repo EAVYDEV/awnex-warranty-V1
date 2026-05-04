@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { colors } from "../../lib/tokens.js";
+import { colors, T } from "../../lib/tokens.js";
 import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
 import CaseTable from "../../src/components/quality/CaseTable.jsx";
@@ -14,7 +14,7 @@ import {
 import { getQualityRiskDashboardData } from "../../src/lib/qualityRiskDataSource.js";
 
 const C = colors;
-const ACCENT = "#DC2626";
+const ACCENT = C.danger;
 
 const TABS = ["All NCRs", "Open", "High Risk", "Field Impact", "Closed"];
 
@@ -36,7 +36,7 @@ function btnStyle(variant) {
 
 function KpiCard({ label, value, sub }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: T.cardShadow }}>
       <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>{label}</p>
       <p style={{ fontSize: 26, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
       {sub && <p style={{ fontSize: 11.5, color: C.text3, fontWeight: 500, margin: "4px 0 0" }}>{sub}</p>}

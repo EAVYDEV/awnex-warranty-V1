@@ -5,6 +5,11 @@ import { Icon } from "../ui/Icon.jsx";
 import { COLOR_PALETTES } from "../../lib/dashboardDefaults.js";
 import { BUILTIN_FIELDS, NUMERIC_TYPES, TEXT_TYPES, computeChartData } from "../../lib/dashboardMetrics.js";
 
+function getThemeBrandHex() {
+  if (typeof window === 'undefined') return '#1B5FA8';
+  return getComputedStyle(document.documentElement).getPropertyValue('--t-brand').trim() || '#1B5FA8';
+}
+
 // ─── CHART EDITOR MODAL ───────────────────────────────────────────────────────
 
 const CHART_TYPES = [
@@ -344,7 +349,7 @@ function MetricRow({ metric, index, numericFields, onChange, onRemove }) {
         {index === 0 && <label style={{ ...formStyles.label, marginBottom: 4 }}>Color</label>}
         <input
           type="color"
-          value={metric.color || "#1B5FA8"}
+          value={metric.color || getThemeBrandHex()}
           onChange={e => onChange({ color: e.target.value })}
           style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }}
         />

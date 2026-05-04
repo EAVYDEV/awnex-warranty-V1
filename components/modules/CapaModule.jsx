@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { colors } from "../../lib/tokens.js";
+import { colors, T } from "../../lib/tokens.js";
 import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
 import { getQualityRiskDashboardData } from "../../src/lib/qualityRiskDataSource.js";
@@ -7,17 +7,17 @@ import { calculateRiskLevel, calculateRiskScore, canAdvanceStatus, canCloseCase 
 import CaseDetailPanel from "../../src/components/quality/CaseDetailPanel.jsx";
 
 const C = colors;
-const ACCENT = "#7C3AED";
+const ACCENT = C.purple;
 
 const STATUS_ORDER = ["Open", "Containment", "RCA", "CAPA", "Verification", "Closed"];
 
 const STATUS_CFG = {
-  Open:         { bg: C.dangerSubtle,  text: C.dangerText,  dot: C.danger },
-  Containment:  { bg: "#FFFBEB",       text: C.warningText, dot: "#D97706" },
-  RCA:          { bg: C.brandSubtle,   text: C.brandDark,   dot: C.brand },
-  CAPA:         { bg: "#F5F3FF",       text: "#5B21B6",     dot: ACCENT },
-  Verification: { bg: "#ECFEFF",       text: "#0E7490",     dot: "#0891B2" },
-  Closed:       { bg: C.successSubtle, text: C.successText, dot: C.success },
+  Open:         { bg: C.dangerSubtle,  text: C.dangerText,   dot: C.danger   },
+  Containment:  { bg: C.warningSoft,   text: C.warningText,  dot: C.warning  },
+  RCA:          { bg: C.brandSubtle,   text: C.brandDark,    dot: C.brand    },
+  CAPA:         { bg: C.purpleSubtle,  text: C.purpleText,   dot: ACCENT     },
+  Verification: { bg: C.tealSubtle,    text: C.tealText,     dot: C.teal     },
+  Closed:       { bg: C.successSubtle, text: C.successText,  dot: C.success  },
 };
 
 function hydrateCase(c) {
@@ -38,7 +38,7 @@ function btnStyle(variant) {
 
 function KpiCard({ label, value, sub }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: T.cardShadow }}>
       <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>{label}</p>
       <p style={{ fontSize: 26, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
       {sub && <p style={{ fontSize: 11.5, color: C.text3, fontWeight: 500, margin: "4px 0 0" }}>{sub}</p>}
@@ -75,7 +75,7 @@ function PipelineBar({ cases }) {
     cfg: STATUS_CFG[s],
   }));
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "18px 20px", marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "18px 20px", marginBottom: 24, boxShadow: T.cardShadow }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>CAPA Pipeline</p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {counts.map(({ status, count, cfg }) => (
@@ -203,7 +203,7 @@ export function CapaModule() {
       <PipelineBar cases={cases} />
 
       {/* Action items table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: T.cardShadow, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Action Items</span>
           <span style={{ fontSize: 11, color: C.text3, marginLeft: 4 }}>({allActions.length} total)</span>
@@ -241,7 +241,7 @@ export function CapaModule() {
       </div>
 
       {/* Cases table for drilling in */}
-      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
+      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: T.cardShadow, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}` }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Cases</span>
         </div>

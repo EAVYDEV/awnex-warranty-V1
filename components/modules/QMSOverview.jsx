@@ -1,4 +1,4 @@
-import { colors } from "../../lib/tokens.js";
+import { colors, T } from "../../lib/tokens.js";
 
 const C = colors;
 
@@ -11,7 +11,7 @@ function KpiCard({ label, value, sub }) {
       border: `1px solid ${C.borderLight}`,
       borderRadius: 6,
       padding: "14px 16px",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+      boxShadow: T.cardShadow,
     }}>
       <span style={{ display: "block", fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>{label}</span>
       <div style={{ fontSize: 26, fontWeight: 800, color: C.text1, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</div>
@@ -29,14 +29,14 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
         border: `1px solid ${C.borderLight}`,
         borderRadius: 6,
         padding: "20px",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+        boxShadow: T.cardShadow,
         cursor: "pointer",
         textAlign: "left",
         width: "100%",
         transition: "box-shadow 150ms, border-color 150ms",
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(15,23,42,0.10)"; e.currentTarget.style.borderColor = accentColor; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 3px rgba(15,23,42,0.06)"; e.currentTarget.style.borderColor = C.borderLight; }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = T.cardHover; e.currentTarget.style.borderColor = accentColor; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = T.cardShadow; e.currentTarget.style.borderColor = C.borderLight; }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{
@@ -52,7 +52,7 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
             <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>{title}</span>
             <span style={{
               fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999,
-              background: status === "live" ? C.successSubtle : "#F1F5F9",
+              background: status === "live" ? C.successSubtle : C.surface,
               color: status === "live" ? C.successText : C.text3,
               textTransform: "uppercase", letterSpacing: "0.08em",
             }}>
@@ -89,7 +89,7 @@ export function QMSOverview({ onNavigate }) {
       id: "inspections",
       title: "Inspections",
       description: "QC inspection records, pass/fail rates, inspector assignments, and defect tracking per production run.",
-      accentColor: "#0891B2",
+      accentColor: C.teal,
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -101,7 +101,7 @@ export function QMSOverview({ onNavigate }) {
       id: "ncrs",
       title: "Quality Intelligence",
       description: "Log, investigate, and resolve non-conforming product events with root-cause analysis and disposition tracking.",
-      accentColor: "#DC2626",
+      accentColor: C.danger,
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -114,7 +114,7 @@ export function QMSOverview({ onNavigate }) {
       id: "capas",
       title: "Field Execution (CAPA)",
       description: "Full CAPA lifecycle — initiation, root-cause, action items, verification, and closure with on-time tracking.",
-      accentColor: "#7C3AED",
+      accentColor: C.purple,
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -126,7 +126,7 @@ export function QMSOverview({ onNavigate }) {
       id: "production",
       title: "Production Analytics",
       description: "Monitor production runs, batch quality metrics, yield rates, and line-level defect counts.",
-      accentColor: "#D97706",
+      accentColor: C.warning,
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

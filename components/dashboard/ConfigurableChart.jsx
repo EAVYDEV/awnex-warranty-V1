@@ -11,10 +11,19 @@ import { CustomTooltip } from "./ChartCard.jsx";
 // Renders any chart type (bar, hbar, donut, line, stacked) from a config object.
 // Handles label truncation, responsive sizing, and empty states.
 
-// Semantic color overrides for status / risk group fields
+// Semantic color overrides for status / risk group fields — use token dots so they theme correctly
 const SEMANTIC_COLORS = {
-  status: { active: "#97C459", expiring: "#FAD07A", expired: "#F09595" },
-  risk:   { critical: "#E24B4A", high: "#F5A623", medium: "#7DAEE8", low: "#97C459" },
+  status: {
+    active:   STATUS_CFG.active.dot,
+    expiring: STATUS_CFG.expiring.dot,
+    expired:  STATUS_CFG.expired.dot,
+  },
+  risk: {
+    critical: RISK_CFG.critical.dot,
+    high:     RISK_CFG.high.dot,
+    medium:   RISK_CFG.medium.dot,
+    low:      RISK_CFG.low.dot,
+  },
 };
 
 function resolveColor(groupField, key, metricColor, palette, index) {

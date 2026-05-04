@@ -1,7 +1,7 @@
 import { ThemeSwitcher } from "./ui/ThemeSwitcher.jsx";
+import { colors as C } from "../lib/tokens.js";
 
-// Amber accent — always hardcoded because it must show on the dark sidebar bg
-const ACCENT = '#F5A623';
+const ACCENT = C.accent;
 
 // Awnex bolt mark SVG (shown when sidebar is collapsed)
 function BoltMark() {
@@ -52,7 +52,7 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
     <aside style={{
       width: collapsed ? 52 : 200,
       minWidth: collapsed ? 52 : 200,
-      background: '#07244A',
+      background: C.sidebar,
       display: 'flex',
       flexDirection: 'column',
       flexShrink: 0,
@@ -82,7 +82,7 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
         }
       </div>
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 4px 8px', flexShrink: 0 }} />
+      <div style={{ height: 1, background: C.sidebarBorder, margin: '0 4px 8px', flexShrink: 0 }} />
 
       {/* ── Nav ───────────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', overflowX: 'hidden' }}>
@@ -107,22 +107,22 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
                 fontWeight: isActive ? 700 : 500,
                 textAlign: 'left',
                 width: '100%',
-                background: isActive ? 'rgba(255,255,255,0.14)' : 'transparent',
-                color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                background: isActive ? C.sidebarActive : 'transparent',
+                color: isActive ? '#fff' : C.sidebarText,
                 transition: 'background 0.12s, color 0.12s',
                 position: 'relative',
                 flexShrink: 0,
               }}
               onMouseEnter={e => {
                 if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
+                  e.currentTarget.style.background = C.sidebarHover;
+                  e.currentTarget.style.color = C.sidebarTextHover;
                 }
               }}
               onMouseLeave={e => {
                 if (!isActive) {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
+                  e.currentTarget.style.color = C.sidebarText;
                 }
               }}
             >
@@ -152,7 +152,7 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
 
       {/* ── Footer: theme switcher + collapse strip ────────────────────────── */}
       <div style={{ padding: '10px 0 18px', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 4px 8px' }} />
+        <div style={{ height: 1, background: C.sidebarBorder, margin: '0 4px 8px' }} />
 
         {/* Theme switcher in sidebar footer */}
         <ThemeSwitcher variant="sidebar" collapsed={collapsed} />
@@ -172,20 +172,20 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
             justifyContent: 'center',
             gap: 5,
             width: '100%',
-            background: 'rgba(255,255,255,0.06)',
-            color: 'rgba(255,255,255,0.4)',
+            background: C.sidebarBorder,
+            color: C.sidebarMuted,
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: '0.04em',
             transition: 'background 0.12s, color 0.12s',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-            e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
+            e.currentTarget.style.background = C.sidebarHover;
+            e.currentTarget.style.color = C.sidebarTextHover;
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-            e.currentTarget.style.color = 'rgba(255,255,255,0.4)';
+            e.currentTarget.style.background = C.sidebarBorder;
+            e.currentTarget.style.color = C.sidebarMuted;
           }}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
