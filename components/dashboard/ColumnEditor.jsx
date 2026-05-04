@@ -38,7 +38,7 @@ function SortableRow({ col, draft, onChange, onReset }) {
         transition,
         opacity: isDragging ? 0.5 : 1,
         background: isDragging ? T.brandSubtle : "transparent",
-        borderRadius: 8,
+        borderRadius: 6,
         padding: "1px 0",
       }}
     >
@@ -73,7 +73,7 @@ function SortableRow({ col, draft, onChange, onReset }) {
         style={{
           ...formStyles.input,
           padding: "6px 10px",
-          borderRadius: 10,
+          borderRadius: 6,
           borderColor: changed ? T.brand : T.borderLight,
           outline: "none",
         }}
@@ -85,7 +85,7 @@ function SortableRow({ col, draft, onChange, onReset }) {
         title="Reset to Quickbase label"
         disabled={!changed}
         style={{
-          width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.borderLight}`,
+          width: 28, height: 28, borderRadius: 6, border: `1px solid ${T.borderLight}`,
           background: changed ? T.brandSubtle : T.surface,
           color: changed ? T.brand : T.text3,
           fontSize: 14, cursor: changed ? "pointer" : "default",

@@ -23,13 +23,13 @@ export function InstallationDashboard({ jobs }) {
       <KpiCard label="Completed This Week" value={String(kpi.completedThisWeek)} />
     </div>
 
-    <div style={{ background: T.card, borderRadius: 20, padding: "12px 16px", marginBottom: 16, boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+    <div style={{ background: T.card, borderRadius: 6, padding: "12px 16px", marginBottom: 16, boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
       {[["status", "Status", "status"], ["crew", "Crew", "crew"], ["region", "Region", "state"], ["pm", "PM", "projectManager"]].map(([fk, lbl, key]) => (
-        <select key={fk} value={filters[fk]} onChange={(e) => setFilter(fk, e.target.value)} style={{ padding: "8px 12px", borderRadius: 14, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.card }}>
+        <select key={fk} value={filters[fk]} onChange={(e) => setFilter(fk, e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.text1, background: T.card }}>
           {options(key).map((v) => <option key={v} value={v}>{v === "all" ? `All ${lbl}` : v}</option>)}
         </select>
       ))}
-      <div style={{ marginLeft: "auto", display: "flex", background: T.card, border: `1px solid ${T.borderLight}`, borderRadius: 10, overflow: "hidden" }}>
+      <div style={{ marginLeft: "auto", display: "flex", background: T.card, border: `1px solid ${T.borderLight}`, borderRadius: 6, overflow: "hidden" }}>
         {[["kanban", "Kanban View"], ["table", "Table View"], ["map", "Map View"]].map(([v, l]) => <button key={v} onClick={() => setView(v)} style={{ padding: "7px 14px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: view === v ? T.brand : "transparent", color: view === v ? T.card : T.text2 }}>{l}</button>)}
       </div>
     </div>
@@ -37,7 +37,7 @@ export function InstallationDashboard({ jobs }) {
     {/* TODO: wire onStatusChange to persist status updates to QB */}
     {view === "kanban" && <InstallationKanban jobs={filtered} onOpenDetail={setSelected} onStatusChange={() => {}} />}
     {view === "table" && (
-      <div style={{ overflow: "auto", borderRadius: 20, boxShadow: T.cardShadow, background: T.card }}>
+      <div style={{ overflow: "auto", borderRadius: 6, boxShadow: T.cardShadow, background: T.card }}>
         <table style={{ minWidth: "100%", fontSize: 13 }}>
           <thead>
             <tr>

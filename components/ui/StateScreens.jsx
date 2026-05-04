@@ -11,7 +11,7 @@ export function EmptyState({ onConfigure }) {
       padding: "48px 32px", textAlign: "center",
     }}>
       <div style={{
-        width: 56, height: 56, borderRadius: 18,
+        width: 56, height: 56, borderRadius: 6,
         background: T.brandSubtle,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
@@ -28,7 +28,7 @@ export function EmptyState({ onConfigure }) {
       </div>
       <div style={{
         background: T.bg, border: `1px solid ${T.borderLight}`,
-        borderRadius: 14, padding: "14px 20px",
+        borderRadius: 6, padding: "14px 20px",
         textAlign: "left", maxWidth: 520, width: "100%",
       }}>
         <p style={{
@@ -49,7 +49,7 @@ QB_TOKEN   your_user_token`}
         <button
           onClick={onConfigure}
           style={{
-            padding: "11px 24px", borderRadius: 12,
+            padding: "11px 24px", borderRadius: 6,
             background: T.brand, color: T.card,
             border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer",
             display: "flex", alignItems: "center", gap: 8,
@@ -92,7 +92,7 @@ export function LoadingState() {
       }}>
         {[...Array(4)].map((_, i) => (
           <div key={i} style={{
-            background: T.card, borderRadius: 24,
+            background: T.card, borderRadius: 6,
             padding: "18px 20px", boxShadow: T.cardShadow,
           }}>
             <div style={{ width: "60%", height: 12, marginBottom: 14, ...sk }} />
@@ -102,7 +102,7 @@ export function LoadingState() {
         ))}
       </div>
       <div style={{
-        background: T.card, borderRadius: 24, padding: 20,
+        background: T.card, borderRadius: 6, padding: 20,
         boxShadow: T.cardShadow,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20,
       }}>
@@ -127,7 +127,7 @@ export function ErrorState({ message, onRetry }) {
       padding: "48px 32px", textAlign: "center",
     }}>
       <div style={{
-        width: 52, height: 52, borderRadius: 18,
+        width: 52, height: 52, borderRadius: 6,
         background: T.dangerSubtle,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
@@ -142,7 +142,7 @@ export function ErrorState({ message, onRetry }) {
       <button
         onClick={onRetry}
         style={{
-          padding: "9px 20px", borderRadius: 12,
+          padding: "9px 20px", borderRadius: 6,
           background: T.brand, color: T.card,
           border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer",
         }}

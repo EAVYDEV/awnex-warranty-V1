@@ -79,7 +79,7 @@ function PipelineBar({ cases }) {
       <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>CAPA Pipeline</p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {counts.map(({ status, count, cfg }) => (
-          <div key={status} style={{ flex: "1 1 80px", background: cfg.bg, border: `1px solid ${cfg.dot}30`, borderRadius: 10, padding: "10px 14px" }}>
+          <div key={status} style={{ flex: "1 1 80px", background: cfg.bg, border: `1px solid ${cfg.dot}30`, borderRadius: 6, padding: "10px 14px" }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: cfg.text }}>{count}</div>
             <div style={{ fontSize: 10, fontWeight: 600, color: cfg.text, opacity: 0.8, marginTop: 2 }}>{status}</div>
           </div>

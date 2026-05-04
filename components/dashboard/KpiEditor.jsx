@@ -162,7 +162,7 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
                 title={name}
                 onClick={() => update({ icon: name })}
                 style={{
-                  width: 34, height: 34, borderRadius: 10,
+                  width: 34, height: 34, borderRadius: 6,
                   border: `2px solid ${draft.icon === name ? T.brand : T.borderLight}`,
                   background: draft.icon === name ? T.brandSubtle : T.bg,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -187,7 +187,7 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
                   title={key}
                   onClick={() => update({ color: th.color, bg: th.bg })}
                   style={{
-                    width: 34, height: 34, borderRadius: 8,
+                    width: 34, height: 34, borderRadius: 6,
                     background: th.bg,
                     border: `2px solid ${active ? th.color : T.borderLight}`,
                     cursor: "pointer", position: "relative",
@@ -202,10 +202,10 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 4 }}>
               <label style={{ fontSize: 11, color: T.text3 }}>Value</label>
               <input type="color" value={draft.color} onChange={e => update({ color: e.target.value })}
-                style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }} />
+                style={{ width: 34, height: 34, borderRadius: 6, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }} />
               <label style={{ fontSize: 11, color: T.text3 }}>BG</label>
               <input type="color" value={draft.bg} onChange={e => update({ bg: e.target.value })}
-                style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }} />
+                style={{ width: 34, height: 34, borderRadius: 6, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }} />
             </div>
           </div>
         </Field>
@@ -213,7 +213,7 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
         {/* Live preview */}
         <div style={{
           background: T.bg, border: `1px solid ${T.borderLight}`,
-          borderRadius: 14, padding: "14px 18px",
+          borderRadius: 6, padding: "14px 18px",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
         }}>
           <div>
@@ -226,7 +226,7 @@ export function KpiEditor({ config, enrichedOrders = [], availableFields = BUILT
             {draft.subtitle && <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>{draft.subtitle}</div>}
           </div>
           <div style={{
-            width: 40, height: 40, borderRadius: 10,
+            width: 40, height: 40, borderRadius: 6,
             background: draft.bg || T.brandSubtle,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
@@ -260,7 +260,7 @@ function FilterRow({ filter, fields, onToggle, onChange }) {
           id="filter-toggle"
           onClick={onToggle}
           style={{
-            marginBottom: 6, padding: "2px 10px", borderRadius: 20,
+            marginBottom: 6, padding: "2px 10px", borderRadius: 6,
             border: `1px solid ${filter ? T.brand : T.borderLight}`,
             background: filter ? T.brandSubtle : T.bg,
             color: filter ? T.brand : T.text2,

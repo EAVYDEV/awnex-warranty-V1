@@ -129,7 +129,7 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
                 key={ct.value}
                 onClick={() => update({ type: ct.value })}
                 style={{
-                  padding: "8px 14px", borderRadius: 10, cursor: "pointer",
+                  padding: "8px 14px", borderRadius: 6, cursor: "pointer",
                   border: `2px solid ${draft.type === ct.value ? T.brand : T.borderLight}`,
                   background: draft.type === ct.value ? T.brandSubtle : T.bg,
                   color: draft.type === ct.value ? T.brand : T.text2,
@@ -185,7 +185,7 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
             <button
               onClick={addMetric}
               style={{
-                marginTop: 8, padding: "6px 14px", borderRadius: 10,
+                marginTop: 8, padding: "6px 14px", borderRadius: 6,
                 border: `1px dashed ${T.borderLight}`, background: "transparent",
                 color: T.brand, fontSize: 12, fontWeight: 600, cursor: "pointer",
                 display: "flex", alignItems: "center", gap: 6,
@@ -238,7 +238,7 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
                 onClick={() => update({ palette: pk })}
                 style={{
                   display: "flex", alignItems: "center", gap: 3,
-                  padding: "5px 10px", borderRadius: 8, cursor: "pointer",
+                  padding: "5px 10px", borderRadius: 6, cursor: "pointer",
                   border: `2px solid ${draft.palette === pk ? T.brand : T.borderLight}`,
                   background: draft.palette === pk ? T.brandSubtle : T.bg,
                 }}
@@ -255,7 +255,7 @@ export function ChartEditor({ config, enrichedOrders = [], availableFields = BUI
         {/* Live preview info */}
         <div style={{
           background: T.bg, border: `1px solid ${T.borderLight}`,
-          borderRadius: 14, padding: "12px 16px",
+          borderRadius: 6, padding: "12px 16px",
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <Icon name="info" size={15} color={T.brand} />
@@ -299,7 +299,7 @@ function MetricRow({ metric, index, numericFields, onChange, onRemove }) {
     <div style={{
       display: "flex", gap: 8, alignItems: "flex-end",
       padding: "10px 12px",
-      background: T.bg, borderRadius: 14,
+      background: T.bg, borderRadius: 6,
       border: `1px solid ${T.borderLight}`,
     }}>
       {/* Field */}
@@ -346,7 +346,7 @@ function MetricRow({ metric, index, numericFields, onChange, onRemove }) {
           type="color"
           value={metric.color || "#1B5FA8"}
           onChange={e => onChange({ color: e.target.value })}
-          style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }}
+          style={{ width: 38, height: 38, borderRadius: 6, border: `1px solid ${T.borderLight}`, cursor: "pointer", padding: 2 }}
         />
       </div>
 
@@ -378,7 +378,7 @@ function FilterRow({ filter, fields, onToggle, onChange }) {
         <button
           onClick={onToggle}
           style={{
-            marginBottom: 6, padding: "2px 10px", borderRadius: 20,
+            marginBottom: 6, padding: "2px 10px", borderRadius: 6,
             border: `1px solid ${filter ? T.brand : T.borderLight}`,
             background: filter ? T.brandSubtle : T.bg,
             color: filter ? T.brand : T.text2,

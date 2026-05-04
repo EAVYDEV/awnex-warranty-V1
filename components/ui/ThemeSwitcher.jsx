@@ -19,7 +19,7 @@ function themeCardStyle(theme, isActive, hovered) {
   const v = theme.vars;
   return {
     width: '100%',
-    borderRadius: 12,
+    borderRadius: 9,
     border: `1px solid ${isActive ? v['--t-brand'] : hovered ? v['--t-border-mid'] : v['--t-border']}`,
     background: hovered && !isActive ? v['--t-surface'] : v['--t-card'],
     padding: 10,
@@ -82,7 +82,7 @@ function ThemeMenu({ themeId, setTheme, onClose, position = 'bottom', sidebarCol
         width: 248,
         background: 'var(--t-card)',
         border: '1px solid var(--t-border)',
-        borderRadius: 14,
+        borderRadius: 9,
         boxShadow: 'var(--t-shadow-card)',
         zIndex: 1000,
         padding: 10,
@@ -115,7 +115,7 @@ function SidebarThemeSwitcher({ collapsed }) {
         title={collapsed ? `Theme: ${THEMES[themeId].name}` : 'Switch theme'}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
-          gap: 8, padding: collapsed ? '8px 0' : '8px 10px', borderRadius: 10, border: '1px solid transparent',
+          gap: 8, padding: collapsed ? '8px 0' : '8px 10px', borderRadius: 6, border: '1px solid transparent',
           background: open ? colors.sidebarHover : 'transparent', color: colors.sidebarMuted, cursor: 'pointer', fontSize: 12,
         }}
         onClick={() => setOpen(v => !v)}
@@ -145,7 +145,7 @@ function DefaultThemeSwitcher() {
         onClick={() => setOpen(v => !v)}
         title="Switch theme"
         style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 10,
+          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 6,
           border: `1px solid ${colors.borderLight}`, background: colors.card, color: colors.text2, cursor: 'pointer',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = colors.surfaceWarm; }}

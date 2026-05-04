@@ -15,7 +15,7 @@ export function DashboardEditToolbar({ onAddKpi, onAddChart, onResetAll, onExit 
   return (
     <div style={{
       background: T.brandDeep,
-      borderRadius: 14,
+      borderRadius: 6,
       padding: "10px 16px",
       marginBottom: 16,
       display: "flex",
@@ -26,7 +26,7 @@ export function DashboardEditToolbar({ onAddKpi, onAddChart, onResetAll, onExit 
       {/* Mode badge */}
       <div style={{
         display: "flex", alignItems: "center", gap: 6,
-        padding: "4px 10px", borderRadius: 8,
+        padding: "4px 10px", borderRadius: 6,
         background: "rgba(255,255,255,0.12)",
         fontSize: 11, fontWeight: 700, color: T.accentSoft,
         letterSpacing: "0.05em", textTransform: "uppercase",
@@ -59,7 +59,7 @@ export function DashboardEditToolbar({ onAddKpi, onAddChart, onResetAll, onExit 
       <button
         onClick={onExit}
         style={{
-          padding: "7px 14px", borderRadius: 12,
+          padding: "7px 14px", borderRadius: 6,
           background: T.brand, border: "none",
           color: T.card, fontSize: 12, fontWeight: 700,
           cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
@@ -78,7 +78,7 @@ function ToolbarBtn({ icon, label, onClick, danger = false }) {
     <button
       onClick={onClick}
       style={{
-        padding: "6px 12px", borderRadius: 10,
+        padding: "6px 12px", borderRadius: 6,
         background: "rgba(255,255,255,0.10)",
         border: `1px solid ${danger ? "rgba(242,95,92,0.4)" : "rgba(255,255,255,0.18)"}`,
         color: danger ? "#F9A8A8" : "rgba(255,255,255,0.88)",

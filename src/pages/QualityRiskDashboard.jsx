@@ -135,17 +135,17 @@ export default function QualityRiskDashboard() {
             <button
               onClick={() => setShowQualitySettings(true)}
               title="Configure Quickbase connection"
-              style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}
+              style={{ width: 34, height: 34, borderRadius: 6, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
             </button>
-            <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: T.brand, color: T.card, fontSize: 13, fontWeight: 700, boxShadow: T.cardShadow, cursor: "pointer" }}>Create Case</button>
+            <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 6, border: `1px solid ${T.borderLight}`, background: T.brand, color: T.card, fontSize: 13, fontWeight: 700, boxShadow: T.cardShadow, cursor: "pointer" }}>Create Case</button>
           </div>
         </div>
 
         <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>
           {dashboardTabs.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: "7px 14px", borderRadius: 10, border: `1px solid ${T.borderLight}`, background: activeTab === tab ? T.brand : T.card, color: activeTab === tab ? T.card : T.text2, fontSize: 12, fontWeight: 600 }}>
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: "7px 14px", borderRadius: 6, border: `1px solid ${T.borderLight}`, background: activeTab === tab ? T.brand : T.card, color: activeTab === tab ? T.card : T.text2, fontSize: 12, fontWeight: 600 }}>
               {tab}
             </button>
           ))}
@@ -154,7 +154,7 @@ export default function QualityRiskDashboard() {
         {activeTab === "Overview" && (
           <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             {[ ["Open Cases", kpi.open], ["Critical Issues", kpi.critical], ["Field Impact Cases", kpi.fieldImpact], ["Average Days Open", kpi.avgDaysOpen] ].map(([label, value]) => (
-              <div key={label} style={{ borderRadius: 20, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}><p style={{ fontSize: 11, color: T.text3, margin: 0, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p><p style={{ fontSize: 40, margin: "4px 0 0", fontWeight: 700, color: T.text1 }}>{value}</p></div>
+              <div key={label} style={{ borderRadius: 6, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}><p style={{ fontSize: 11, color: T.text3, margin: 0, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p><p style={{ fontSize: 40, margin: "4px 0 0", fontWeight: 700, color: T.text1 }}>{value}</p></div>
             ))}
           </div>
         )}
@@ -166,7 +166,7 @@ export default function QualityRiskDashboard() {
               { title: "Cases by Severity", rows: trendData.bySeverity },
               { title: "Recurring Issue Categories", rows: trendData.recurringCategories },
             ].map((card) => (
-              <div key={card.title} style={{ borderRadius: 16, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}>
+              <div key={card.title} style={{ borderRadius: 6, border: `1px solid ${T.borderLight}`, background: T.card, padding: 16, boxShadow: T.cardShadow }}>
                 <h3 style={{ margin: 0, color: T.text1, fontSize: 36, fontWeight: 700 }}>{card.title}</h3>
                 <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
                   {card.rows.map((item) => (

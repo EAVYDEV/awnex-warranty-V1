@@ -30,8 +30,8 @@ export function ContentViewer({ open, url, onClose }) {
         background: "#fff", boxShadow: "-10px 0 28px rgba(0,0,0,.16)", display: "flex", flexDirection: "column", pointerEvents: "auto",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderBottom: "1px solid #E6E9EF" }}>
-          <button onClick={() => setMaximized(v => !v)} style={{ border: "1px solid #D8DEE9", borderRadius: 8, padding: "6px 10px", background: "#fff", cursor: "pointer" }}>{maximized ? "Restore" : "Expand"}</button>
-          <button onClick={onClose} style={{ border: "1px solid #D8DEE9", borderRadius: 8, padding: "6px 10px", background: "#fff", cursor: "pointer" }}>Close</button>
+          <button onClick={() => setMaximized(v => !v)} style={{ border: "1px solid #D8DEE9", borderRadius: 6, padding: "6px 10px", background: "#fff", cursor: "pointer" }}>{maximized ? "Restore" : "Expand"}</button>
+          <button onClick={onClose} style={{ border: "1px solid #D8DEE9", borderRadius: 6, padding: "6px 10px", background: "#fff", cursor: "pointer" }}>Close</button>
           <span style={{ marginLeft: "auto", fontSize: 12, color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</span>
         </div>
         <div style={{ position: "relative", flex: 1 }}>
