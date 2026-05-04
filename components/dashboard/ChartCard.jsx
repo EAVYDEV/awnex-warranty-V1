@@ -10,7 +10,8 @@ export function ChartCard({
   return (
     <div style={{
       background: T.card,
-      borderRadius: 24,
+      borderRadius: 6,
+      border: `1px solid ${T.borderLight}`,
       padding: "16px 20px 12px",
       boxShadow: T.cardShadow,
       position: "relative",

@@ -8,28 +8,30 @@ export function KpiCard({
   onEdit, onDuplicate, onToggleHide,
 }) {
   const isBlank = value === null || value === undefined || value === "-";
+  const valColor = isBlank ? T.text3 : (color || T.brand);
 
   return (
     <div style={{
       background: T.card,
-      borderRadius: 24,
-      padding: "16px 18px",
+      borderRadius: 6,
+      border: `1px solid ${T.borderLight}`,
+      padding: '14px 16px',
       boxShadow: T.cardShadow,
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-      position: "relative",
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+      position: 'relative',
       opacity: hidden && editMode ? 0.45 : 1,
-      outline: editMode ? `2px dashed ${T.brandSoft}` : "none",
+      outline: editMode ? `2px dashed ${T.brandSoft}` : 'none',
       outlineOffset: 2,
-      transition: "opacity 0.2s",
+      transition: 'opacity 0.2s',
     }}>
 
       {/* Edit-mode overlay controls */}
       {editMode && (
         <div style={{
-          position: "absolute", top: 8, right: 8,
-          display: "flex", gap: 4, zIndex: 2,
+          position: 'absolute', top: 8, right: 8,
+          display: 'flex', gap: 4, zIndex: 2,
         }}>
           <EditBtn title="Edit KPI" onClick={onEdit}>
             <Icon name="pencil" size={12} />
@@ -47,21 +49,21 @@ export function KpiCard({
         <div
           title="Drag this KPI card to reorder"
           style={{
-            position: "absolute",
+            position: 'absolute',
             top: 8,
             left: 8,
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             gap: 4,
-            padding: "2px 7px",
+            padding: '2px 7px',
             borderRadius: 999,
             border: `1px solid ${T.borderLight}`,
             background: T.card,
             color: T.text3,
             fontSize: 10,
             fontWeight: 700,
-            letterSpacing: "0.03em",
-            textTransform: "uppercase",
+            letterSpacing: '0.03em',
+            textTransform: 'uppercase',
           }}
         >
           <Icon name="grip" size={11} color={T.text3} />
@@ -69,57 +71,54 @@ export function KpiCard({
         </div>
       )}
 
-      {/* Header row: label + icon */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+      {/* Label row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{
-          fontSize: 11, fontWeight: 700, color: T.text2,
-          textTransform: "uppercase", letterSpacing: "0.05em",
+          fontSize: 10,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.12em',
+          color: T.text3,
           paddingRight: editMode ? 68 : 0,
           paddingLeft: editMode ? 58 : 0,
           minWidth: 0,
-          wordBreak: "break-word",
+          wordBreak: 'break-word',
           lineHeight: 1.35,
         }}>
           {label}
         </span>
-        {iconName && !editMode && (
-          <div style={{
-            width: 32, height: 32, borderRadius: 10,
-            background: bg || T.brandSubtle,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <Icon name={iconName} size={16} color={color || T.brand} />
-          </div>
-        )}
       </div>
 
-      {/* Value */}
-      <span style={{
-        fontSize: isBlank ? 22 : value && String(value).length > 12 ? 20 : value && String(value).length > 8 ? 24 : 30,
-        fontWeight: 700,
-        color: isBlank ? T.text3 : (color || T.text1),
-        lineHeight: 1.15,
-        wordBreak: "break-word",
-        overflowWrap: "anywhere",
-        minWidth: 0,
-      }}>
-        {isBlank ? "—" : value}
-      </span>
-
-      {/* Sub-text */}
-      {sub && (
-        <span style={{ fontSize: 12, color: T.text3, lineHeight: 1.4 }}>{sub}</span>
-      )}
+      {/* Value + sub */}
+      <div>
+        <span style={{
+          display: 'block',
+          fontSize: isBlank ? 22 : value && String(value).length > 12 ? 18 : value && String(value).length > 8 ? 22 : 26,
+          fontWeight: 800,
+          color: valColor,
+          lineHeight: 1,
+          letterSpacing: '-0.02em',
+          wordBreak: 'break-word',
+          overflowWrap: 'anywhere',
+          minWidth: 0,
+        }}>
+          {isBlank ? '—' : value}
+        </span>
+        {sub && (
+          <span style={{ display: 'block', fontSize: 11.5, color: T.text3, fontWeight: 500, marginTop: 4 }}>
+            {sub}
+          </span>
+        )}
+      </div>
 
       {/* Hidden badge in edit mode */}
       {hidden && editMode && (
         <div style={{
-          position: "absolute", bottom: 8, left: 8,
+          position: 'absolute', bottom: 8, left: 8,
           background: T.bg, border: `1px solid ${T.borderLight}`,
-          borderRadius: 6, padding: "1px 6px",
+          borderRadius: 4, padding: '1px 6px',
           fontSize: 10, fontWeight: 700, color: T.text3,
-          textTransform: "uppercase", letterSpacing: "0.04em",
+          textTransform: 'uppercase', letterSpacing: '0.04em',
         }}>
           Hidden
         </div>
@@ -134,11 +133,11 @@ function EditBtn({ onClick, title, children }) {
       title={title}
       onClick={e => { e.stopPropagation(); onClick?.(); }}
       style={{
-        width: 24, height: 24, borderRadius: 8,
+        width: 24, height: 24, borderRadius: 5,
         border: `1px solid ${T.borderLight}`,
         background: T.card,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        cursor: "pointer", color: T.text2, padding: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', color: T.text2, padding: 0,
       }}
     >
       {children}
