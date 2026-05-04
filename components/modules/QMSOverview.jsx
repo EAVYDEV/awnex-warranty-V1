@@ -4,22 +4,20 @@ const C = colors;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, sub, accent, icon }) {
+function KpiCard({ label, value, sub, accent }) {
   return (
     <div style={{
       background: C.card,
       border: `1px solid ${C.borderLight}`,
-      borderRadius: 12,
-      padding: "20px 22px",
-      boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
-      borderLeft: `4px solid ${accent}`,
+      borderRadius: 6,
+      padding: "14px 16px",
+      boxShadow: "var(--t-shadow-card)",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
-        <span style={{ color: accent, opacity: 0.8 }}>{icon}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em" }}>{label}</span>
       </div>
-      <div style={{ fontSize: 36, fontWeight: 800, color: C.text1, lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: C.text2, marginTop: 6 }}>{sub}</div>}
+      <div style={{ fontSize: 26, fontWeight: 800, color: accent || C.text1, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</div>
+      {sub && <div style={{ fontSize: 11.5, color: C.text3, marginTop: 4, fontWeight: 500 }}>{sub}</div>}
     </div>
   );
 }
@@ -31,20 +29,20 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
       style={{
         background: C.card,
         border: `1px solid ${C.borderLight}`,
-        borderRadius: 12,
-        padding: "20px",
-        boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+        borderRadius: 6,
+        padding: "16px",
+        boxShadow: "var(--t-shadow-card)",
         cursor: "pointer",
         textAlign: "left",
         width: "100%",
         transition: "box-shadow 150ms, border-color 150ms",
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(15,23,42,0.10)"; e.currentTarget.style.borderColor = accentColor; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 3px rgba(15,23,42,0.06)"; e.currentTarget.style.borderColor = C.borderLight; }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--t-shadow-elevated)"; e.currentTarget.style.borderColor = accentColor; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "var(--t-shadow-card)"; e.currentTarget.style.borderColor = C.borderLight; }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10,
+          width: 36, height: 36, borderRadius: 7,
           background: accentColor + "18",
           display: "flex", alignItems: "center", justifyContent: "center",
           color: accentColor, flexShrink: 0,
@@ -56,7 +54,7 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
             <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>{title}</span>
             <span style={{
               fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999,
-              background: status === "live" ? C.successSubtle : "#F1F5F9",
+              background: status === "live" ? C.successSubtle : C.surface,
               color: status === "live" ? C.successText : C.text3,
               textTransform: "uppercase", letterSpacing: "0.08em",
             }}>
@@ -93,7 +91,7 @@ export function QMSOverview({ onNavigate }) {
       id: "inspections",
       title: "Inspections",
       description: "QC inspection records, pass/fail rates, inspector assignments, and defect tracking per production run.",
-      accentColor: "#0891B2",
+      accentColor: C.teal,
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -105,7 +103,7 @@ export function QMSOverview({ onNavigate }) {
       id: "ncrs",
       title: "Non-Conformances",
       description: "Log, investigate, and resolve non-conforming product events with root-cause analysis and disposition tracking.",
-      accentColor: "#DC2626",
+      accentColor: C.danger,
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -118,7 +116,7 @@ export function QMSOverview({ onNavigate }) {
       id: "capas",
       title: "Corrective Actions (CAPA)",
       description: "Full CAPA lifecycle — initiation, root-cause, action items, verification, and closure with on-time tracking.",
-      accentColor: "#7C3AED",
+      accentColor: 'var(--t-purple)',
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -130,7 +128,7 @@ export function QMSOverview({ onNavigate }) {
       id: "production",
       title: "Production & Batch Tracking",
       description: "Monitor production runs, batch quality metrics, yield rates, and line-level defect counts.",
-      accentColor: "#D97706",
+      accentColor: 'var(--t-orange)',
       status: "configure",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -146,8 +144,7 @@ export function QMSOverview({ onNavigate }) {
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-          <div style={{ width: 4, height: 28, borderRadius: 2, background: C.brand }} />
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: C.text1, margin: 0 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>
             Quality Management System
           </h1>
         </div>
@@ -161,16 +158,16 @@ export function QMSOverview({ onNavigate }) {
         <KpiCard label="Active Warranties" value="—" sub="Connect Warranty module" accent={C.brand}
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
         />
-        <KpiCard label="Open NCRs" value="—" sub="Connect NCR module" accent="#DC2626"
+        <KpiCard label="Open NCRs" value="—" sub="Connect NCR module" accent={C.danger}
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
         />
-        <KpiCard label="Open CAPAs" value="—" sub="Connect CAPA module" accent="#7C3AED"
+        <KpiCard label="Open CAPAs" value="—" sub="Connect CAPA module" accent="var(--t-purple)"
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>}
         />
-        <KpiCard label="Inspections (MTD)" value="—" sub="Connect Inspections module" accent="#0891B2"
+        <KpiCard label="Inspections (MTD)" value="—" sub="Connect Inspections module" accent={C.teal}
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>}
         />
-        <KpiCard label="Yield Rate" value="—" sub="Connect Production module" accent="#D97706"
+        <KpiCard label="Yield Rate" value="—" sub="Connect Production module" accent="var(--t-orange)"
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
         />
       </div>

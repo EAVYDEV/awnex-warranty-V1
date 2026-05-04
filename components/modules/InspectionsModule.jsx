@@ -4,7 +4,7 @@ import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
 
 const C = colors;
-const ACCENT = "#0891B2";
+const ACCENT = C.teal;
 
 // ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ const SAMPLE_INSPECTIONS = [
 const RESULT_CFG = {
   Pass:   { bg: C.successSubtle, text: C.successText, dot: C.success },
   Fail:   { bg: C.dangerSubtle,  text: C.dangerText,  dot: C.danger  },
-  Rework: { bg: "#FFFBEB",       text: C.warningText, dot: "#D97706" },
+  Rework: { bg: 'var(--t-warning-soft)',       text: C.warningText, dot: 'var(--t-warning)' },
 };
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ function ModuleHeader({ onSettings }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 4, height: 28, borderRadius: 2, background: ACCENT }} />
+        
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>Inspections</h1>
           <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>QC inspection records &amp; pass/fail tracking</p>
@@ -49,10 +49,10 @@ function ModuleHeader({ onSettings }) {
 
 function KpiCard({ label, value, sub, accent }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.06)", borderTop: `3px solid ${accent}` }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>{label}</p>
-      <p style={{ fontSize: 32, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: C.text2, margin: "6px 0 0" }}>{sub}</p>}
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: "var(--t-shadow-card)" }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>{label}</p>
+      <p style={{ fontSize: 26, fontWeight: 800, color: accent || C.text1, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
+      {sub && <p style={{ fontSize: 11.5, color: C.text3, margin: "4px 0 0", fontWeight: 500 }}>{sub}</p>}
     </div>
   );
 }
@@ -69,7 +69,7 @@ function ResultBadge({ result }) {
 
 function ConnectBanner({ onSettings }) {
   return (
-    <div style={{ background: ACCENT + "12", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "20px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div style={{ background: ACCENT + "12", border: `1px dashed ${ACCENT}`, borderRadius: 6, padding: "20px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <div>
         <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 4px" }}>Showing sample data</p>
         <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live inspection records.</p>
@@ -134,20 +134,20 @@ export function InspectionsModule() {
         <KpiCard label="Total Inspections" value={total}      sub="All-time sample data"      accent={ACCENT} />
         <KpiCard label="Pass Rate"         value={`${passRate}%`} sub={`${passed} of ${total} passed`} accent={C.success} />
         <KpiCard label="Failed"            value={failed}     sub="Require rework or scrap"   accent={C.danger} />
-        <KpiCard label="Rework"            value={rework}     sub="Conditional pass"          accent="#D97706" />
+        <KpiCard label="Rework"            value={rework}     sub="Conditional pass"          accent="var(--t-warning)" />
         <KpiCard label="Total Defects"     value={totalDefects} sub="Across all inspections" accent={C.brand} />
       </div>
 
       {/* Pass/Fail bar */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: "0 1px 3px rgba(15,23,42,0.06)" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "18px 20px", marginBottom: 24, boxShadow: "var(--t-shadow-card)" }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Inspection Results Breakdown</p>
         <div style={{ display: "flex", gap: 0, height: 20, borderRadius: 999, overflow: "hidden", background: C.bg }}>
           {passed > 0 && <div style={{ flex: passed, background: C.success }} title={`Pass: ${passed}`} />}
-          {rework > 0 && <div style={{ flex: rework, background: "#D97706" }} title={`Rework: ${rework}`} />}
+          {rework > 0 && <div style={{ flex: rework, background: "var(--t-warning)" }} title={`Rework: ${rework}`} />}
           {failed > 0 && <div style={{ flex: failed, background: C.danger }} title={`Fail: ${failed}`} />}
         </div>
         <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
-          {[["Pass", C.success, passed], ["Rework", "#D97706", rework], ["Fail", C.danger, failed]].map(([l, color, v]) => (
+          {[["Pass", C.success, passed], ["Rework", "var(--t-warning)", rework], ["Fail", C.danger, failed]].map(([l, color, v]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: C.text2 }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
               {l}: <strong style={{ color: C.text1 }}>{v}</strong>
@@ -157,7 +157,7 @@ export function InspectionsModule() {
       </div>
 
       {/* Table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: "0 1px 3px rgba(15,23,42,0.06)", overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: "var(--t-shadow-card)", overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Inspection Records</span>
           {!isConnected && <span style={{ fontSize: 11, color: C.text3 }}>Sample data — connect QB to load live records</span>}

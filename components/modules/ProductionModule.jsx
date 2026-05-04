@@ -4,7 +4,7 @@ import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
 
 const C = colors;
-const ACCENT = "#D97706";
+const ACCENT = 'var(--t-orange)';
 
 // ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
 
@@ -22,17 +22,17 @@ const SAMPLE_BATCHES = [
 const STATUS_CFG = {
   "Complete":    { bg: C.successSubtle, text: C.successText, dot: C.success },
   "In Progress": { bg: C.brandSubtle,   text: C.brandDark,   dot: C.brand   },
-  "On Hold":     { bg: "#FFFBEB",       text: C.warningText, dot: "#D97706" },
+  "On Hold":     { bg: 'var(--t-warning-soft)',       text: C.warningText, dot: 'var(--t-warning)' },
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 function KpiCard({ label, value, sub, accent }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.06)", borderTop: `3px solid ${accent}` }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>{label}</p>
-      <p style={{ fontSize: 32, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: C.text2, margin: "6px 0 0" }}>{sub}</p>}
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: "var(--t-shadow-card)" }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>{label}</p>
+      <p style={{ fontSize: 26, fontWeight: 800, color: accent || C.text1, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
+      {sub && <p style={{ fontSize: 11.5, color: C.text3, margin: "4px 0 0", fontWeight: 500 }}>{sub}</p>}
     </div>
   );
 }
@@ -64,7 +64,7 @@ function YieldBar({ value }) {
 
 function ConnectBanner({ onSettings }) {
   return (
-    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 6, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <div>
         <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 2px" }}>Showing sample data</p>
         <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live production batch records.</p>
@@ -125,7 +125,7 @@ export function ProductionModule() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 4, height: 28, borderRadius: 2, background: ACCENT }} />
+          
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>Production &amp; Batch Tracking</h1>
             <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Batch quality metrics, yield rates, and line-level defect counts</p>
@@ -154,7 +154,7 @@ export function ProductionModule() {
       {/* Line stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 24 }}>
         {lineStats.map(({ line, batches: cnt, yield: y }) => (
-          <div key={line} style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "16px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.06)" }}>
+          <div key={line} style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "16px 20px", boxShadow: "var(--t-shadow-card)" }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{line}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
               <span style={{ fontSize: 28, fontWeight: 800, color: C.text1 }}>{y != null ? `${y}%` : "—"}</span>
@@ -166,7 +166,7 @@ export function ProductionModule() {
       </div>
 
       {/* Batch table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: "0 1px 3px rgba(15,23,42,0.06)", overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, boxShadow: "var(--t-shadow-card)", overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Batch Records</span>
           <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
