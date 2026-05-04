@@ -12,9 +12,10 @@ export function KpiCard({
   return (
     <div style={{
       background: T.card,
-      borderRadius: 24,
-      padding: "16px 18px",
+      borderRadius: 6,
+      padding: "14px 16px",
       boxShadow: T.cardShadow,
+      border: `1px solid ${T.borderLight}`,
       display: "flex",
       flexDirection: "column",
       gap: 6,
@@ -72,8 +73,8 @@ export function KpiCard({
       {/* Header row: label + icon */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <span style={{
-          fontSize: 11, fontWeight: 700, color: T.text2,
-          textTransform: "uppercase", letterSpacing: "0.05em",
+          fontSize: 10, fontWeight: 700, color: T.text3,
+          textTransform: "uppercase", letterSpacing: "0.12em",
           paddingRight: editMode ? 68 : 0,
           paddingLeft: editMode ? 58 : 0,
           minWidth: 0,
@@ -84,7 +85,7 @@ export function KpiCard({
         </span>
         {iconName && !editMode && (
           <div style={{
-            width: 32, height: 32, borderRadius: 10,
+            width: 30, height: 30, borderRadius: 7,
             background: bg || T.brandSubtle,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
@@ -96,10 +97,11 @@ export function KpiCard({
 
       {/* Value */}
       <span style={{
-        fontSize: isBlank ? 22 : value && String(value).length > 12 ? 20 : value && String(value).length > 8 ? 24 : 30,
-        fontWeight: 700,
+        fontSize: isBlank ? 22 : value && String(value).length > 12 ? 18 : value && String(value).length > 8 ? 22 : 26,
+        fontWeight: 800,
         color: isBlank ? T.text3 : (color || T.text1),
-        lineHeight: 1.15,
+        lineHeight: 1,
+        letterSpacing: '-0.02em',
         wordBreak: "break-word",
         overflowWrap: "anywhere",
         minWidth: 0,
@@ -109,7 +111,7 @@ export function KpiCard({
 
       {/* Sub-text */}
       {sub && (
-        <span style={{ fontSize: 12, color: T.text3, lineHeight: 1.4 }}>{sub}</span>
+        <span style={{ fontSize: 11.5, color: T.text3, fontWeight: 500, lineHeight: 1.4 }}>{sub}</span>
       )}
 
       {/* Hidden badge in edit mode */}

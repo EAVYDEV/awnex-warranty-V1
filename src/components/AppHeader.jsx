@@ -1,42 +1,60 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { T } from "../../lib/tokens";
-import { AwnexLogo } from "../../components/AwnexLogo";
-import { ThemeSwitcher } from "../../components/ui/ThemeSwitcher.jsx";
+import { colors } from "../../lib/tokens";
 
-export default function AppHeader() {
+const C = colors;
+
+export default function AppHeader({ title = "Warranty Management", subtitle = "Real-time warranty coverage, claim tracking, and risk visibility across all orders." }) {
   const router = useRouter();
   const isInstallation = router.pathname === "/" && router.query.module === "installation";
 
-  const tabStyle = (active) => ({
-    padding: "6px 10px",
-    borderRadius: 8,
-    border: `1px solid ${T.borderLight}`,
-    background: active ? T.brandSubtle : T.card,
-    color: active ? T.brand : T.text2,
-    fontSize: 12,
-    fontWeight: 600,
-    textDecoration: "none",
-  });
+  const tabs = [
+    { href: "/",                  label: "Warranty",         active: router.pathname === "/" && !isInstallation },
+    { href: "/?module=installation", label: "Installation",  active: isInstallation },
+    { href: "/quality-risk",      label: "Quality Risk & RCA", active: router.pathname === "/quality-risk" },
+  ];
 
   return (
-    <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <AwnexLogo />
-          <h1 style={{ fontSize: 48, fontWeight: 700, color: T.brandDeep, margin: 0, lineHeight: 1.05 }}>
-            Warranty Management
-          </h1>
-        </div>
-        <p style={{ fontSize: 13, color: T.text2, margin: "3px 0 0" }}>Awntrak Platform — QC Module</p>
-        <div className="mt-3 flex gap-2">
-          <Link href="/" style={tabStyle(router.pathname === "/" && !isInstallation)}>Warranty</Link>
-          <Link href="/?module=installation" style={tabStyle(isInstallation)}>Installation</Link>
-          <Link href="/quality-risk" style={tabStyle(router.pathname === "/quality-risk")}>Quality Risk & RCA</Link>
-        </div>
-      </div>
-      <div style={{ paddingTop: 4 }}>
-        <ThemeSwitcher variant="default" />
+    <div style={{
+      background: `linear-gradient(115deg, ${C.brandDeep} 0%, ${C.brand} 60%, ${C.brandLight} 100%)`,
+      borderRadius: 13,
+      padding: '24px 32px',
+      marginBottom: 20,
+      position: 'relative',
+      overflow: 'hidden',
+      flexShrink: 0,
+    }}>
+      {/* Decorative circles */}
+      <div style={{ position: 'absolute', right: 180, top: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', right: 220, bottom: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+
+      <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 6, lineHeight: 1.15 }}>
+        {title}
+      </h1>
+      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, maxWidth: 420, margin: 0 }}>
+        {subtitle}
+      </p>
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        {tabs.map(tab => (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            style={{
+              borderRadius: 9999,
+              padding: '7px 16px',
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: 'none',
+              background: tab.active ? '#fff' : 'rgba(255,255,255,0.15)',
+              color: tab.active ? C.brand : '#fff',
+              transition: 'background 0.12s',
+              display: 'inline-block',
+            }}
+          >
+            {tab.label}
+          </Link>
+        ))}
       </div>
     </div>
   );
