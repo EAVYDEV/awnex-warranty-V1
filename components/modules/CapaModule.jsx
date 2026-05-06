@@ -8,6 +8,7 @@ import CaseDetailPanel from "../../src/components/quality/CaseDetailPanel.jsx";
 
 const C = colors;
 const ACCENT = 'var(--t-purple)';
+const HERO_GRADIENT = "linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)";
 
 const STATUS_ORDER = ["Open", "Containment", "RCA", "CAPA", "Verification", "Closed"];
 
@@ -34,6 +35,16 @@ function btnStyle(variant) {
       : { background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2 }
     ),
   };
+}
+
+function StatChip({ label, value, sub }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", borderRadius: 6, padding: "12px 18px", textAlign: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1, fontWeight: 500 }}>{sub}</div>
+    </div>
+  );
 }
 
 function KpiCard({ label, value, sub, accent }) {
@@ -108,11 +119,11 @@ function ActionRow({ action, caseId }) {
   );
 }
 
-export function CapaModule() {
+export function CapaModule({ onNavigate }) {
   const [settings, setSettings]             = useState({ tableId: "", reportId: "" });
   const [showSettings, setShowSettings]     = useState(false);
   const [cases, setCases]                   = useState([]);
-  const [activeTab, setActiveTab]           = useState("All CAPAs");
+  const [activeTab, setActiveTab]           = useState("All Actions");
   const [selectedCaseId, setSelectedCaseId] = useState(null);
 
   useEffect(() => {
@@ -154,7 +165,7 @@ export function CapaModule() {
   };
 
   return (
-    <div style={{ padding: "32px 32px 48px" }}>
+    <div style={{ padding: "20px 24px 48px" }}>
       {showSettings && (
         <SettingsModal
           dashboardLabel="Corrective Actions (CAPA)"
@@ -174,15 +185,28 @@ export function CapaModule() {
         />
       )}
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 4, height: 28, borderRadius: 2, background: ACCENT }} />
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>Corrective Actions (CAPA)</h1>
-            <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Full CAPA lifecycle — initiation through verified closure</p>
+      {/* Hero Banner */}
+      <div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", marginBottom: 20 }}>
+        <div style={{ position: "absolute", right: 180, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", right: 220, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, margin: 0 }}>Field Execution</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500, maxWidth: 380, margin: "6px 0 0" }}>Full CAPA lifecycle — initiation, root-cause analysis, action items, verification, and closure.</p>
+          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <button onClick={() => onNavigate?.("ncrs")} style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.15)", color: "#fff" }}>Quality Intelligence</button>
+            <button style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "#fff", color: "var(--t-brand)" }}>Field Execution</button>
           </div>
         </div>
+        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+          <StatChip label="Open Cases" value={String(kpi.open)} sub="Require action" />
+          <StatChip label="Overdue" value={String(kpi.overdue)} sub="Past due date" />
+          <StatChip label="Closed" value={String(kpi.closed)} sub="Verified closed" />
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+        <div style={{ flex: 1 }} />
         <button onClick={() => setShowSettings(true)} style={btnStyle("outline")}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Configure QB
@@ -240,7 +264,7 @@ export function CapaModule() {
         )}
       </div>
 
-      {/* Cases table for drilling in */}
+      {/* Cases table */}
       <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}` }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Cases</span>

@@ -2,7 +2,17 @@ import { colors, shadows } from "../../lib/tokens.js";
 
 const C = colors;
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const HERO_GRADIENT = "linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)";
+
+function StatChip({ label, value, sub }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", borderRadius: 6, padding: "12px 18px", textAlign: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1, fontWeight: 500 }}>{sub}</div>
+    </div>
+  );
+}
 
 function KpiCard({ label, value, sub, accent, icon }) {
   return (
@@ -116,7 +126,7 @@ export function QMSOverview({ onNavigate }) {
     },
     {
       id: "capas",
-      title: "Field Execution (CAPA)",
+      title: "Field Execution",
       description: "Full CAPA lifecycle — initiation, root-cause, action items, verification, and closure with on-time tracking.",
       accentColor: 'var(--t-purple)',
       status: "configure",
@@ -139,21 +149,39 @@ export function QMSOverview({ onNavigate }) {
         </svg>
       ),
     },
+    {
+      id: "dispatch",
+      title: "Dispatch Planning",
+      description: "Blend installation and service work orders to plan and optimize technician field trips.",
+      accentColor: 'var(--t-teal)',
+      status: "configure",
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      ),
+    },
   ];
 
   return (
-    <div style={{ padding: "32px 32px 48px", maxWidth: 1200 }}>
-      {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-          <div style={{ width: 4, height: 28, borderRadius: 2, background: C.brand }} />
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: C.text1, margin: 0 }}>
-            Quality Management System
-          </h1>
+    <div style={{ padding: "20px 24px 48px", maxWidth: 1200 }}>
+
+      {/* Hero Banner */}
+      <div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", marginBottom: 20 }}>
+        <div style={{ position: "absolute", right: 180, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", right: 220, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, margin: 0 }}>Quality Management System</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500, maxWidth: 420, margin: "6px 0 0" }}>Awnex Manufacturing QMS — unified visibility across all operations.</p>
+          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <button style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "#fff", color: "var(--t-brand)" }}>Overview</button>
+          </div>
         </div>
-        <p style={{ fontSize: 14, color: C.text2, margin: 0, paddingLeft: 14 }}>
-          Awnex Manufacturing QMS — select a module below to get started
-        </p>
+        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+          <StatChip label="Modules" value={String(modules.length)} sub="Total available" />
+          <StatChip label="Live" value="1" sub="Warranty connected" />
+          <StatChip label="Status" value="Active" sub={new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} />
+        </div>
       </div>
 
       {/* KPI strip */}
