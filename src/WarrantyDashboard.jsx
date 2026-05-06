@@ -452,24 +452,6 @@ export function WarrantyDashboard({
     setRiskHistory(loadRiskHistory());
   }, [orders]);
 
-  // ── Sticky column left-offset measurement ──────────────────────────────────
-  // Runs after each render so offsets stay accurate when column order changes.
-  useLayoutEffect(() => {
-    const newOffsets = {};
-    let accumulated = 0;
-    for (const spec of columnSpecs) {
-      const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
-      if (isSticky) {
-        newOffsets[spec.id] = accumulated;
-        const el = thRefs.current[spec.id];
-        if (el) accumulated += el.offsetWidth;
-      }
-    }
-    setColOffsets(newOffsets);
-  // columnSpecs reference changes when specs rebuild; stickyColumns when user edits
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columnSpecs, stickyColumns]);
-
   // ── Enrichment ─────────────────────────────────────────────────────────────
   const enriched = useMemo(() => orders, [orders]);
 
@@ -530,6 +512,23 @@ export function WarrantyDashboard({
       if (spec.id === "col_watch" || stickyColumns.has(spec.id)) last = spec.id;
     }
     return last;
+  }, [columnSpecs, stickyColumns]);
+
+  // ── Sticky column left-offset measurement ──────────────────────────────────
+  // columnSpecs and lastStickyColId are defined above — safe to reference here.
+  useLayoutEffect(() => {
+    const newOffsets = {};
+    let accumulated = 0;
+    for (const spec of columnSpecs) {
+      const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
+      if (isSticky) {
+        newOffsets[spec.id] = accumulated;
+        const el = thRefs.current[spec.id];
+        if (el) accumulated += el.offsetWidth;
+      }
+    }
+    setColOffsets(newOffsets);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnSpecs, stickyColumns]);
 
   // ── Rising risk count (used for filter chip label) ────────────────────────

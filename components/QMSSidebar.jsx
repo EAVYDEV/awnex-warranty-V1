@@ -1,7 +1,8 @@
 import { ThemeSwitcher } from "./ui/ThemeSwitcher.jsx";
+import { T } from "../lib/tokens.js";
 
 // Amber accent — always hardcoded because it must show on the dark sidebar bg
-const ACCENT = '#F5A623';
+const ACCENT = T.accent;
 
 // Awnex bolt mark SVG (shown when sidebar is collapsed)
 function BoltMark() {
@@ -53,7 +54,7 @@ export function QMSSidebar({ activeModule, onModuleChange, collapsed, onToggleCo
     <aside style={{
       width: collapsed ? 52 : 200,
       minWidth: collapsed ? 52 : 200,
-      background: '#07244A',
+      background: T.sidebar,
       display: 'flex',
       flexDirection: 'column',
       flexShrink: 0,
