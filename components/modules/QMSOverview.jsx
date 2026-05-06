@@ -164,7 +164,7 @@ export function QMSOverview({ onNavigate }) {
   ];
 
   return (
-    <div style={{ padding: "20px 24px 48px", maxWidth: 1200 }}>
+    <div style={{ padding: "20px 24px 48px" }}>
 
       {/* Hero Banner */}
       <div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", marginBottom: 20 }}>
