@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { useRouter } from "next/router";
 import { T } from "../lib/tokens.js";
@@ -24,6 +24,7 @@ import {
   loadColumnTitles, saveColumnTitles,
   loadColumnOrder, saveColumnOrder,
   loadFilterFields, saveFilterFields,
+  loadStickyColumns, saveStickyColumns,
   DEFAULT_DASHBOARD_TITLE, DEFAULT_DASHBOARD_SUBTITLE,
   resetAllConfigs, clearAllData,
 } from "../lib/dashboardStorage.js";
@@ -244,7 +245,10 @@ export function WarrantyDashboard({
   const [editingChart, setEditingChart]   = useState(null); // { config, idx }
   const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
   const [columnOrder,  setColumnOrder]    = useState(() => loadColumnOrder());
+  const [stickyColumns, setStickyColumns] = useState(() => loadStickyColumns());
   const [showColumnEditor, setShowColumnEditor] = useState(false);
+  const thRefs   = useRef({});
+  const [colOffsets, setColOffsets] = useState({});
   const [selectedFilterFieldIds, setSelectedFilterFieldIds] = useState(() => loadFilterFields());
   const [draggingKpiId, setDraggingKpiId] = useState(null);
   const [draggingChartId, setDraggingChartId] = useState(null);
@@ -258,6 +262,7 @@ export function WarrantyDashboard({
         if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
         if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
         if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
+        if (Array.isArray(s.stickyColumns))               setStickyColumns(new Set(s.stickyColumns));
         if (Array.isArray(s.filterFieldIds))              setSelectedFilterFieldIds(s.filterFieldIds);
         if (s.tableId || s.reportId) {
           const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
@@ -286,6 +291,7 @@ export function WarrantyDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kpiConfigs, chartConfigs, columnTitles, columnOrder,
+          stickyColumns: [...stickyColumns],
           filterFieldIds: selectedFilterFieldIds,
           tableId: settings.tableId, reportId: settings.reportId,
           installationTableId: installationSettings.tableId,
@@ -298,7 +304,7 @@ export function WarrantyDashboard({
     return () => clearTimeout(timer);
   // syncStatus intentionally excluded — we use the ref to avoid re-triggering
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, selectedFilterFieldIds, settings, installationSettings]);
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, stickyColumns, selectedFilterFieldIds, settings, installationSettings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -367,7 +373,7 @@ export function WarrantyDashboard({
   function handleResetAll() {
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setKpiConfigs(k); setChartConfigs(c);
-    setColumnTitles({}); setColumnOrder([]);
+    setColumnTitles({}); setColumnOrder([]); setStickyColumns(new Set());
     setSelectedFilterFieldIds([]);
     setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
     setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
@@ -378,7 +384,7 @@ export function WarrantyDashboard({
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setSettings({ tableId: "", reportId: "" });
     setKpiConfigs(k); setChartConfigs(c);
-    setColumnTitles({}); setColumnOrder([]);
+    setColumnTitles({}); setColumnOrder([]); setStickyColumns(new Set());
     setSelectedFilterFieldIds([]);
     setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
     setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
@@ -391,6 +397,24 @@ export function WarrantyDashboard({
     saveRiskSnapshot(orders);
     setRiskHistory(loadRiskHistory());
   }, [orders]);
+
+  // ── Sticky column left-offset measurement ──────────────────────────────────
+  // Runs after each render so offsets stay accurate when column order changes.
+  useLayoutEffect(() => {
+    const newOffsets = {};
+    let accumulated = 0;
+    for (const spec of columnSpecs) {
+      const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
+      if (isSticky) {
+        newOffsets[spec.id] = accumulated;
+        const el = thRefs.current[spec.id];
+        if (el) accumulated += el.offsetWidth;
+      }
+    }
+    setColOffsets(newOffsets);
+  // columnSpecs reference changes when specs rebuild; stickyColumns when user edits
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnSpecs, stickyColumns]);
 
   // ── Enrichment ─────────────────────────────────────────────────────────────
   const enriched = useMemo(() => orders, [orders]);
@@ -444,6 +468,15 @@ export function WarrantyDashboard({
     };
     return [watchCol, ...ordered];
   }, [qbReportFields, columnTitles, columnOrder]);
+
+  // ID of the rightmost sticky column — gets the separator shadow
+  const lastStickyColId = useMemo(() => {
+    let last = null;
+    for (const spec of columnSpecs) {
+      if (spec.id === "col_watch" || stickyColumns.has(spec.id)) last = spec.id;
+    }
+    return last;
+  }, [columnSpecs, stickyColumns]);
 
   // ── Rising risk count (used for filter chip label) ────────────────────────
   const risingRiskCount = useMemo(
@@ -1003,10 +1036,12 @@ export function WarrantyDashboard({
           {showColumnEditor && (
             <ColumnEditor
               columns={columnSpecs.filter(c => c.renderAs !== "watch" && c.renderAs !== "sparkline")}
-              onSave={(customTitles, newOrder) => {
+              stickyColumns={stickyColumns}
+              onSave={(customTitles, newOrder, newSticky) => {
                 setColumnTitles(customTitles);
                 saveColumnTitles(customTitles);
                 if (newOrder) { setColumnOrder(newOrder); saveColumnOrder(newOrder); }
+                if (newSticky) { setStickyColumns(newSticky); saveStickyColumns(newSticky); }
                 setShowColumnEditor(false);
               }}
               onClose={() => setShowColumnEditor(false)}
@@ -1031,16 +1066,29 @@ export function WarrantyDashboard({
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
               <thead>
                 <tr>
-                  {columnSpecs.map(spec => (
-                    <th
-                      key={spec.id}
-                      style={{ ...TH, cursor: spec.sortable ? "pointer" : "default" }}
-                      onClick={spec.sortable ? () => handleSort(spec.key) : undefined}
-                    >
-                      {spec.title}
-                      {spec.sortable && <SortIcon col={spec.key} sortCol={sortCol} sortDir={sortDir} />}
-                    </th>
-                  ))}
+                  {columnSpecs.map(spec => {
+                    const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
+                    return (
+                      <th
+                        key={spec.id}
+                        ref={el => { thRefs.current[spec.id] = el; }}
+                        style={{
+                          ...TH,
+                          cursor: spec.sortable ? "pointer" : "default",
+                          ...(isSticky ? {
+                            position: "sticky",
+                            left: colOffsets[spec.id] ?? 0,
+                            zIndex: 3,
+                            boxShadow: spec.id === lastStickyColId ? "2px 0 5px -1px rgba(0,0,0,0.10)" : undefined,
+                          } : {}),
+                        }}
+                        onClick={spec.sortable ? () => handleSort(spec.key) : undefined}
+                      >
+                        {spec.title}
+                        {spec.sortable && <SortIcon col={spec.key} sortCol={sortCol} sortDir={sortDir} />}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -1050,7 +1098,18 @@ export function WarrantyDashboard({
                   return (
                     <>
                       <tr key={o.orderNum} style={{ background: rowBg, borderBottom: `1px solid ${T.borderLight}`, cursor: "pointer" }} onClick={() => setExpandedRow(isExpanded ? null : o.orderNum)}>
-                        {columnSpecs.map(spec => renderCell(o, spec, TD))}
+                        {columnSpecs.map(spec => {
+                          const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
+                          const tdStyle = isSticky ? {
+                            ...TD,
+                            position: "sticky",
+                            left: colOffsets[spec.id] ?? 0,
+                            zIndex: 1,
+                            background: rowBg,
+                            boxShadow: spec.id === lastStickyColId ? "2px 0 5px -1px rgba(0,0,0,0.10)" : undefined,
+                          } : TD;
+                          return renderCell(o, spec, tdStyle);
+                        })}
                       </tr>
                       {isExpanded && (
                         <tr key={`${o.orderNum}-exp`} style={{ background: T.brandSubtle }}>
