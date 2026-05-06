@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { colors } from "../../lib/tokens.js";
+import { colors, shadows } from "../../lib/tokens.js";
 import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
 import CaseTable from "../../src/components/quality/CaseTable.jsx";
@@ -14,7 +14,7 @@ import {
 import { getQualityRiskDashboardData } from "../../src/lib/qualityRiskDataSource.js";
 
 const C = colors;
-const ACCENT = "#DC2626";
+const ACCENT = C.danger;
 
 const TABS = ["All NCRs", "Open", "High Risk", "Field Impact", "Closed"];
 
@@ -28,7 +28,7 @@ function btnStyle(variant) {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
     ...(variant === "primary"
-      ? { background: ACCENT, border: "none", color: "#fff" }
+      ? { background: ACCENT, border: "none", color: C.card }
       : { background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2 }
     ),
   };
@@ -36,7 +36,7 @@ function btnStyle(variant) {
 
 function KpiCard({ label, value, sub, accent }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.06)", borderTop: `3px solid ${accent}` }}>
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", boxShadow: shadows.card, borderTop: `3px solid ${accent}` }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>{label}</p>
       <p style={{ fontSize: 32, fontWeight: 800, color: C.text1, margin: 0, lineHeight: 1 }}>{value}</p>
       {sub && <p style={{ fontSize: 11, color: C.text2, margin: "6px 0 0" }}>{sub}</p>}
@@ -165,7 +165,7 @@ export function NcrModule() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
         <KpiCard label="Open NCRs"        value={kpi.open}        sub="Require investigation" accent={ACCENT} />
         <KpiCard label="Critical Issues"  value={kpi.critical}    sub="Immediate attention"   accent={C.danger} />
-        <KpiCard label="Field Impact"     value={kpi.fieldImpact} sub="Installed product risk" accent="#D97706" />
+        <KpiCard label="Field Impact"     value={kpi.fieldImpact} sub="Installed product risk" accent={C.warningText} />
         <KpiCard label="Closed"           value={kpi.closed}      sub="Resolved this period"  accent={C.success} />
       </div>
 
@@ -179,7 +179,7 @@ export function NcrModule() {
               padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
               border: `1px solid ${activeTab === tab ? ACCENT : C.borderLight}`,
               background: activeTab === tab ? ACCENT : C.card,
-              color: activeTab === tab ? "#fff" : C.text2,
+              color: activeTab === tab ? C.card : C.text2,
               cursor: "pointer",
             }}
           >

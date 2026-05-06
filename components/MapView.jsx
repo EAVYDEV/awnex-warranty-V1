@@ -260,7 +260,7 @@ export function MapView({ orders }) {
         : <div ref={containerRef} style={{ height: 460 }} />
       }
 
-      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.border}`, background: "#FAFAF8", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.border}`, background: T.surface, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 11, color: T.textMuted }}>
           Click any pin to view order details. Zoom in or click a cluster to expand.
         </span>

@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect } from "react";
-import { colors } from "../../lib/tokens.js";
+import { colors, shadows } from "../../lib/tokens.js";
 import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
 
 const C = colors;
-const ACCENT = "#0EA5E9";
+const ACCENT = 'var(--t-teal)';
 
 function parseDate(value) {
   if (!value) return null;
