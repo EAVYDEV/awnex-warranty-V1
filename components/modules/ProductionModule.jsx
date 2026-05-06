@@ -5,6 +5,7 @@ import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStora
 
 const C = colors;
 const ACCENT = C.warningText;
+const HERO_GRADIENT = "linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)";
 
 // ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
 
@@ -26,6 +27,16 @@ const STATUS_CFG = {
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function StatChip({ label, value, sub }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", borderRadius: 6, padding: "12px 18px", textAlign: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1, fontWeight: 500 }}>{sub}</div>
+    </div>
+  );
+}
 
 function KpiCard({ label, value, sub, accent }) {
   return (
@@ -111,7 +122,7 @@ export function ProductionModule() {
   });
 
   return (
-    <div style={{ padding: "32px 32px 48px" }}>
+    <div style={{ padding: "20px 24px 48px" }}>
       {showSettings && (
         <SettingsModal
           dashboardLabel="Production & Batch Tracking"
@@ -122,15 +133,27 @@ export function ProductionModule() {
         />
       )}
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 4, height: 28, borderRadius: 2, background: ACCENT }} />
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>Production &amp; Batch Tracking</h1>
-            <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Batch quality metrics, yield rates, and line-level defect counts</p>
+      {/* Hero Banner */}
+      <div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", marginBottom: 20 }}>
+        <div style={{ position: "absolute", right: 180, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", right: 220, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, margin: 0 }}>Production Analytics</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500, maxWidth: 380, margin: "6px 0 0" }}>Batch quality metrics, yield rates, and line-level defect counts across all production runs.</p>
+          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <button style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "#fff", color: "var(--t-brand)" }}>Production Analytics</button>
           </div>
         </div>
+        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+          <StatChip label="Active" value={String(inProgress.length)} sub="Batches in progress" />
+          <StatChip label="Avg Yield" value={`${avgYield}%`} sub="Completed batches" />
+          <StatChip label="Defects" value={String(totalDefects)} sub="All batches combined" />
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+        <div style={{ flex: 1 }} />
         <button
           onClick={() => setShowSettings(true)}
           style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2 }}
