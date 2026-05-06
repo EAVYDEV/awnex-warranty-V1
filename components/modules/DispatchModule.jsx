@@ -55,8 +55,8 @@ function readErr(json, fallback) {
   return json?.error || fallback;
 }
 
-const TABLE_HEADER_STYLE = { textAlign: "left", padding: "10px 12px", borderBottom: `1px solid ${C.borderLight}`, fontSize: 11, color: C.text3, textTransform: "uppercase" };
-const TABLE_CELL_STYLE = { padding: "10px 12px", borderBottom: `1px solid ${C.borderLight}`, color: C.text1 };
+const TABLE_HEADER_STYLE = { textAlign: 'left', padding: '10px 12px', borderBottom: `1px solid ${C.borderLight}`, fontSize: 11, color: C.text3, textTransform: 'uppercase' };
+const TABLE_CELL_STYLE = { padding: '10px 12px', borderBottom: `1px solid ${C.borderLight}`, color: C.text1 };
 
 export function DispatchModule() {
   const [installCfg, setInstallCfg] = useState({ tableId: "", reportId: "" });
@@ -133,15 +133,15 @@ export function DispatchModule() {
     {loadState === "loaded" && (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(120px, 1fr))", gap: 12, marginBottom: 20 }}>
-          {[["Installations", installJobs.length], ["Service Sites", serviceJobs.length], ["Combined Stops", combined.length], ["Unassigned", combined.filter(j => j.tech === "Unassigned").length]].map(([label, value]) => (
+          {[['Installations', installJobs.length], ['Service Sites', serviceJobs.length], ['Combined Stops', combined.length], ['Unassigned', combined.filter(j => j.tech === 'Unassigned').length]].map(([label, value]) => (
             <div key={label} style={{ border: `1px solid ${C.borderLight}`, borderTop: `3px solid ${ACCENT}`, borderRadius: 10, padding: 12, background: C.card }}><div style={{ fontSize: 11, color: C.text3 }}>{label}</div><div style={{ fontSize: 24, fontWeight: 700 }}>{value}</div></div>
           ))}
         </div>
-        <div style={{ border: `1px solid ${C.borderLight}`, borderRadius: 10, overflow: "hidden", background: C.card }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <div style={{ border: `1px solid ${C.borderLight}`, borderRadius: 10, overflow: 'hidden', background: C.card }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead><tr style={{ background: C.surface }}><th style={TABLE_HEADER_STYLE}>Type</th><th style={TABLE_HEADER_STYLE}>Site</th><th style={TABLE_HEADER_STYLE}>Region</th><th style={TABLE_HEADER_STYLE}>Due</th><th style={TABLE_HEADER_STYLE}>Assigned</th><th style={TABLE_HEADER_STYLE}>Status</th></tr></thead>
             <tbody>
-              {combined.map((job) => <tr key={`${job.type}-${job.id}`}><td style={TABLE_CELL_STYLE}>{job.type}</td><td style={TABLE_CELL_STYLE}>{job.site}</td><td style={TABLE_CELL_STYLE}>{job.region || "—"}</td><td style={TABLE_CELL_STYLE}>{job.dueDate || "—"}</td><td style={TABLE_CELL_STYLE}>{job.tech}</td><td style={TABLE_CELL_STYLE}>{job.status}</td></tr>)}
+              {combined.map((job) => <tr key={`${job.type}-${job.id}`}><td style={TABLE_CELL_STYLE}>{job.type}</td><td style={TABLE_CELL_STYLE}>{job.site}</td><td style={TABLE_CELL_STYLE}>{job.region || '—'}</td><td style={TABLE_CELL_STYLE}>{job.dueDate || '—'}</td><td style={TABLE_CELL_STYLE}>{job.tech}</td><td style={TABLE_CELL_STYLE}>{job.status}</td></tr>)}
             </tbody>
           </table>
         </div>
@@ -149,3 +149,4 @@ export function DispatchModule() {
     )}
   </div>;
 }
+
