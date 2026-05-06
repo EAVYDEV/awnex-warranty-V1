@@ -1,6 +1,19 @@
 # TODO — QMS Platform Transition
 
-This TODO tracks the next implementation steps after the README rebrand and Phase 1 transition plan.
+This TODO tracks next implementation steps after the code-vs-documentation review on 2026-05-05.
+
+## Immediate follow-up (from review findings)
+
+- [ ] Resolve `/api/warranty-orders` error contract mismatch:
+  - Option A: update `API_REFERENCE.md` to document the current normalized `502` behavior.
+  - Option B: update `pages/api/warranty-orders.js` to passthrough Quickbase status + detail as currently documented.
+  - Decide one approach and keep docs + implementation aligned.
+- [ ] Update all docs to consistently reference `src/lib/qualityRiskDataSource.js` (not `lib/qualityRiskDataSource.js`).
+- [ ] Update any stale project-tree references to the orchestrator path (`src/WarrantyDashboard.jsx`).
+- [ ] Clarify local API setup in `API_REFERENCE.md`:
+  - `QB_REALM` + `QB_TOKEN` are not sufficient by themselves.
+  - Also require `tableId`/`reportId` (via settings/localStorage) or `QB_TABLE_ID` + `QB_REPORT_ID` env vars.
+- [ ] Add a docs consistency check step to release checklist/CI (at minimum: path accuracy + API contract consistency).
 
 ## Phase 1 (non-breaking)
 
@@ -22,5 +35,5 @@ This TODO tracks the next implementation steps after the README rebrand and Phas
 ## Guardrails
 
 - [ ] Do not rename or remove current routes during Phase 1.
-- [ ] Do not change API request/response contracts during Phase 1.
+- [ ] Do not change API request/response contracts during Phase 1 unless docs are updated in the same PR.
 - [ ] Keep changes additive and backward compatible.

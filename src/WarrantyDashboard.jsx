@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { useRouter } from "next/router";
 import { T } from "../lib/tokens.js";
@@ -24,6 +24,7 @@ import {
   loadColumnTitles, saveColumnTitles,
   loadColumnOrder, saveColumnOrder,
   loadFilterFields, saveFilterFields,
+  loadStickyColumns, saveStickyColumns,
   DEFAULT_DASHBOARD_TITLE, DEFAULT_DASHBOARD_SUBTITLE,
   resetAllConfigs, clearAllData,
 } from "../lib/dashboardStorage.js";
@@ -48,6 +49,60 @@ import { InstallationDashboard } from "./components/installation/InstallationDas
 import { mapInstallationData }   from "../lib/installationData";
 import { loadRiskHistory, saveRiskSnapshot, isRisingRisk } from "../lib/riskHistory.js";
 import { loadAlertThresholds, saveAlertThresholds, loadWatchedOrders, saveWatchedOrders } from "../lib/alertsStorage.js";
+
+// ─── DASHBOARD HELPER COMPONENTS ──────────────────────────────────────────────
+
+function DonutChart({ segs, size = 118 }) {
+  const total = segs.reduce((s, x) => s + x.v, 0);
+  if (total === 0) {
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size/2} cy={size/2} r={size/2-14} fill="none" stroke={T.borderLight} strokeWidth={18}/>
+        <text x={size/2} y={size/2+5} textAnchor="middle" fontSize="11" fontWeight="700" fill={T.text3} fontFamily="DM Sans,sans-serif">No data</text>
+      </svg>
+    );
+  }
+  let cur = -Math.PI / 2;
+  const cx = size / 2, cy = size / 2, r = size / 2 - 14, sw = 18;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={T.borderLight} strokeWidth={sw}/>
+      {segs.map((s, i) => {
+        const angle = (s.v / total) * 2 * Math.PI;
+        const x1 = cx + r * Math.cos(cur), y1 = cy + r * Math.sin(cur);
+        cur += angle;
+        const x2 = cx + r * Math.cos(cur), y2 = cy + r * Math.sin(cur);
+        const lg = angle > Math.PI ? 1 : 0;
+        return <path key={i} d={`M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${lg},1 ${x2.toFixed(2)},${y2.toFixed(2)}`} fill="none" stroke={s.c} strokeWidth={sw} strokeLinecap="butt"/>;
+      })}
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="15" fontWeight="800" fill={T.text1} fontFamily="DM Sans,sans-serif">{Math.round(segs[0].v / total * 100)}%</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fontSize="8.5" fontWeight="700" fill={T.text3} fontFamily="DM Sans,sans-serif" letterSpacing="0.1">ACTIVE</text>
+    </svg>
+  );
+}
+
+function PmRow({ name, initials, orders, claims, maxOrders }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0" }}>
+      <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.brand, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9.5, fontWeight: 800, flexShrink: 0 }}>{initials}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: T.text1, marginBottom: 4 }}>{name}</div>
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <div style={{ flex: 1, height: 5, background: T.borderLight, borderRadius: 99 }}>
+            <div style={{ height: "100%", width: `${maxOrders > 0 ? (orders / maxOrders) * 100 : 0}%`, background: T.brandSoft, borderRadius: 99 }} />
+          </div>
+          <div style={{ flex: 1, height: 5, background: T.borderLight, borderRadius: 99 }}>
+            <div style={{ height: "100%", width: `${maxOrders > 0 ? Math.min((claims / maxOrders) * 100, 100) : 0}%`, background: T.brand, borderRadius: 99 }} />
+          </div>
+        </div>
+      </div>
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: T.text1 }}>{orders}</div>
+        <div style={{ fontSize: 10, color: T.text3, fontWeight: 600 }}>{claims} claims</div>
+      </div>
+    </div>
+  );
+}
 
 // ─── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 export function WarrantyDashboard({
@@ -244,7 +299,10 @@ export function WarrantyDashboard({
   const [editingChart, setEditingChart]   = useState(null); // { config, idx }
   const [columnTitles, setColumnTitles]   = useState(() => loadColumnTitles());
   const [columnOrder,  setColumnOrder]    = useState(() => loadColumnOrder());
+  const [stickyColumns, setStickyColumns] = useState(() => loadStickyColumns());
   const [showColumnEditor, setShowColumnEditor] = useState(false);
+  const thRefs   = useRef({});
+  const [colOffsets, setColOffsets] = useState({});
   const [selectedFilterFieldIds, setSelectedFilterFieldIds] = useState(() => loadFilterFields());
   const [draggingKpiId, setDraggingKpiId] = useState(null);
   const [draggingChartId, setDraggingChartId] = useState(null);
@@ -258,6 +316,7 @@ export function WarrantyDashboard({
         if (s.chartConfigs?.length)                       setChartConfigs(s.chartConfigs);
         if (s.columnTitles && Object.keys(s.columnTitles).length) setColumnTitles(s.columnTitles);
         if (s.columnOrder?.length)                        setColumnOrder(s.columnOrder);
+        if (Array.isArray(s.stickyColumns))               setStickyColumns(new Set(s.stickyColumns));
         if (Array.isArray(s.filterFieldIds))              setSelectedFilterFieldIds(s.filterFieldIds);
         if (s.tableId || s.reportId) {
           const ns = { tableId: s.tableId || "", reportId: s.reportId || "" };
@@ -286,6 +345,7 @@ export function WarrantyDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kpiConfigs, chartConfigs, columnTitles, columnOrder,
+          stickyColumns: [...stickyColumns],
           filterFieldIds: selectedFilterFieldIds,
           tableId: settings.tableId, reportId: settings.reportId,
           installationTableId: installationSettings.tableId,
@@ -298,7 +358,7 @@ export function WarrantyDashboard({
     return () => clearTimeout(timer);
   // syncStatus intentionally excluded — we use the ref to avoid re-triggering
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, selectedFilterFieldIds, settings, installationSettings]);
+  }, [kpiConfigs, chartConfigs, columnTitles, columnOrder, stickyColumns, selectedFilterFieldIds, settings, installationSettings]);
 
   // KPI helpers
   function updateKpi(idx, updated) {
@@ -367,7 +427,7 @@ export function WarrantyDashboard({
   function handleResetAll() {
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setKpiConfigs(k); setChartConfigs(c);
-    setColumnTitles({}); setColumnOrder([]);
+    setColumnTitles({}); setColumnOrder([]); setStickyColumns(new Set());
     setSelectedFilterFieldIds([]);
     setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
     setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
@@ -378,7 +438,7 @@ export function WarrantyDashboard({
     const { kpiConfigs: k, chartConfigs: c } = resetAllConfigs();
     setSettings({ tableId: "", reportId: "" });
     setKpiConfigs(k); setChartConfigs(c);
-    setColumnTitles({}); setColumnOrder([]);
+    setColumnTitles({}); setColumnOrder([]); setStickyColumns(new Set());
     setSelectedFilterFieldIds([]);
     setDashboardTitle(DEFAULT_DASHBOARD_TITLE);
     setDashboardSubtitle(DEFAULT_DASHBOARD_SUBTITLE);
@@ -391,6 +451,24 @@ export function WarrantyDashboard({
     saveRiskSnapshot(orders);
     setRiskHistory(loadRiskHistory());
   }, [orders]);
+
+  // ── Sticky column left-offset measurement ──────────────────────────────────
+  // Runs after each render so offsets stay accurate when column order changes.
+  useLayoutEffect(() => {
+    const newOffsets = {};
+    let accumulated = 0;
+    for (const spec of columnSpecs) {
+      const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
+      if (isSticky) {
+        newOffsets[spec.id] = accumulated;
+        const el = thRefs.current[spec.id];
+        if (el) accumulated += el.offsetWidth;
+      }
+    }
+    setColOffsets(newOffsets);
+  // columnSpecs reference changes when specs rebuild; stickyColumns when user edits
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnSpecs, stickyColumns]);
 
   // ── Enrichment ─────────────────────────────────────────────────────────────
   const enriched = useMemo(() => orders, [orders]);
@@ -445,11 +523,47 @@ export function WarrantyDashboard({
     return [watchCol, ...ordered];
   }, [qbReportFields, columnTitles, columnOrder]);
 
+  // ID of the rightmost sticky column — gets the separator shadow
+  const lastStickyColId = useMemo(() => {
+    let last = null;
+    for (const spec of columnSpecs) {
+      if (spec.id === "col_watch" || stickyColumns.has(spec.id)) last = spec.id;
+    }
+    return last;
+  }, [columnSpecs, stickyColumns]);
+
   // ── Rising risk count (used for filter chip label) ────────────────────────
   const risingRiskCount = useMemo(
     () => enriched.filter(o => isRisingRisk(riskHistory[o.orderNum])).length,
     [enriched, riskHistory],
   );
+
+  // ── Dashboard summary (hero + right sidebar + donut + PM chart) ───────────
+  const activeCount     = useMemo(() => enriched.filter(o => o.status === "active").length,   [enriched]);
+  const expiringCount   = useMemo(() => enriched.filter(o => o.status === "expiring").length, [enriched]);
+  const expiredCount    = useMemo(() => enriched.filter(o => o.status === "expired").length,  [enriched]);
+  const highRiskCount   = useMemo(() => enriched.filter(o => o.risk === "critical" || o.risk === "high").length, [enriched]);
+  const openClaimsTotal = useMemo(() => enriched.reduce((s, o) => s + (o.openClaims || 0), 0), [enriched]);
+  const claimCostTotal  = useMemo(() => enriched.reduce((s, o) => s + (o.claimCost || 0), 0),  [enriched]);
+  const pmStats = useMemo(() => {
+    const map = {};
+    enriched.forEach(o => {
+      const key = o.pm || "Unassigned";
+      if (!map[key]) map[key] = { orders: 0, claims: 0 };
+      map[key].orders++;
+      map[key].claims += o.openClaims || 0;
+    });
+    return Object.entries(map)
+      .map(([name, data]) => ({
+        name,
+        initials: name.split(" ").filter(Boolean).map(w => w[0]).slice(0, 2).join("").toUpperCase() || "?",
+        ...data,
+      }))
+      .sort((a, b) => b.orders - a.orders)
+      .slice(0, 6);
+  }, [enriched]);
+  const maxPmOrders = useMemo(() => Math.max(...pmStats.map(p => p.orders), 1), [pmStats]);
+  const activePct   = enriched.length ? Math.round((activeCount + expiringCount) / enriched.length * 100) : 0;
 
   // ── Table filter + sort ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -679,7 +793,7 @@ export function WarrantyDashboard({
 
   // ── Full render ────────────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: standalone ? "100vh" : "auto", padding: "24px 24px 48px" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: standalone ? "100vh" : "auto", padding: standalone ? "24px 24px 48px" : "20px 24px 28px", display: "flex", flexDirection: "column", gap: 18 }}>
 
       {/* Modals */}
       {settingsModals}
@@ -726,94 +840,69 @@ export function WarrantyDashboard({
         />
       )}
 
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {standalone && <AppHeader />}
-          {!standalone && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 4, height: 28, borderRadius: 2, background: T.brand }} />
-                <div>
-                  <h1 style={{ fontSize: 22, fontWeight: 800, color: T.text1, margin: 0 }}>Warranty Management</h1>
-                  <p style={{ fontSize: 12, color: T.text2, margin: 0 }}>Order warranties, claim risk scores &amp; expiration tracking</p>
-                </div>
+      {/* ── Standalone: legacy app header ────────────────────────────────── */}
+      {standalone && <AppHeader />}
+
+      {/* ── Non-standalone warranty: hero banner ─────────────────────────── */}
+      {!standalone && activeModule === "warranty" && (
+        <div style={{ background: `linear-gradient(115deg, ${T.brandDeep} 0%, ${T.brand} 60%, ${T.brandLight} 100%)`, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ position: "absolute", right: 180, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+          <div style={{ position: "absolute", right: 220, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, margin: 0 }}>Warranty Management</h1>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500, maxWidth: 380, margin: "6px 0 0" }}>Real-time warranty coverage, claim tracking, and risk visibility across all orders.</p>
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              {["Warranty", "Quality Risk & RCA"].map((tab, i) => (
+                <button key={tab} style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: i === 0 ? "#fff" : "rgba(255,255,255,0.15)", color: i === 0 ? T.brand : "#fff" }}>{tab}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+            {[
+              { label: "Orders", value: String(enriched.length || 0), sub: "Total tracked" },
+              { label: "Coverage", value: enriched.length ? `${activePct}%` : "—", sub: "Active warranty" },
+              { label: "Synced", value: syncStatus === "ready" ? "Live" : syncStatus === "saving" ? "Saving…" : "—", sub: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
+            ].map(s => (
+              <div key={s.label} style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", borderRadius: 6, padding: "12px 18px", textAlign: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1, fontWeight: 500 }}>{s.sub}</div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          {/* Sync status */}
-          {syncStatus !== "loading" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 5, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={syncStatus === "error" ? T.danger : syncStatus === "saving" ? T.text3 : T.successFill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>
-              </svg>
-              <span style={{ color: syncStatus === "error" ? T.danger : T.text2 }}>
-                {syncStatus === "saving" ? "Saving…" : syncStatus === "error" ? "Sync error" : "Synced"}
-              </span>
-            </div>
-          )}
+      )}
 
-          {/* Source status pills */}
-          {Object.entries(sourceStatuses).map(([id, st]) => (
-            <div key={id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 5, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11, color: T.text2 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: st === "ok" ? T.successFill : st === "error" ? T.danger : T.accentSoft, flexShrink: 0 }} />
-              {id}
-            </div>
-          ))}
-
-          {/* Alerts bell */}
-          {activeModule === "warranty" && (
-            <button
-              onClick={() => setShowAlerts(v => !v)}
-              title="View alerts and watchlist"
-              style={{ position: "relative", width: 34, height: 34, borderRadius: 5, border: `1px solid ${showAlerts ? T.brand : T.borderLight}`, background: showAlerts ? T.brandSubtle : T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showAlerts ? T.brand : T.text2, boxShadow: T.cardShadow }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 01-3.46 0"/>
-              </svg>
-              {alertCount > 0 && (
-                <span style={{ position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 999, background: T.danger, color: T.card, fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px", lineHeight: 1 }}>
-                  {alertCount > 99 ? "99+" : alertCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Settings gear — opens module-specific QB connection modal */}
-          <button
-            onClick={() => activeModule === "installation" ? setShowInstallationSettings(true) : setShowSettings(true)}
-            title="Configure Quickbase connection"
-            style={{ width: 34, height: 34, borderRadius: 5, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      {/* ── Compact action bar ───────────────────────────────────────────── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {syncStatus !== "loading" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 5, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={syncStatus === "error" ? T.danger : syncStatus === "saving" ? T.text3 : T.successFill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>
+            <span style={{ color: syncStatus === "error" ? T.danger : T.text2 }}>{syncStatus === "saving" ? "Saving…" : syncStatus === "error" ? "Sync error" : "Synced"}</span>
+          </div>
+        )}
+        {Object.entries(sourceStatuses).map(([id, st]) => (
+          <div key={id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 5, background: T.card, border: `1px solid ${T.borderLight}`, fontSize: 11, color: T.text2 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: st === "ok" ? T.successFill : st === "error" ? T.danger : T.accentSoft, flexShrink: 0 }} />
+            {id}
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        {activeModule === "warranty" && (
+          <button onClick={() => setShowAlerts(v => !v)} title="View alerts and watchlist" style={{ position: "relative", width: 34, height: 34, borderRadius: 5, border: `1px solid ${showAlerts ? T.brand : T.borderLight}`, background: showAlerts ? T.brandSubtle : T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showAlerts ? T.brand : T.text2, boxShadow: T.cardShadow }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            {alertCount > 0 && <span style={{ position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 999, background: T.danger, color: T.card, fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px", lineHeight: 1 }}>{alertCount > 99 ? "99+" : alertCount}</span>}
           </button>
-
-          {activeModule === "warranty" && (
-          <>
-          {/* Edit mode toggle */}
-          <button
-            onClick={() => setEditMode(e => !e)}
-            title={editMode ? "Exit edit mode" : "Customise dashboard"}
-            style={{ padding: "7px 14px", borderRadius: 5, border: `1px solid ${editMode ? T.brand : T.borderLight}`, background: editMode ? T.brandSubtle : T.card, color: editMode ? T.brand : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, boxShadow: T.cardShadow }}
-          >
+        )}
+        <button onClick={() => activeModule === "installation" ? setShowInstallationSettings(true) : setShowSettings(true)} title="Configure Quickbase connection" style={{ width: 34, height: 34, borderRadius: 5, border: `1px solid ${T.borderLight}`, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.text2, boxShadow: T.cardShadow }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
+        {activeModule === "warranty" && (
+          <button onClick={() => setEditMode(e => !e)} title={editMode ? "Exit edit mode" : "Customise dashboard"} style={{ padding: "7px 14px", borderRadius: 5, border: `1px solid ${editMode ? T.brand : T.borderLight}`, background: editMode ? T.brandSubtle : T.card, color: editMode ? T.brand : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, boxShadow: T.cardShadow }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             {editMode ? "Editing…" : "Edit"}
           </button>
-
-          {/* View toggle */}
-          <div style={{ display: "flex", background: T.card, border: `1px solid ${T.borderLight}`, borderRadius: 5, overflow: "hidden", boxShadow: T.cardShadow }}>
-            {[["table","Table"],["map","Map"]].map(([v, label]) => (
-              <button key={v} onClick={() => setActiveView(v)} style={{ padding: "7px 14px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: activeView === v ? T.brand : "transparent", color: activeView === v ? T.card : T.text2, transition: "background 0.15s, color 0.15s" }}>
-                {label}
-              </button>
-            ))}
-          </div>
-          </>
-          )}
-        </div>
+        )}
       </div>
 
       {activeModule === "installation" ? (
@@ -830,60 +919,217 @@ export function WarrantyDashboard({
         />
       )}
 
-      {/* ── KPI grid ─────────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 20 }}>
-        {kpiConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg) => {
-          const idx = kpiConfigs.findIndex(c => c.id === cfg.id);
-          const raw = computeKpiValue(enriched, cfg);
-          const val = formatKpiValue(raw, cfg.format, cfg.decimals);
-          return (
-            <div
-              key={cfg.id}
-              draggable={editMode}
-              title={editMode ? "Drag to reorder KPI cards" : undefined}
-              onDragStart={e => {
-                if (!editMode) return;
-                e.dataTransfer.effectAllowed = "move";
-                setDraggingKpiId(cfg.id);
-              }}
-              onDragEnd={() => setDraggingKpiId(null)}
-              onDragOver={e => {
-                if (!editMode || !draggingKpiId || draggingKpiId === cfg.id) return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
-              }}
-              onDrop={e => {
-                e.preventDefault();
-                if (!editMode) return;
-                moveKpi(draggingKpiId, cfg.id);
-                setDraggingKpiId(null);
-              }}
-              style={{
-                cursor: editMode ? (draggingKpiId === cfg.id ? "grabbing" : "grab") : "default",
-                transform: draggingKpiId === cfg.id ? "scale(0.98)" : "none",
-                opacity: draggingKpiId === cfg.id ? 0.7 : 1,
-              }}
-            >
-              <KpiCard
-                label={cfg.title}
-                value={val}
-                sub={cfg.subtitle}
-                color={cfg.color}
-                bg={cfg.bg}
-                iconName={cfg.icon}
-                editMode={editMode}
-                hidden={cfg.hidden}
-                onEdit={() => setEditingKpi({ config: { ...cfg }, idx })}
-                onDuplicate={() => duplicateKpi(idx)}
-                onToggleHide={() => updateKpi(idx, { ...cfg, hidden: !cfg.hidden })}
-              />
+      {/* ── Two-column body ───────────────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 276px", gap: 18, alignItems: "start" }}>
+
+        {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
+
+          {/* KPI grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+            {kpiConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg) => {
+              const idx = kpiConfigs.findIndex(c => c.id === cfg.id);
+              const raw = computeKpiValue(enriched, cfg);
+              const val = formatKpiValue(raw, cfg.format, cfg.decimals);
+              return (
+                <div
+                  key={cfg.id}
+                  draggable={editMode}
+                  title={editMode ? "Drag to reorder KPI cards" : undefined}
+                  onDragStart={e => { if (!editMode) return; e.dataTransfer.effectAllowed = "move"; setDraggingKpiId(cfg.id); }}
+                  onDragEnd={() => setDraggingKpiId(null)}
+                  onDragOver={e => { if (!editMode || !draggingKpiId || draggingKpiId === cfg.id) return; e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+                  onDrop={e => { e.preventDefault(); if (!editMode) return; moveKpi(draggingKpiId, cfg.id); setDraggingKpiId(null); }}
+                  style={{ cursor: editMode ? (draggingKpiId === cfg.id ? "grabbing" : "grab") : "default", transform: draggingKpiId === cfg.id ? "scale(0.98)" : "none", opacity: draggingKpiId === cfg.id ? 0.7 : 1 }}
+                >
+                  <KpiCard
+                    label={cfg.title} value={val} sub={cfg.subtitle}
+                    color={cfg.color} bg={cfg.bg} iconName={cfg.icon}
+                    editMode={editMode} hidden={cfg.hidden}
+                    onEdit={() => setEditingKpi({ config: { ...cfg }, idx })}
+                    onDuplicate={() => duplicateKpi(idx)}
+                    onToggleHide={() => updateKpi(idx, { ...cfg, hidden: !cfg.hidden })}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Analysis label + view toggle */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.13em", color: T.text3 }}>Analysis</span>
+            <div style={{ display: "flex", background: T.surface, border: `1px solid ${T.borderLight}`, borderRadius: 5, overflow: "hidden" }}>
+              {[["table", "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M3 9h18 M3 15h18 M9 3v18"], ["map", "M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z M8 2v16 M16 6v16"]].map(([v, iconPath]) => (
+                <button key={v} onClick={() => setActiveView(v)} style={{ fontFamily: "inherit", border: "none", cursor: "pointer", width: 30, height: 28, display: "flex", alignItems: "center", justifyContent: "center", background: activeView === v ? T.brand : "transparent", color: activeView === v ? "#fff" : T.text2, transition: "background 0.12s, color 0.12s" }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    {iconPath.split(" M").map((seg, i) => <path key={i} d={i === 0 ? seg : "M" + seg} />)}
+                  </svg>
+                </button>
+              ))}
             </div>
-          );
-        })}
+          </div>
+
+          {/* Map view */}
+          {activeView === "map" && <MapView orders={filtered} />}
+
+          {/* Charts (table view only) */}
+          {activeView === "table" && (
+            <>
+              {/* Donut + PM breakdown row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                {/* Warranty status donut */}
+                <div style={{ background: T.card, borderRadius: 6, border: `1px solid ${T.borderLight}`, boxShadow: T.cardShadow, padding: "16px 18px" }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: T.text1, marginBottom: 14 }}>Warranty Status</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <DonutChart segs={[{ v: activeCount || 1, c: T.successFill }, { v: expiringCount, c: T.accent }, { v: expiredCount, c: T.danger }]} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+                      {[{ label: "Active", v: activeCount, c: T.successFill }, { label: "Expiring Soon", v: expiringCount, c: T.accent }, { label: "Expired", v: expiredCount, c: T.danger }].map(s => {
+                        const total = activeCount + expiringCount + expiredCount;
+                        const pct = total > 0 ? Math.round(s.v / total * 100) : 0;
+                        return (
+                          <div key={s.label}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <div style={{ width: 7, height: 7, borderRadius: 2, background: s.c, flexShrink: 0 }} />
+                                <span style={{ fontSize: 11.5, fontWeight: 600, color: T.text2 }}>{s.label}</span>
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 800, color: T.text1 }}>{s.v}</span>
+                            </div>
+                            <div style={{ height: 4, background: T.borderLight, borderRadius: 99 }}>
+                              <div style={{ height: "100%", width: `${pct}%`, background: s.c, borderRadius: 99 }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Orders by PM */}
+                <div style={{ background: T.card, borderRadius: 6, border: `1px solid ${T.borderLight}`, boxShadow: T.cardShadow, padding: "16px 18px", overflow: "hidden" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 800, color: T.text1 }}>Orders by PM</div>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      {[{ c: T.brandSoft, l: "Orders" }, { c: T.brand, l: "Claims" }].map(x => (
+                        <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: T.text2, fontWeight: 600 }}>
+                          <div style={{ width: 7, height: 7, borderRadius: 2, background: x.c }} />{x.l}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {pmStats.length > 0 ? pmStats.map(p => (
+                      <div key={p.name} style={{ borderBottom: `1px solid ${T.borderLight}` }}>
+                        <PmRow {...p} maxOrders={maxPmOrders} />
+                      </div>
+                    )) : (
+                      <div style={{ fontSize: 12, color: T.text3, padding: "12px 0", textAlign: "center" }}>No data available</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Configurable charts */}
+              {chartConfigs.filter(cfg => !cfg.hidden || editMode).length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }}>
+                  {chartConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg) => {
+                    const idx = chartConfigs.findIndex(c => c.id === cfg.id);
+                    return (
+                      <div
+                        key={cfg.id}
+                        draggable={editMode}
+                        title={editMode ? "Drag to reorder chart cards" : undefined}
+                        onDragStart={e => { if (!editMode) return; e.dataTransfer.effectAllowed = "move"; setDraggingChartId(cfg.id); }}
+                        onDragEnd={() => setDraggingChartId(null)}
+                        onDragOver={e => { if (!editMode || !draggingChartId || draggingChartId === cfg.id) return; e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+                        onDrop={e => { e.preventDefault(); if (!editMode) return; moveChart(draggingChartId, cfg.id); setDraggingChartId(null); }}
+                        style={{ cursor: editMode ? (draggingChartId === cfg.id ? "grabbing" : "grab") : "default", transform: draggingChartId === cfg.id ? "scale(0.99)" : "none", opacity: draggingChartId === cfg.id ? 0.7 : 1 }}
+                      >
+                        <ChartCard
+                          title={cfg.title} editMode={editMode} hidden={cfg.hidden}
+                          onEdit={() => setEditingChart({ config: { ...cfg, metrics: cfg.metrics.map(m => ({ ...m })) }, idx })}
+                          onDuplicate={() => duplicateChart(idx)}
+                          onToggleHide={() => updateChart(idx, { ...cfg, hidden: !cfg.hidden })}
+                        >
+                          <ConfigurableChart config={cfg} records={enriched} />
+                        </ChartCard>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── RIGHT COLUMN ────────────────────────────────────────────────── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
+
+          {/* High Risk callout */}
+          <div style={{ background: T.dangerSubtle, border: "1.5px solid #f3b8b8", borderRadius: 6, padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 6, background: "rgba(226,75,74,0.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: T.dangerText }}>High Risk Orders</div>
+                <div style={{ fontSize: 10.5, color: T.danger, fontWeight: 600 }}>Critical or high risk level</div>
+              </div>
+              <div style={{ marginLeft: "auto", fontSize: 28, fontWeight: 800, color: T.danger, lineHeight: 1 }}>{highRiskCount}</div>
+            </div>
+            <button onClick={() => setShowAlerts(v => !v)} style={{ fontFamily: "inherit", border: "none", cursor: "pointer", width: "100%", height: 32, borderRadius: 9999, background: T.danger, color: "#fff", fontSize: 11.5, fontWeight: 700 }}>Review Now</button>
+          </div>
+
+          {/* Attention Required */}
+          <div style={{ background: T.card, borderRadius: 6, border: `1px solid ${T.borderLight}`, boxShadow: T.cardShadow, padding: "16px 18px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: T.text1 }}>Attention Required</div>
+            </div>
+            {[
+              openClaimsTotal > 0 && { title: `${openClaimsTotal} open claim${openClaimsTotal > 1 ? "s" : ""} require attention`, body: "Open claims pending review and assignment.", tone: "danger", date: "Active" },
+              expiringCount > 0 && { title: `${expiringCount} orders expiring within 90 days`, body: "Schedule renewal review with project managers.", tone: "warning", date: "Upcoming" },
+              highRiskCount > 0 && { title: `${highRiskCount} high-risk order${highRiskCount > 1 ? "s" : ""} flagged`, body: "Critical or high risk level orders pending corrective action.", tone: "danger", date: "Active" },
+              enriched.length > 0 && { title: `${fmtCurrency(enriched.reduce((s, o) => s + (o.orderValue || 0), 0))} total portfolio tracked`, body: "All active orders synced.", tone: "neutral", date: "Current" },
+            ].filter(Boolean).map((n, i) => {
+              const dotColor = n.tone === "danger" ? T.danger : n.tone === "warning" ? T.accent : T.brand;
+              return (
+                <div key={i} style={{ padding: "12px 0", borderBottom: `1px solid ${T.borderLight}` }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 4 }} />
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text1, marginBottom: 3 }}>{n.title}</div>
+                      <div style={{ fontSize: 11.5, color: T.text2, lineHeight: 1.5, fontWeight: 500 }}>{n.body}</div>
+                      {n.date && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 4, fontWeight: 600 }}>{n.date}</div>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {openClaimsTotal === 0 && expiringCount === 0 && highRiskCount === 0 && enriched.length === 0 && (
+              <div style={{ fontSize: 12, color: T.text3, padding: "12px 0", textAlign: "center" }}>No items require attention</div>
+            )}
+          </div>
+
+          {/* Claim Costs */}
+          <div style={{ background: T.card, borderRadius: 6, border: `1px solid ${T.borderLight}`, boxShadow: T.cardShadow, padding: "14px 16px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.text3, marginBottom: 8 }}>Claim Costs</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.text1, letterSpacing: "-0.02em", marginBottom: 2 }}>{fmtCurrency(claimCostTotal)}</div>
+            <div style={{ fontSize: 11.5, color: T.text3, fontWeight: 500, marginBottom: 10 }}>Total repair cost logged</div>
+            <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 10, borderTop: `1px solid ${T.borderLight}` }}>
+              <span style={{ fontSize: 11, color: T.text3, fontWeight: 600 }}>{enriched.length} of {enriched.length} orders</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: T.successText }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: T.successFill }} />
+                All synced
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ── Filter bar ───────────────────────────────────────────────────── */}
-      <div style={{ background: T.card, borderRadius: 6, border: `1px solid ${T.borderLight}`, padding: "12px 16px", marginBottom: 20, boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      {/* ── Filter bar (full width) ───────────────────────────────────────── */}
+      <div style={{ background: T.card, borderRadius: 6, border: `1px solid ${T.borderLight}`, padding: "12px 16px", boxShadow: T.cardShadow, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: "1 1 220px" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.text3} strokeWidth="2" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -896,106 +1142,26 @@ export function WarrantyDashboard({
             {filterOptions[f.key]?.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         ))}
-        {/* Rising Risk quick-filter chip */}
-        <button
-          onClick={() => setShowRisingRisk(v => !v)}
-          title="Show only orders with an upward risk trend"
-          style={{ padding: "7px 12px", borderRadius: 5, border: `1px solid ${showRisingRisk ? T.danger : T.borderLight}`, background: showRisingRisk ? T.dangerSubtle : T.card, color: showRisingRisk ? T.dangerText : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", flexShrink: 0 }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-            <polyline points="17 6 23 6 23 12"/>
-          </svg>
+        <button onClick={() => setShowRisingRisk(v => !v)} title="Show only orders with an upward risk trend" style={{ padding: "7px 12px", borderRadius: 5, border: `1px solid ${showRisingRisk ? T.danger : T.borderLight}`, background: showRisingRisk ? T.dangerSubtle : T.card, color: showRisingRisk ? T.dangerText : T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", flexShrink: 0 }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
           Rising Risk{risingRiskCount > 0 ? ` (${risingRiskCount})` : ""}
         </button>
-
         {editMode && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", borderLeft: `1px solid ${T.borderLight}`, paddingLeft: 10 }}>
             <span style={{ fontSize: 11, color: T.text3, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>Edit Filters</span>
             {[0, 1, 2, 3].map((slot) => (
-              <select
-                key={slot}
-                value={selectedFilterFieldIds[slot] || ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSelectedFilterFieldIds((prev) => {
-                    const next = [...prev];
-                    if (value) next[slot] = value;
-                    else next.splice(slot, 1);
-                    const deduped = next.filter((id, idx) => id && next.indexOf(id) === idx).slice(0, 4);
-                    saveFilterFields(deduped);
-                    return deduped;
-                  });
-                }}
-                style={{ padding: "7px 9px", borderRadius: 5, border: `1px solid ${T.borderLight}`, fontSize: 12, color: T.text2, background: T.bg }}
-              >
+              <select key={slot} value={selectedFilterFieldIds[slot] || ""} onChange={(e) => { const value = e.target.value; setSelectedFilterFieldIds((prev) => { const next = [...prev]; if (value) next[slot] = value; else next.splice(slot, 1); const deduped = next.filter((id, idx) => id && next.indexOf(id) === idx).slice(0, 4); saveFilterFields(deduped); return deduped; }); }} style={{ padding: "7px 9px", borderRadius: 5, border: `1px solid ${T.borderLight}`, fontSize: 12, color: T.text2, background: T.bg }}>
                 <option value="">Filter {slot + 1}…</option>
-                {columnSpecs
-                  .filter((c) => c.renderAs !== "qbLink" && c.renderAs !== "watch" && c.renderAs !== "sparkline")
-                  .map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                {columnSpecs.filter((c) => c.renderAs !== "qbLink" && c.renderAs !== "watch" && c.renderAs !== "sparkline").map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
             ))}
           </div>
         )}
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setFieldFilters({}); setShowRisingRisk(false); }} style={{ padding: "8px 12px", borderRadius: 5, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
-            Clear Filters
-          </button>
+          <button onClick={() => { setSearch(""); setFieldFilters({}); setShowRisingRisk(false); }} style={{ padding: "8px 12px", borderRadius: 5, border: `1px solid ${T.dangerSubtle}`, background: T.dangerSubtle, color: T.danger, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Clear Filters</button>
         )}
         <span style={{ marginLeft: "auto", fontSize: 12, color: T.text3, whiteSpace: "nowrap" }}>{filtered.length} of {enriched.length} orders</span>
       </div>
-
-      {/* ── Map view ─────────────────────────────────────────────────────── */}
-      {activeView === "map" && <div style={{ marginBottom: 20 }}><MapView orders={filtered} /></div>}
-
-      {/* ── Chart grid (table view only) ─────────────────────────────────── */}
-      {activeView === "table" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16, marginBottom: 20 }}>
-          {chartConfigs.filter(cfg => !cfg.hidden || editMode).map((cfg) => {
-            const idx = chartConfigs.findIndex(c => c.id === cfg.id);
-            return (
-              <div
-                key={cfg.id}
-                draggable={editMode}
-                title={editMode ? "Drag to reorder chart cards" : undefined}
-                onDragStart={e => {
-                  if (!editMode) return;
-                  e.dataTransfer.effectAllowed = "move";
-                  setDraggingChartId(cfg.id);
-                }}
-                onDragEnd={() => setDraggingChartId(null)}
-                onDragOver={e => {
-                  if (!editMode || !draggingChartId || draggingChartId === cfg.id) return;
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "move";
-                }}
-                onDrop={e => {
-                  e.preventDefault();
-                  if (!editMode) return;
-                  moveChart(draggingChartId, cfg.id);
-                  setDraggingChartId(null);
-                }}
-                style={{
-                  cursor: editMode ? (draggingChartId === cfg.id ? "grabbing" : "grab") : "default",
-                  transform: draggingChartId === cfg.id ? "scale(0.99)" : "none",
-                  opacity: draggingChartId === cfg.id ? 0.7 : 1,
-                }}
-              >
-                <ChartCard
-                  title={cfg.title}
-                  editMode={editMode}
-                  hidden={cfg.hidden}
-                  onEdit={() => setEditingChart({ config: { ...cfg, metrics: cfg.metrics.map(m => ({ ...m })) }, idx })}
-                  onDuplicate={() => duplicateChart(idx)}
-                  onToggleHide={() => updateChart(idx, { ...cfg, hidden: !cfg.hidden })}
-                >
-                  <ConfigurableChart config={cfg} records={enriched} />
-                </ChartCard>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* ── Order detail table (table view only) ─────────────────────────── */}
       {activeView === "table" && (
@@ -1003,10 +1169,11 @@ export function WarrantyDashboard({
           {showColumnEditor && (
             <ColumnEditor
               columns={columnSpecs.filter(c => c.renderAs !== "watch" && c.renderAs !== "sparkline")}
-              onSave={(customTitles, newOrder) => {
-                setColumnTitles(customTitles);
-                saveColumnTitles(customTitles);
+              stickyColumns={stickyColumns}
+              onSave={(customTitles, newOrder, newSticky) => {
+                setColumnTitles(customTitles); saveColumnTitles(customTitles);
                 if (newOrder) { setColumnOrder(newOrder); saveColumnOrder(newOrder); }
+                if (newSticky) { setStickyColumns(newSticky); saveStickyColumns(newSticky); }
                 setShowColumnEditor(false);
               }}
               onClose={() => setShowColumnEditor(false)}
@@ -1017,11 +1184,7 @@ export function WarrantyDashboard({
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <span style={{ fontSize: 12, color: T.text2 }}><b style={{ color: T.text1 }}>{filteredClaims}</b> claims</span>
               <span style={{ fontSize: 12, color: T.text2 }}>Portfolio: <b style={{ color: T.text1 }}>{fmtCurrency(filteredValue)}</b></span>
-              <button
-                onClick={() => setShowColumnEditor(true)}
-                title="Edit column titles"
-                style={{ padding: "5px 12px", borderRadius: 5, border: `1px solid ${T.borderLight}`, background: T.surface, color: T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
-              >
+              <button onClick={() => setShowColumnEditor(true)} title="Edit column titles" style={{ padding: "5px 12px", borderRadius: 5, border: `1px solid ${T.borderLight}`, background: T.surface, color: T.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 Columns
               </button>
@@ -1031,16 +1194,15 @@ export function WarrantyDashboard({
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
               <thead>
                 <tr>
-                  {columnSpecs.map(spec => (
-                    <th
-                      key={spec.id}
-                      style={{ ...TH, cursor: spec.sortable ? "pointer" : "default" }}
-                      onClick={spec.sortable ? () => handleSort(spec.key) : undefined}
-                    >
-                      {spec.title}
-                      {spec.sortable && <SortIcon col={spec.key} sortCol={sortCol} sortDir={sortDir} />}
-                    </th>
-                  ))}
+                  {columnSpecs.map(spec => {
+                    const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
+                    return (
+                      <th key={spec.id} ref={el => { thRefs.current[spec.id] = el; }} style={{ ...TH, cursor: spec.sortable ? "pointer" : "default", ...(isSticky ? { position: "sticky", left: colOffsets[spec.id] ?? 0, zIndex: 3, boxShadow: spec.id === lastStickyColId ? "2px 0 5px -1px rgba(0,0,0,0.10)" : undefined } : {}) }} onClick={spec.sortable ? () => handleSort(spec.key) : undefined}>
+                        {spec.title}
+                        {spec.sortable && <SortIcon col={spec.key} sortCol={sortCol} sortDir={sortDir} />}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -1050,7 +1212,11 @@ export function WarrantyDashboard({
                   return (
                     <>
                       <tr key={o.orderNum} style={{ background: rowBg, borderBottom: `1px solid ${T.borderLight}`, cursor: "pointer" }} onClick={() => setExpandedRow(isExpanded ? null : o.orderNum)}>
-                        {columnSpecs.map(spec => renderCell(o, spec, TD))}
+                        {columnSpecs.map(spec => {
+                          const isSticky = spec.id === "col_watch" || stickyColumns.has(spec.id);
+                          const tdStyle = isSticky ? { ...TD, position: "sticky", left: colOffsets[spec.id] ?? 0, zIndex: 1, background: rowBg, boxShadow: spec.id === lastStickyColId ? "2px 0 5px -1px rgba(0,0,0,0.10)" : undefined } : TD;
+                          return renderCell(o, spec, tdStyle);
+                        })}
                       </tr>
                       {isExpanded && (
                         <tr key={`${o.orderNum}-exp`} style={{ background: T.brandSubtle }}>

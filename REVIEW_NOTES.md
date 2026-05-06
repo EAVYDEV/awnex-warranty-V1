@@ -1,44 +1,72 @@
 # Documentation + Code Review Notes
 
-Date: 2026-05-04
+Date: 2026-05-05
 
 ## Scope reviewed
 
 - `README.md`
 - `ARCHITECTURE.md`
 - `API_REFERENCE.md`
-- Repository file/layout consistency via `rg --files`
+- `pages/api/warranty-orders.js`
+- `pages/api/settings.js`
+- Repository layout consistency via `rg --files`
+- Build validation via `npm run build`
 
 ## Findings
 
-### 1) Path mismatch for Quality Risk data provider
+### 1) API error contract mismatch in `API_REFERENCE.md`
 
-Documentation references `lib/qualityRiskDataSource.js` in a few places, but the implementation exists at `src/lib/qualityRiskDataSource.js`.
+`API_REFERENCE.md` says Quickbase non-2xx responses are passed through with the original Quickbase status and payload detail. Current implementation instead normalizes Quickbase failures to HTTP `502` with a generic message:
 
-**Impact:** New contributors may look in the wrong location for the Quality Risk data source switch point.
+- Docs claim passthrough (`Quickbase error passthrough` section)
+- Code returns: `res.status(502).json({ error: "Failed to fetch data from Quickbase..." })`
 
-**Recommended action:** Standardize docs to the actual `src/lib/qualityRiskDataSource.js` path.
+**Impact:** API consumers and frontend debugging workflows may expect status fidelity/detail that is not actually available.
 
-### 2) README project tree has stale top-level app path
+**Recommendation:** Either (A) update docs to describe the current normalized `502` behavior, or (B) update the handler to passthrough status + detail as documented.
 
-README shows `WarrantyDashboard.jsx` at repo root as the main orchestrator, while the active file is `src/WarrantyDashboard.jsx`.
+---
 
-**Impact:** Slight confusion for onboarding and code navigation.
+### 2) Quality Risk provider path drift in docs
 
-**Recommended action:** Update README tree to reflect `src/WarrantyDashboard.jsx`.
+`README.md` and `ARCHITECTURE.md` include references to `lib/qualityRiskDataSource.js`, while the implemented file is `src/lib/qualityRiskDataSource.js`.
 
-### 3) API reference aligns with current backend contract
+**Impact:** Slower onboarding/navigation for contributors looking for the live/mock switch point.
 
-`/api/warranty-orders` docs correctly describe server-side credential handling and pass-through response/error behavior.
+**Recommendation:** Standardize all references to `src/lib/qualityRiskDataSource.js`.
 
-**Impact:** None.
+---
 
-### 4) Architecture doc largely aligns with implemented module organization
+### 3) README project tree has stale orchestrator path
 
-Component contract sections and flow description are consistent with present folder structure and route layout.
+README project tree still includes a root-level `WarrantyDashboard.jsx` entry as the main orchestrator. Active implementation exists at `src/WarrantyDashboard.jsx`.
 
-**Impact:** None.
+**Impact:** Minor navigation confusion for new contributors.
+
+**Recommendation:** Update README tree and related narrative to only reference `src/WarrantyDashboard.jsx` as canonical.
+
+---
+
+### 4) `API_REFERENCE.md` includes an environment setup implication that is incomplete
+
+`API_REFERENCE.md` local development example only shows `QB_REALM` and `QB_TOKEN`; runtime still requires `tableId` and `reportId` supplied either via query params/localStorage or optional env fallbacks.
+
+**Impact:** New developers may expect API calls to succeed immediately with just two env vars.
+
+**Recommendation:** Add a short note that local usage also needs either:
+- dashboard settings modal values (`tableId`, `reportId`) persisted in localStorage, or
+- `QB_TABLE_ID` + `QB_REPORT_ID` env vars.
+
+---
+
+### 5) Build/runtime posture check
+
+`npm run build` completed successfully on current codebase, including static generation and route compilation.
+
+**Impact:** No immediate compile-time regressions detected.
+
+**Recommendation:** Keep this as a baseline CI gate if not already enforced.
 
 ## Summary
 
-Primary issues are documentation path drift (Quality Risk provider path and one dashboard orchestrator path). No critical API contract issues observed in the reviewed docs.
+The biggest documentation-contract issue is the `/api/warranty-orders` error behavior mismatch: docs promise Quickbase status/detail passthrough, but code intentionally normalizes to `502` + generic message. Remaining issues are path/documentation drift and a small local setup clarity gap. No build-breaking issues were found.

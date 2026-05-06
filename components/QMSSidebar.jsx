@@ -43,6 +43,7 @@ export const NAV_ITEMS = [
   { id: "ncrs",        label: "Quality Intelligence", iconKey: "alert",      group: "modules" },
   { id: "capas",       label: "Field Execution",      iconKey: "settings",   group: "modules" },
   { id: "production",  label: "Production Analytics", iconKey: "production", group: "modules" },
+  { id: "dispatch",    label: "Dispatch Planning",   iconKey: "settings",   group: "modules" },
 ];
 
 // ─── SIDEBAR ───────────────────────────────────────────────────────────────────
