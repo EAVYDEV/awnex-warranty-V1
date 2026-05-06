@@ -1,8 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { T } from "../../lib/tokens.js";
 import { Icon } from "./Icon.jsx";
 
 export function Modal({ title, subtitle, onClose, footer, children, width = 520, zIndex = 1000 }) {
+  const mouseDownTarget = useRef(null);
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -23,7 +25,10 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 20,
       }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={e => { mouseDownTarget.current = e.target; }}
+      onClick={e => {
+        if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) onClose();
+      }}
     >
       <div style={{
         background: T.card,
