@@ -147,10 +147,10 @@ export function MapView({ orders }) {
         const c   = STATUS_CFG[o.status];
         const r   = RISK_CFG[o.risk || "low"];
         const sep = i < os.length - 1
-          ? "border-bottom:1px solid #E5E4E0;margin-bottom:8px;padding-bottom:8px;" : "";
+          ? "border-bottom:1px solid var(--t-border);margin-bottom:8px;padding-bottom:8px;" : "";
         return `<div style="${sep}">
-          <div style="font-weight:700;color:#0D3F72;font-size:13px">${o.orderNum} - ${o.brand}</div>
-          <div style="font-size:11px;color:#636260;margin:2px 0 4px">${o.customer}</div>
+          <div style="font-weight:700;color:var(--t-brand-dark);font-size:13px">${o.orderNum} - ${o.brand}</div>
+          <div style="font-size:11px;color:var(--t-text2);margin:2px 0 4px">${o.customer}</div>
           <div style="font-size:11px">PM: ${o.pm}</div>
           <div style="font-size:11px">Expires: ${fmtDate(o.warrantyEnd)}&nbsp;&nbsp;Claims: ${o.claims}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
@@ -231,7 +231,7 @@ export function MapView({ orders }) {
   }, [orders, ready]);
 
   return (
-    <div style={{ background: T.bgCard, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.07)", overflow: "hidden" }}>
+    <div style={{ background: T.bgCard, borderRadius: 6, boxShadow: T.cardShadow, overflow: "hidden" }}>
       <div style={{
         padding: "14px 20px", borderBottom: `1px solid ${T.border}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -260,7 +260,7 @@ export function MapView({ orders }) {
         : <div ref={containerRef} style={{ height: 460 }} />
       }
 
-      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.border}`, background: "#FAFAF8", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ padding: "9px 20px", borderTop: `1px solid ${T.border}`, background: T.surface, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 11, color: T.textMuted }}>
           Click any pin to view order details. Zoom in or click a cluster to expand.
         </span>

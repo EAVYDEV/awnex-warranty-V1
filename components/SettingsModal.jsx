@@ -126,8 +126,8 @@ export function SettingsModal({ onClose, onSave, onClear, initialTableId = "", i
           />
           <p style={{
             fontSize: 11, marginTop: 5,
-            color: urlMsgType === "error"   ? "#B42318"
-                 : urlMsgType === "success" ? "#067647"
+            color: urlMsgType === "error"   ? T.dangerText
+                 : urlMsgType === "success" ? T.successText
                  : T.text3,
           }}>
             {urlMsg || "Paste a table/report URL and both IDs will fill in automatically."}

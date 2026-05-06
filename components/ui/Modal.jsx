@@ -19,7 +19,7 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
     <div
       style={{
         position: "fixed", inset: 0, zIndex,
-        background: "rgba(7,36,74,0.50)",
+        background: T.overlay,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 20,
       }}
@@ -30,7 +30,7 @@ export function Modal({ title, subtitle, onClose, footer, children, width = 520,
         borderRadius: 24,
         width: "100%",
         maxWidth: width,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.28)",
+        boxShadow: T.modalShadow,
         display: "flex",
         flexDirection: "column",
         maxHeight: "90vh",

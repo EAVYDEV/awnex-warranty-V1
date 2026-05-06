@@ -27,7 +27,7 @@ export function DashboardEditToolbar({ onAddKpi, onAddChart, onResetAll, onExit 
       <div style={{
         display: "flex", alignItems: "center", gap: 6,
         padding: "4px 10px", borderRadius: 8,
-        background: "rgba(255,255,255,0.12)",
+        background: T.toolbarBadgeBg,
         fontSize: 11, fontWeight: 700, color: T.accentSoft,
         letterSpacing: "0.05em", textTransform: "uppercase",
       }}>
@@ -35,7 +35,7 @@ export function DashboardEditToolbar({ onAddKpi, onAddChart, onResetAll, onExit 
         Edit Mode
       </div>
 
-      <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.15)" }} />
+      <div style={{ width: 1, height: 20, background: T.toolbarDivider }} />
 
       <ToolbarBtn icon="plus" label="Add KPI" onClick={onAddKpi} />
       <ToolbarBtn icon="bar-chart-2" label="Add Chart" onClick={onAddChart} />
@@ -54,7 +54,7 @@ export function DashboardEditToolbar({ onAddKpi, onAddChart, onResetAll, onExit 
         <ToolbarBtn icon="refresh-cw" label="Reset to Defaults" onClick={handleReset} />
       )}
 
-      <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.15)" }} />
+      <div style={{ width: 1, height: 20, background: T.toolbarDivider }} />
 
       <button
         onClick={onExit}
@@ -79,16 +79,16 @@ function ToolbarBtn({ icon, label, onClick, danger = false }) {
       onClick={onClick}
       style={{
         padding: "6px 12px", borderRadius: 10,
-        background: "rgba(255,255,255,0.10)",
-        border: `1px solid ${danger ? "rgba(242,95,92,0.4)" : "rgba(255,255,255,0.18)"}`,
-        color: danger ? "#F9A8A8" : "rgba(255,255,255,0.88)",
+        background: T.toolbarBtnBg,
+        border: `1px solid ${danger ? T.toolbarBtnBorderDanger : T.toolbarBtnBorder}`,
+        color: danger ? T.toolbarDanger : T.toolbarText,
         fontSize: 12, fontWeight: 600,
         cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
         fontFamily: "inherit",
         transition: "background 0.15s",
       }}
     >
-      <Icon name={icon} size={13} color={danger ? "#F9A8A8" : "rgba(255,255,255,0.80)"} />
+      <Icon name={icon} size={13} color={danger ? T.toolbarDanger : T.toolbarTextMuted} />
       {label}
     </button>
   );

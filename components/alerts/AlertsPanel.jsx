@@ -112,7 +112,7 @@ export function AlertsPanel({ orders, watchedOrders, onToggleWatch, thresholds, 
       {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.22)", zIndex: 999 }}
+        style={{ position: "fixed", inset: 0, background: T.backdrop, zIndex: 999 }}
       />
 
       {/* Panel */}
@@ -120,7 +120,7 @@ export function AlertsPanel({ orders, watchedOrders, onToggleWatch, thresholds, 
         position: "fixed", top: 0, right: 0, bottom: 0, width: 360,
         background: T.card, zIndex: 1000,
         display: "flex", flexDirection: "column",
-        boxShadow: "-4px 0 28px rgba(0,0,0,0.14)",
+        boxShadow: T.panelShadow,
       }}>
 
         {/* Header */}
