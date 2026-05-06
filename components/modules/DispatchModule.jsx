@@ -55,6 +55,9 @@ function readErr(json, fallback) {
   return json?.error || fallback;
 }
 
+const TABLE_HEADER_STYLE = { textAlign: 'left', padding: '10px 12px', borderBottom: `1px solid ${C.borderLight}`, fontSize: 11, color: C.text3, textTransform: 'uppercase' };
+const TABLE_CELL_STYLE = { padding: '10px 12px', borderBottom: `1px solid ${C.borderLight}`, color: C.text1 };
+
 export function DispatchModule() {
   const [installCfg, setInstallCfg] = useState({ tableId: "", reportId: "" });
   const [serviceCfg, setServiceCfg] = useState({ tableId: "", reportId: "" });
@@ -136,9 +139,9 @@ export function DispatchModule() {
         </div>
         <div style={{ border: `1px solid ${C.borderLight}`, borderRadius: 10, overflow: 'hidden', background: C.card }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead><tr style={{ background: C.surface }}><th style={th}>Type</th><th style={th}>Site</th><th style={th}>Region</th><th style={th}>Due</th><th style={th}>Assigned</th><th style={th}>Status</th></tr></thead>
+            <thead><tr style={{ background: C.surface }}><th style={TABLE_HEADER_STYLE}>Type</th><th style={TABLE_HEADER_STYLE}>Site</th><th style={TABLE_HEADER_STYLE}>Region</th><th style={TABLE_HEADER_STYLE}>Due</th><th style={TABLE_HEADER_STYLE}>Assigned</th><th style={TABLE_HEADER_STYLE}>Status</th></tr></thead>
             <tbody>
-              {combined.map((job) => <tr key={`${job.type}-${job.id}`}><td style={td}>{job.type}</td><td style={td}>{job.site}</td><td style={td}>{job.region || '—'}</td><td style={td}>{job.dueDate || '—'}</td><td style={td}>{job.tech}</td><td style={td}>{job.status}</td></tr>)}
+              {combined.map((job) => <tr key={`${job.type}-${job.id}`}><td style={TABLE_CELL_STYLE}>{job.type}</td><td style={TABLE_CELL_STYLE}>{job.site}</td><td style={TABLE_CELL_STYLE}>{job.region || '—'}</td><td style={TABLE_CELL_STYLE}>{job.dueDate || '—'}</td><td style={TABLE_CELL_STYLE}>{job.tech}</td><td style={TABLE_CELL_STYLE}>{job.status}</td></tr>)}
             </tbody>
           </table>
         </div>
@@ -147,5 +150,3 @@ export function DispatchModule() {
   </div>;
 }
 
-const th = { textAlign: 'left', padding: '10px 12px', borderBottom: `1px solid ${C.borderLight}`, fontSize: 11, color: C.text3, textTransform: 'uppercase' };
-const td = { padding: '10px 12px', borderBottom: `1px solid ${C.borderLight}`, color: C.text1 };
