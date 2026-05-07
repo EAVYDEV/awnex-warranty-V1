@@ -1,7 +1,8 @@
 # Dispatch Planning Module — Technical Documentation
 
 ## Overview
-The Dispatch Planning module combines two Quickbase reports into a unified planning view:
+The Dispatch Planning module combines two Quickbase reports into a unified planning view.
+It follows the platform-wide visual design system: dark gradient hero banner, standardized KpiCards (`borderRadius: 6`, colored value text, no accent border stripe), and container cards at `borderRadius: 8`.
 
 1. **Installations report** (current/upcoming installs)
 2. **Services report** (repair/service/inspection sites)

@@ -76,7 +76,7 @@ Browser (src/WarrantyDashboard.jsx)
 | Sortable column header arrow | `components/ui/SortIcon.jsx` |
 | Awnex branding logo | `components/AwnexLogo.jsx` |
 | QMS shell (sidebar + module switcher) | `components/QMSShell.jsx`, `components/QMSSidebar.jsx` |
-| Per-module containers (Inspections, NCRs, CAPAs, Production, Overview) | `components/modules/*.jsx` |
+| Per-module containers (Overview, Inspections, NCRs/Quality Intelligence, CAPAs/Field Execution, Production, Dispatch) | `components/modules/*.jsx` |
 | QB connection settings modal (canonical, used everywhere) | `components/SettingsModal.jsx` |
 | Leaflet map + clustering + geocoding | `components/MapView.jsx` |
 | KPI display card | `components/dashboard/KpiCard.jsx` |
@@ -93,7 +93,7 @@ Browser (src/WarrantyDashboard.jsx)
 | Quality Risk & RCA dashboard page | `src/pages/QualityRiskDashboard.jsx` |
 | Quality case UI (table, detail panel, tabs) | `src/components/quality/*.jsx` |
 | Quality Risk mock data + helpers (`USE_MOCK_QUALITY_RISK_DATA = true`) | `src/lib/qualityRiskDataSource.js`, `src/lib/qualityRiskUtils.js` |
-| QB API proxies (one per module) | `pages/api/{warranty-orders,inspections,ncrs,capas,production}.js` |
+| QB API proxies (one per module) | `pages/api/{warranty-orders,inspections,ncrs,capas,production,dispatch}.js` |
 | Vercel KV settings store | `pages/api/settings.js` |
 
 ### Quickbase field mapping
@@ -269,3 +269,26 @@ localStorage is used as an immediate read/write cache. All keys are also synced 
 | `awntrak_geocache` | `{ [locationKey]: [lat, lng] }` Nominatim geocoding cache |
 
 Per-module connection helpers are `loadModuleSettings(module)` / `saveModuleSettings(module, …)` in `lib/dashboardStorage.js`; the warranty pair has compat aliases `loadConnectionSettings` / `saveConnectionSettings`. The Vercel KV key is `awntrak_settings` and holds all of the above as a single JSON object. Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars; when absent the app runs on localStorage only.
+
+### UI design conventions
+
+All module pages share a consistent visual system:
+
+**Hero banner** — `linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)`, `borderRadius: 13`, with frosted-glass `StatChip` components (`borderRadius: 6`) for live stats in the top-right corner.
+
+**KPI cards (module-local)** — `borderRadius: 6`, `padding: 14px 16px`, no accent border. Value text uses the module accent color; label is `fontSize: 10`, `letterSpacing: 0.12em`. This matches `components/dashboard/KpiCard.jsx` (used by the Warranty dashboard).
+
+**Container cards** (tables, analysis bars, pipeline, connect banners) — `borderRadius: 8`, `border: 1px solid borderLight`, `boxShadow: shadows.card`.
+
+**Pill / badge shapes** — `borderRadius: 999` (unchanged).
+
+**Module accent colors:**
+
+| Module | Accent |
+|---|---|
+| Warranty | `var(--t-brand)` |
+| Inspections | `var(--t-teal)` |
+| Quality Intelligence (NCRs) | `var(--t-danger)` |
+| Field Execution (CAPAs) | `var(--t-purple)` |
+| Production Analytics | `var(--t-warning-text)` |
+| Dispatch Planning | `var(--t-teal)` |

@@ -106,14 +106,13 @@ Returned when `QB_REALM` or `QB_TOKEN` are not set in the Vercel environment.
 }
 ```
 
-### Quickbase error passthrough
+### 502 - Quickbase request failed
 
-If Quickbase itself returns a non-2xx status, the endpoint passes the status and QB error body back to the client:
+If Quickbase returns a non-2xx status, the endpoint normalizes the failure to HTTP `502` with a generic message. The original Quickbase status code and body are **not** passed through:
 
 ```json
 {
-  "error": "Quickbase returned 401: Unauthorized",
-  "detail": { ... }
+  "error": "Failed to fetch data from Quickbase. Check your Table ID, Report ID, and token."
 }
 ```
 
@@ -144,6 +143,8 @@ For local development, create a `.env.local` file in the project root:
 QB_REALM=awnexinc.quickbase.com
 QB_TOKEN=your_user_token
 ```
+
+> **Note:** `QB_REALM` and `QB_TOKEN` alone are not sufficient to get a successful response. The endpoint also requires a `tableId` and `reportId`. Supply these either via the settings modal in the dashboard (stored in `localStorage` and appended automatically to every request) or by setting `QB_TABLE_ID` and `QB_REPORT_ID` as additional environment variables.
 
 ---
 

@@ -1,4 +1,4 @@
-# Awntrak Warranty Dashboard — Architecture
+# Awntrak QMS Platform — Architecture
 
 Full system design, component contracts, config schemas, and extension guide.
 
@@ -34,15 +34,20 @@ Full system design, component contracts, config schemas, and extension guide.
 | `lib/installationData.js` | ✅ Done | Installation field alias map, fixed status pipeline, Quickbase payload normalization |
 | `lib/installationHelpers.js` | ✅ Done | Installation grouping/filter helpers + KPI metric derivation |
 | `src/lib/qualityRiskDataSource.js` | ✅ Done | Quality Risk data provider abstraction with mock/live switch and standard `{ cases, trends }` shape |
+| `src/lib/qualityRiskUtils.js` | ✅ Done | Risk scoring, status advancement helpers for NCR/CAPA cases |
 | `src/components/installation/*` | ✅ Done | Installation Kanban/Table/Map UI, job card, and detail panel |
-
-### In progress / remaining
-
-| File | Status | Notes |
-|---|---|---|
+| `src/components/quality/*` | ✅ Done | NCR/CAPA case table, detail panel, create modal |
+| `components/QMSShell.jsx` | ✅ Done | Main app shell — sidebar + top bar + module router; maps module IDs to components |
+| `components/QMSSidebar.jsx` | ✅ Done | Navigation sidebar with module items, collapse toggle, theme switcher |
+| `components/modules/QMSOverview.jsx` | ✅ Done | Landing page — module selection cards + cross-module KPI strip |
+| `components/modules/InspectionsModule.jsx` | ✅ Done | QC inspection records, pass/fail/rework tracking, defect counts |
+| `components/modules/NcrModule.jsx` | ✅ Done | Quality Intelligence — NCR case management, risk scoring, field impact |
+| `components/modules/CapaModule.jsx` | ✅ Done | Field Execution — CAPA lifecycle, pipeline bar, action items table |
+| `components/modules/ProductionModule.jsx` | ✅ Done | Production Analytics — batch yield, line stats, defect tracking |
+| `components/modules/DispatchModule.jsx` | ✅ Done | Dispatch Planning — merges two QB reports (installations + services) into unified schedule |
+| `pages/api/dispatch.js` | ✅ Done | Server-side QB proxy for dispatch installations and services reports |
 | `src/WarrantyDashboard.jsx` | ✅ Done | Orchestrator for Warranty + Installation modules, shared Quickbase fetch/settings flow, query-based module activation (`?module=installation`) |
-| `src/pages/QualityRiskDashboard.jsx` | ✅ Updated | Reads case/trend data through provider (`getQualityRiskDashboardData`) and renders Trends cards from structured data |
-| `src/WarrantyDashboard.jsx` (filters) | ✅ Updated | Filter dropdowns are built from visible `columnSpecs`; labels use `columnSpecs.title` so custom column names propagate to filters. |
+| `src/pages/QualityRiskDashboard.jsx` | ✅ Done | Reads case/trend data through provider (`getQualityRiskDashboardData`) and renders Trends cards from structured data |
 
 ---
 
@@ -50,7 +55,10 @@ Full system design, component contracts, config schemas, and extension guide.
 
 ```
 pages/index.jsx
-  └── <WarrantyDashboard apiRoute="/api/warranty-orders" />
+  └── <QMSShell />
+        └── active module component (e.g. <WarrantyDashboard standalone={false} />)
+
+src/WarrantyDashboard.jsx (when activeModule === "warranty")
         │
         ├── fetch()  →  pages/api/warranty-orders.js
         │                  └── QB Report Run API (server-side, credentials injected)
@@ -323,6 +331,72 @@ All `lib/` utilities and `components/` are framework-agnostic and importable fro
 
 ---
 
+## Module design system
+
+All module pages (`components/modules/*.jsx`) share a consistent visual language. Deviating from these conventions creates the visual inconsistency shown in earlier screenshots.
+
+### Hero banner
+
+```jsx
+const HERO_GRADIENT = "linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)";
+
+<div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", ... }}>
+  <h1>Module Title</h1>
+  <p>Module subtitle</p>
+  <div>/* pill nav tabs */</div>
+  <div>/* StatChip components (borderRadius: 6) */</div>
+</div>
+```
+
+### KPI cards (module-local)
+
+Matches `components/dashboard/KpiCard.jsx` — the same component used by the Warranty configurable dashboard:
+
+```jsx
+function KpiCard({ label, value, sub, accent }) {
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.borderLight}`,
+      borderRadius: 6,          // ← not 12
+      padding: "14px 16px",
+      boxShadow: shadows.card,
+      display: "flex", flexDirection: "column", gap: 10,
+      // NO borderTop or borderLeft accent stripe
+    }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em" }}>{label}</p>
+      <div>
+        <p style={{ fontSize: 26, fontWeight: 800, color: accent, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
+        {sub && <p style={{ fontSize: 11.5, color: C.text3, fontWeight: 500 }}>{sub}</p>}
+      </div>
+    </div>
+  );
+}
+```
+
+### Container cards
+
+Tables, analysis bars, pipeline bars, connect banners:
+
+```jsx
+borderRadius: 8    // ← not 12 or 10
+border: `1px solid ${C.borderLight}`
+boxShadow: shadows.card
+```
+
+### Module accent colors
+
+| Module | `ACCENT` |
+|---|---|
+| Warranty | `var(--t-brand)` (set by `WarrantyDashboard`) |
+| Inspections | `var(--t-teal)` |
+| Quality Intelligence | `C.danger` (`var(--t-danger)`) |
+| Field Execution | `var(--t-purple)` |
+| Production Analytics | `C.warningText` (`var(--t-warning-text)`) |
+| Dispatch Planning | `var(--t-teal)` |
+
+---
+
 ## Future improvements
 
 - Per-row KPI grouping (currently all KPIs render in a single auto-fit grid)
@@ -335,7 +409,7 @@ All `lib/` utilities and `components/` are framework-agnostic and importable fro
 
 ### Filter-label synchronization (column rename support)
 
-`WarrantyDashboard.jsx` now derives `filterableFields` from `columnSpecs` instead of raw report-field metadata. This ensures:
+`WarrantyDashboard.jsx` derives `filterableFields` from `columnSpecs` instead of raw report-field metadata. This ensures:
 
 - Filter labels always use the active display title (`columnSpecs.title`).
 - Renaming a column via Column Editor updates the corresponding filter label immediately.
