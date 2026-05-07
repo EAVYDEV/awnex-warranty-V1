@@ -1,30 +1,16 @@
 import { colors, shadows } from "../../lib/tokens.js";
+import { registerModule } from "../../lib/moduleRegistry.js";
+import { getModules } from "../../lib/moduleRegistry.js";
+import { StatChip, SvgIcon, MODULE_ICON_PATHS } from "../ui/ModuleShared.jsx";
 
 const C = colors;
-
 const HERO_GRADIENT = "linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)";
-
-function StatChip({ label, value, sub }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", borderRadius: 6, padding: "12px 18px", textAlign: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
-      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1, fontWeight: 500 }}>{sub}</div>
-    </div>
-  );
-}
 
 function KpiCard({ label, value, sub, accent, icon }) {
   return (
     <div style={{
-      background: C.card,
-      border: `1px solid ${C.borderLight}`,
-      borderRadius: 6,
-      padding: "14px 16px",
-      boxShadow: shadows.card,
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
+      background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6,
+      padding: "14px 16px", boxShadow: shadows.card, display: "flex", flexDirection: "column", gap: 10,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.35 }}>{label}</span>
@@ -43,18 +29,12 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
     <button
       onClick={onClick}
       style={{
-        background: C.card,
-        border: `1px solid ${C.borderLight}`,
-        borderRadius: 12,
-        padding: "20px",
-        boxShadow: shadows.card,
-        cursor: "pointer",
-        textAlign: "left",
-        width: "100%",
-        transition: "box-shadow 150ms, border-color 150ms",
+        background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12,
+        padding: "20px", boxShadow: shadows.card, cursor: "pointer", textAlign: "left",
+        width: "100%", transition: "box-shadow 150ms, border-color 150ms", fontFamily: "inherit",
       }}
       onMouseEnter={e => { e.currentTarget.style.boxShadow = shadows.elevated; e.currentTarget.style.borderColor = accentColor; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = shadows.card; e.currentTarget.style.borderColor = C.borderLight; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = shadows.card;    e.currentTarget.style.borderColor = C.borderLight; }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{
@@ -71,7 +51,7 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
             <span style={{
               fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999,
               background: status === "live" ? C.successSubtle : C.surfaceWarm,
-              color: status === "live" ? C.successText : C.text3,
+              color:      status === "live" ? C.successText  : C.text3,
               textTransform: "uppercase", letterSpacing: "0.08em",
             }}>
               {status === "live" ? "Live" : "Connect QB"}
@@ -87,92 +67,17 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
   );
 }
 
-// ─── QMS OVERVIEW ─────────────────────────────────────────────────────────────
-
 export function QMSOverview({ onNavigate }) {
-  const modules = [
-    {
-      id: "warranty",
-      title: "Warranty Operations",
-      description: "Track active warranties, claim risk scores, and expiration timelines across all Awnex orders.",
-      accentColor: C.brand,
-      status: "live",
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-      ),
-    },
-    {
-      id: "inspections",
-      title: "Inspections",
-      description: "QC inspection records, pass/fail rates, inspector assignments, and defect tracking per production run.",
-      accentColor: 'var(--t-teal)',
-      status: "configure",
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-        </svg>
-      ),
-    },
-    {
-      id: "ncrs",
-      title: "Quality Intelligence",
-      description: "Log, investigate, and resolve non-conforming product events with root-cause analysis and disposition tracking.",
-      accentColor: C.danger,
-      status: "configure",
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-      ),
-    },
-    {
-      id: "capas",
-      title: "Field Execution",
-      description: "Full CAPA lifecycle — initiation, root-cause, action items, verification, and closure with on-time tracking.",
-      accentColor: 'var(--t-purple)',
-      status: "configure",
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-        </svg>
-      ),
-    },
-    {
-      id: "production",
-      title: "Production Analytics",
-      description: "Monitor production runs, batch quality metrics, yield rates, and line-level defect counts.",
-      accentColor: C.warningText,
-      status: "configure",
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-          <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
-        </svg>
-      ),
-    },
-    {
-      id: "dispatch",
-      title: "Dispatch Planning",
-      description: "Blend installation and service work orders to plan and optimize technician field trips.",
-      accentColor: 'var(--t-teal)',
-      status: "configure",
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-      ),
-    },
-  ];
+  // Exclude the overview module itself from the cards list
+  const modules     = getModules().filter(m => m.id !== "overview");
+  const liveCount   = modules.filter(m => m.overviewStatus === "live").length;
 
   return (
     <div style={{ padding: "20px 24px 48px" }}>
 
       {/* Hero Banner */}
       <div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", marginBottom: 20 }}>
-        <div style={{ position: "absolute", right: 180, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", right: 180, top: -30,   width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
         <div style={{ position: "absolute", right: 220, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, margin: 0 }}>Quality Management System</h1>
@@ -183,44 +88,44 @@ export function QMSOverview({ onNavigate }) {
         </div>
         <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
           <StatChip label="Modules" value={String(modules.length)} sub="Total available" />
-          <StatChip label="Live" value="1" sub="Warranty connected" />
-          <StatChip label="Status" value="Active" sub={new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} />
+          <StatChip label="Live"    value={String(liveCount)}       sub={liveCount === 1 ? "Warranty connected" : `${liveCount} connected`} />
+          <StatChip label="Status"  value="Active" sub={new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} />
         </div>
       </div>
 
-      {/* KPI strip */}
+      {/* KPI strip — placeholders until modules provide live data */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 32 }}>
         <KpiCard label="Active Warranties" value="—" sub="Connect Warranty module" accent={C.brand}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+          icon={<SvgIcon path={MODULE_ICON_PATHS.shield} size={16} />}
         />
         <KpiCard label="Open NCRs" value="—" sub="Connect NCR module" accent={C.danger}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+          icon={<SvgIcon path={MODULE_ICON_PATHS.alert} size={16} />}
         />
-        <KpiCard label="Open CAPAs" value="—" sub="Connect CAPA module" accent={'var(--t-purple)'}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>}
+        <KpiCard label="Open CAPAs" value="—" sub="Connect CAPA module" accent="var(--t-purple)"
+          icon={<SvgIcon path={MODULE_ICON_PATHS.gear} size={16} />}
         />
-        <KpiCard label="Inspections (MTD)" value="—" sub="Connect Inspections module" accent={'var(--t-teal)'}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>}
+        <KpiCard label="Inspections (MTD)" value="—" sub="Connect Inspections module" accent="var(--t-teal)"
+          icon={<SvgIcon path={MODULE_ICON_PATHS.checklist} size={16} />}
         />
         <KpiCard label="Yield Rate" value="—" sub="Connect Production module" accent={C.warningText}
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
         />
       </div>
 
-      {/* Module cards */}
+      {/* Module cards — auto-populated from the registry */}
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 13, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 14px" }}>
           Modules
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 12 }}>
-          {modules.map((m) => (
+          {modules.map(m => (
             <ModuleCard
               key={m.id}
-              title={m.title}
+              title={m.label}
               description={m.description}
-              status={m.status}
+              status={m.overviewStatus}
               accentColor={m.accentColor}
-              icon={m.icon}
+              icon={<SvgIcon path={MODULE_ICON_PATHS[m.iconKey] || MODULE_ICON_PATHS.home} size={18} />}
               onClick={() => onNavigate(m.id)}
             />
           ))}
@@ -229,3 +134,14 @@ export function QMSOverview({ onNavigate }) {
     </div>
   );
 }
+
+registerModule({
+  id:             "overview",
+  label:          "Overview",
+  iconKey:        "home",
+  group:          "main",
+  component:      QMSOverview,
+  accentColor:    colors.brand,
+  description:    "System-wide overview of all QMS modules and live status.",
+  overviewStatus: "live",
+});

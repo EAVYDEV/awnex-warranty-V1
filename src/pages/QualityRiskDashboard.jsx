@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { T } from "../../lib/tokens";
 import AppHeader from "../components/AppHeader";
-import CaseTable from "../components/quality/CaseTable";
-import CaseCard from "../components/quality/CaseCard";
-import CreateCaseModal from "../components/quality/CreateCaseModal";
-import CaseDetailPanel from "../components/quality/CaseDetailPanel";
+import CaseTable from "../../components/quality/CaseTable";
+import CaseCard from "../../components/quality/CaseCard";
+import CreateCaseModal from "../../components/quality/CreateCaseModal";
+import CaseDetailPanel from "../../components/quality/CaseDetailPanel";
 import { SettingsModal } from "../../components/SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage";
 import {
@@ -14,8 +14,8 @@ import {
   canCloseCase,
   isContainmentRequired,
   isFieldImpactReviewRequired,
-} from "../lib/qualityRiskUtils";
-import { getQualityRiskDashboardData } from "../lib/qualityRiskDataSource";
+} from "../../lib/qualityRiskUtils";
+import { getQualityRiskDashboardData } from "../../lib/qualityRiskDataSource";
 
 const dashboardTabs = ["Overview", "Active Cases", "High Risk", "Field Impact", "CAPA Tracking", "Trends"];
 
