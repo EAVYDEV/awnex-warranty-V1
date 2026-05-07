@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { colors, shadows } from "../../lib/tokens.js";
+import { colors } from "../../lib/tokens.js";
 import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
+import { registerModule } from "../../lib/moduleRegistry.js";
+import {
+  HeroBanner, ConnectBanner, ModuleKpiCard,
+} from "../ui/ModuleShared.jsx";
 
-const C = colors;
-const ACCENT = 'var(--t-teal)';
-const HERO_GRADIENT = "linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)";
-
-// ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
+const C      = colors;
+const ACCENT = "var(--t-teal)";
 
 const SAMPLE_INSPECTIONS = [
   { id: "INS-0041", order: "ORD-2241", product: "Powder Coat — Bronze", inspector: "J. Martinez", date: "2026-04-28", result: "Pass",   defects: 0,  notes: "" },
@@ -23,32 +24,8 @@ const SAMPLE_INSPECTIONS = [
 const RESULT_CFG = {
   Pass:   { bg: C.successSubtle, text: C.successText, dot: C.success },
   Fail:   { bg: C.dangerSubtle,  text: C.dangerText,  dot: C.danger  },
-  Rework: { bg: 'var(--t-warning-soft)', text: C.warningText, dot: C.warningText },
+  Rework: { bg: "var(--t-warning-soft)", text: C.warningText, dot: C.warningText },
 };
-
-// ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
-
-function StatChip({ label, value, sub }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", borderRadius: 6, padding: "12px 18px", textAlign: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
-      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1, fontWeight: 500 }}>{sub}</div>
-    </div>
-  );
-}
-
-function KpiCard({ label, value, sub, accent }) {
-  return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: shadows.card, display: "flex", flexDirection: "column", gap: 10 }}>
-      <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: 0, lineHeight: 1.35 }}>{label}</p>
-      <div>
-        <p style={{ fontSize: 26, fontWeight: 800, color: accent, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
-        {sub && <p style={{ fontSize: 11.5, color: C.text3, margin: "4px 0 0", fontWeight: 500 }}>{sub}</p>}
-      </div>
-    </div>
-  );
-}
 
 function ResultBadge({ result }) {
   const cfg = RESULT_CFG[result] || { bg: C.surface, text: C.text2, dot: C.text3 };
@@ -60,38 +37,19 @@ function ResultBadge({ result }) {
   );
 }
 
-function ConnectBanner({ onSettings }) {
-  return (
-    <div style={{ background: ACCENT + "12", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "20px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-      <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 4px" }}>Showing sample data</p>
-        <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live inspection records.</p>
-      </div>
-      <button onClick={onSettings} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", background: ACCENT, border: "none", color: C.card }}>
-        Connect QB Report
-      </button>
-    </div>
-  );
-}
-
-// ─── INSPECTIONS MODULE ───────────────────────────────────────────────────────
-
 export function InspectionsModule() {
-  const [settings, setSettings]           = useState({ tableId: "", reportId: "" });
-  const [showSettings, setShowSettings]   = useState(false);
-  const [inspections]                     = useState(SAMPLE_INSPECTIONS);
+  const [settings, setSettings]         = useState({ tableId: "", reportId: "" });
+  const [showSettings, setShowSettings] = useState(false);
+  const [inspections]                   = useState(SAMPLE_INSPECTIONS);
 
-  useEffect(() => {
-    setSettings(loadModuleSettings("inspections"));
-  }, []);
+  useEffect(() => { setSettings(loadModuleSettings("inspections")); }, []);
 
-  const isConnected = !!(settings.tableId && settings.reportId);
-
-  const total  = inspections.length;
-  const passed = inspections.filter(i => i.result === "Pass").length;
-  const failed = inspections.filter(i => i.result === "Fail").length;
-  const rework = inspections.filter(i => i.result === "Rework").length;
-  const passRate = total ? Math.round((passed / total) * 100) : 0;
+  const isConnected  = !!(settings.tableId && settings.reportId);
+  const total        = inspections.length;
+  const passed       = inspections.filter(i => i.result === "Pass").length;
+  const failed       = inspections.filter(i => i.result === "Fail").length;
+  const rework       = inspections.filter(i => i.result === "Rework").length;
+  const passRate     = total ? Math.round((passed / total) * 100) : 0;
   const totalDefects = inspections.reduce((s, i) => s + i.defects, 0);
 
   return (
@@ -102,59 +60,55 @@ export function InspectionsModule() {
           initialTableId={settings.tableId}
           initialReportId={settings.reportId}
           onClose={() => setShowSettings(false)}
-          onSave={(s) => {
-            saveModuleSettings("inspections", s);
-            setSettings(s);
-            setShowSettings(false);
-          }}
+          onSave={s => { saveModuleSettings("inspections", s); setSettings(s); setShowSettings(false); }}
         />
       )}
 
-      {/* Hero Banner */}
-      <div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", marginBottom: 20 }}>
-        <div style={{ position: "absolute", right: 180, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
-        <div style={{ position: "absolute", right: 220, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, margin: 0 }}>Inspections</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500, maxWidth: 380, margin: "6px 0 0" }}>QC inspection records, pass/fail tracking, and defect visibility across all production runs.</p>
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            <button style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "#fff", color: "var(--t-brand)" }}>Inspections</button>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-          <StatChip label="Total" value={String(total)} sub="All inspections" />
-          <StatChip label="Pass Rate" value={`${passRate}%`} sub={`${passed} passed`} />
-          <StatChip label="Failed" value={String(failed)} sub="Require action" />
-        </div>
-      </div>
+      <HeroBanner
+        title="Inspections"
+        subtitle="QC inspection records, pass/fail tracking, and defect visibility across all production runs."
+        chips={[
+          { label: "Total",     value: String(total),       sub: "All inspections" },
+          { label: "Pass Rate", value: `${passRate}%`,      sub: `${passed} passed` },
+          { label: "Failed",    value: String(failed),      sub: "Require action" },
+        ]}
+      >
+        <button style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "#fff", color: "var(--t-brand)" }}>Inspections</button>
+      </HeroBanner>
 
       {/* Action bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
         <div style={{ flex: 1 }} />
-        <button onClick={() => setShowSettings(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2 }}>
+        <button onClick={() => setShowSettings(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2, fontFamily: "inherit" }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Configure QB
         </button>
       </div>
 
-      {!isConnected && <ConnectBanner onSettings={() => setShowSettings(true)} />}
+      {!isConnected && (
+        <ConnectBanner
+          accent={ACCENT}
+          message="Connect a Quickbase report to load live inspection records."
+          onSettings={() => setShowSettings(true)}
+        />
+      )}
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 28 }}>
-        <KpiCard label="Total Inspections" value={total}      sub="All-time sample data"      accent={ACCENT} />
-        <KpiCard label="Pass Rate"         value={`${passRate}%`} sub={`${passed} of ${total} passed`} accent={C.success} />
-        <KpiCard label="Failed"            value={failed}     sub="Require rework or scrap"   accent={C.danger} />
-        <KpiCard label="Rework"            value={rework}     sub="Conditional pass"          accent={C.warningText} />
-        <KpiCard label="Total Defects"     value={totalDefects} sub="Across all inspections" accent={C.brand} />
+        <ModuleKpiCard label="Total Inspections" value={total}           sub="All-time sample data"        accent={ACCENT} />
+        <ModuleKpiCard label="Pass Rate"         value={`${passRate}%`} sub={`${passed} of ${total} passed`} accent={C.success} />
+        <ModuleKpiCard label="Failed"            value={failed}         sub="Require rework or scrap"     accent={C.danger} />
+        <ModuleKpiCard label="Rework"            value={rework}         sub="Conditional pass"            accent={C.warningText} />
+        <ModuleKpiCard label="Total Defects"     value={totalDefects}   sub="Across all inspections"      accent={C.brand} />
       </div>
 
       {/* Pass/Fail bar */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: shadows.card }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,.06)" }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Inspection Results Breakdown</p>
-        <div style={{ display: "flex", gap: 0, height: 20, borderRadius: 999, overflow: "hidden", background: C.bg }}>
-          {passed > 0 && <div style={{ flex: passed, background: C.success }} title={`Pass: ${passed}`} />}
-          {rework > 0 && <div style={{ flex: rework, background: C.warningText }} title={`Rework: ${rework}`} />}
-          {failed > 0 && <div style={{ flex: failed, background: C.danger }} title={`Fail: ${failed}`} />}
+        <div style={{ display: "flex", height: 20, borderRadius: 999, overflow: "hidden", background: C.bg }}>
+          {passed > 0 && <div style={{ flex: passed,  background: C.success    }} title={`Pass: ${passed}`} />}
+          {rework > 0 && <div style={{ flex: rework,  background: C.warningText}} title={`Rework: ${rework}`} />}
+          {failed > 0 && <div style={{ flex: failed,  background: C.danger     }} title={`Fail: ${failed}`} />}
         </div>
         <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
           {[["Pass", C.success, passed], ["Rework", C.warningText, rework], ["Fail", C.danger, failed]].map(([l, color, v]) => (
@@ -167,7 +121,7 @@ export function InspectionsModule() {
       </div>
 
       {/* Table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,.06)" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Inspection Records</span>
           {!isConnected && <span style={{ fontSize: 11, color: C.text3 }}>Sample data — connect QB to load live records</span>}
@@ -201,3 +155,14 @@ export function InspectionsModule() {
     </div>
   );
 }
+
+registerModule({
+  id:             "inspections",
+  label:          "Inspections",
+  iconKey:        "checklist",
+  group:          "modules",
+  component:      InspectionsModule,
+  accentColor:    "var(--t-teal)",
+  description:    "QC inspection records, pass/fail rates, inspector assignments, and defect tracking per production run.",
+  overviewStatus: "configure",
+});

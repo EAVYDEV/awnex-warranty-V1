@@ -1,24 +1,25 @@
 import { useState, useEffect, useMemo } from "react";
-import { colors, shadows } from "../../lib/tokens.js";
+import { colors } from "../../lib/tokens.js";
 import { SettingsModal } from "../SettingsModal.jsx";
 import { loadModuleSettings, saveModuleSettings } from "../../lib/dashboardStorage.js";
-import { getQualityRiskDashboardData } from "../../src/lib/qualityRiskDataSource.js";
-import { calculateRiskLevel, calculateRiskScore, canAdvanceStatus, canCloseCase } from "../../src/lib/qualityRiskUtils.js";
-import CaseDetailPanel from "../../src/components/quality/CaseDetailPanel.jsx";
+import { registerModule } from "../../lib/moduleRegistry.js";
+import { HeroBanner, ConnectBanner, ModuleKpiCard } from "../ui/ModuleShared.jsx";
+import { getQualityRiskDashboardData } from "../../lib/qualityRiskDataSource.js";
+import { calculateRiskLevel, calculateRiskScore, canAdvanceStatus, canCloseCase } from "../../lib/qualityRiskUtils.js";
+import CaseDetailPanel from "../quality/CaseDetailPanel.jsx";
 
-const C = colors;
-const ACCENT = 'var(--t-purple)';
-const HERO_GRADIENT = "linear-gradient(115deg, var(--t-brand-deep) 0%, var(--t-brand) 60%, var(--t-brand-light) 100%)";
+const C      = colors;
+const ACCENT = "var(--t-purple)";
 
 const STATUS_ORDER = ["Open", "Containment", "RCA", "CAPA", "Verification", "Closed"];
 
 const STATUS_CFG = {
-  Open:         { bg: C.dangerSubtle,  text: C.dangerText,  dot: C.danger },
-  Containment:  { bg: 'var(--t-warning-soft)',    text: C.warningText,          dot: C.warningText },
-  RCA:          { bg: C.brandSubtle,              text: C.brandDark,            dot: C.brand },
-  CAPA:         { bg: 'var(--t-purple-subtle)',   text: 'var(--t-purple-text)', dot: ACCENT },
-  Verification: { bg: 'var(--t-teal-subtle)',     text: 'var(--t-teal-text)',   dot: 'var(--t-teal)' },
-  Closed:       { bg: C.successSubtle, text: C.successText, dot: C.success },
+  Open:         { bg: C.dangerSubtle,              text: C.dangerText,              dot: C.danger },
+  Containment:  { bg: "var(--t-warning-soft)",     text: C.warningText,             dot: C.warningText },
+  RCA:          { bg: C.brandSubtle,               text: C.brandDark,               dot: C.brand },
+  CAPA:         { bg: "var(--t-purple-subtle)",    text: "var(--t-purple-text)",    dot: ACCENT },
+  Verification: { bg: "var(--t-teal-subtle)",      text: "var(--t-teal-text)",      dot: "var(--t-teal)" },
+  Closed:       { bg: C.successSubtle,             text: C.successText,             dot: C.success },
 };
 
 function hydrateCase(c) {
@@ -29,34 +30,13 @@ function hydrateCase(c) {
 function btnStyle(variant) {
   return {
     display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+    padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+    cursor: "pointer", fontFamily: "inherit",
     ...(variant === "primary"
       ? { background: ACCENT, border: "none", color: C.card }
       : { background: C.card, border: `1px solid ${C.borderLight}`, color: C.text2 }
     ),
   };
-}
-
-function StatChip({ label, value, sub }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", borderRadius: 6, padding: "12px 18px", textAlign: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
-      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1, fontWeight: 500 }}>{sub}</div>
-    </div>
-  );
-}
-
-function KpiCard({ label, value, sub, accent }) {
-  return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", boxShadow: shadows.card, display: "flex", flexDirection: "column", gap: 10 }}>
-      <p style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", margin: 0, lineHeight: 1.35 }}>{label}</p>
-      <div>
-        <p style={{ fontSize: 26, fontWeight: 800, color: accent, margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
-        {sub && <p style={{ fontSize: 11.5, color: C.text3, margin: "4px 0 0", fontWeight: 500 }}>{sub}</p>}
-      </div>
-    </div>
-  );
 }
 
 function StatusBadge({ status }) {
@@ -69,26 +49,12 @@ function StatusBadge({ status }) {
   );
 }
 
-function ConnectBanner({ onSettings }) {
-  return (
-    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-      <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 2px" }}>Showing sample data</p>
-        <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live CAPA records.</p>
-      </div>
-      <button onClick={onSettings} style={{ ...btnStyle("primary"), background: ACCENT }}>Connect QB Report</button>
-    </div>
-  );
-}
-
 function PipelineBar({ cases }) {
   const counts = STATUS_ORDER.map(s => ({
-    status: s,
-    count: cases.filter(c => c.status === s).length,
-    cfg: STATUS_CFG[s],
+    status: s, count: cases.filter(c => c.status === s).length, cfg: STATUS_CFG[s],
   }));
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: shadows.card }}>
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,.06)" }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>CAPA Pipeline</p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {counts.map(({ status, count, cfg }) => (
@@ -131,14 +97,14 @@ export function CapaModule({ onNavigate }) {
   useEffect(() => {
     setSettings(loadModuleSettings("capas"));
     let mounted = true;
-    getQualityRiskDashboardData().then((data) => {
+    getQualityRiskDashboardData().then(data => {
       if (!mounted) return;
       setCases((data.cases || []).map(hydrateCase));
     });
     return () => { mounted = false; };
   }, []);
 
-  const isConnected = !!(settings.tableId && settings.reportId);
+  const isConnected  = !!(settings.tableId && settings.reportId);
   const selectedCase = useMemo(() => cases.find(c => c.id === selectedCaseId) || null, [cases, selectedCaseId]);
 
   const allActions = useMemo(() =>
@@ -147,24 +113,21 @@ export function CapaModule({ onNavigate }) {
   );
 
   const kpi = useMemo(() => {
-    const open     = cases.filter(c => c.status !== "Closed").length;
-    const inCapaPhase = cases.filter(c => c.status === "CAPA").length;
-    const overdue  = allActions.filter(a => a.dueDate && new Date(a.dueDate) < new Date() && a.status !== "Complete" && a.status !== "Verified").length;
-    const closed   = cases.filter(c => c.status === "Closed").length;
-    const onTime   = closed ? Math.round((cases.filter(c => c.status === "Closed" && !allActions.some(a => a.caseId === c.id && a.dueDate && new Date(a.dueDate) < new Date(c.closedDate || Date.now()))).length / closed) * 100) : 0;
-    return { open, inCapaPhase, overdue, closed, onTime };
+    const open         = cases.filter(c => c.status !== "Closed").length;
+    const inCapaPhase  = cases.filter(c => c.status === "CAPA").length;
+    const overdue      = allActions.filter(a => a.dueDate && new Date(a.dueDate) < new Date() && a.status !== "Complete" && a.status !== "Verified").length;
+    const closed       = cases.filter(c => c.status === "Closed").length;
+    return { open, inCapaPhase, overdue, closed };
   }, [cases, allActions]);
 
   const filteredActions = useMemo(() => {
-    if (activeTab === "Overdue") return allActions.filter(a => a.dueDate && new Date(a.dueDate) < new Date() && a.status !== "Complete" && a.status !== "Verified");
+    if (activeTab === "Overdue")     return allActions.filter(a => a.dueDate && new Date(a.dueDate) < new Date() && a.status !== "Complete" && a.status !== "Verified");
     if (activeTab === "In Progress") return allActions.filter(a => a.status !== "Complete" && a.status !== "Verified");
-    if (activeTab === "Completed") return allActions.filter(a => a.status === "Complete" || a.status === "Verified");
+    if (activeTab === "Completed")   return allActions.filter(a => a.status === "Complete" || a.status === "Verified");
     return allActions;
   }, [activeTab, allActions]);
 
-  const saveCase = (updated) => {
-    setCases(prev => prev.map(c => c.id === updated.id ? hydrateCase(updated) : c));
-  };
+  const saveCase = updated => setCases(prev => prev.map(c => c.id === updated.id ? hydrateCase(updated) : c));
 
   return (
     <div style={{ padding: "20px 24px 48px" }}>
@@ -174,7 +137,7 @@ export function CapaModule({ onNavigate }) {
           initialTableId={settings.tableId}
           initialReportId={settings.reportId}
           onClose={() => setShowSettings(false)}
-          onSave={(s) => { saveModuleSettings("capas", s); setSettings(s); setShowSettings(false); }}
+          onSave={s => { saveModuleSettings("capas", s); setSettings(s); setShowSettings(false); }}
         />
       )}
       {selectedCase && (
@@ -187,24 +150,18 @@ export function CapaModule({ onNavigate }) {
         />
       )}
 
-      {/* Hero Banner */}
-      <div style={{ background: HERO_GRADIENT, borderRadius: 13, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden", marginBottom: 20 }}>
-        <div style={{ position: "absolute", right: 180, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
-        <div style={{ position: "absolute", right: 220, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, margin: 0 }}>Field Execution</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500, maxWidth: 380, margin: "6px 0 0" }}>Full CAPA lifecycle — initiation, root-cause analysis, action items, verification, and closure.</p>
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            <button onClick={() => onNavigate?.("ncrs")} style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.15)", color: "#fff" }}>Quality Intelligence</button>
-            <button style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "#fff", color: "var(--t-brand)" }}>Field Execution</button>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-          <StatChip label="Open Cases" value={String(kpi.open)} sub="Require action" />
-          <StatChip label="Overdue" value={String(kpi.overdue)} sub="Past due date" />
-          <StatChip label="Closed" value={String(kpi.closed)} sub="Verified closed" />
-        </div>
-      </div>
+      <HeroBanner
+        title="Field Execution"
+        subtitle="Full CAPA lifecycle — initiation, root-cause analysis, action items, verification, and closure."
+        chips={[
+          { label: "Open Cases", value: String(kpi.open),    sub: "Require action" },
+          { label: "Overdue",    value: String(kpi.overdue), sub: "Past due date" },
+          { label: "Closed",     value: String(kpi.closed),  sub: "Verified closed" },
+        ]}
+      >
+        <button onClick={() => onNavigate?.("ncrs")} style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.15)", color: "#fff" }}>Quality Intelligence</button>
+        <button style={{ fontFamily: "inherit", border: "none", cursor: "pointer", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, background: "#fff", color: "var(--t-brand)" }}>Field Execution</button>
+      </HeroBanner>
 
       {/* Action bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
@@ -215,31 +172,36 @@ export function CapaModule({ onNavigate }) {
         </button>
       </div>
 
-      {!isConnected && <ConnectBanner onSettings={() => setShowSettings(true)} />}
+      {!isConnected && (
+        <ConnectBanner
+          accent={ACCENT}
+          message="Connect a Quickbase report to load live CAPA records."
+          onSettings={() => setShowSettings(true)}
+        />
+      )}
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
-        <KpiCard label="Open Cases"      value={kpi.open}         sub="Require action"         accent={ACCENT} />
-        <KpiCard label="In CAPA Phase"   value={kpi.inCapaPhase}  sub="Action items in flight" accent={C.brand} />
-        <KpiCard label="Overdue Actions" value={kpi.overdue}      sub="Past due date"          accent={C.danger} />
-        <KpiCard label="Closed"          value={kpi.closed}       sub="Verified closed"        accent={C.success} />
+        <ModuleKpiCard label="Open Cases"      value={kpi.open}        sub="Require action"         accent={ACCENT} />
+        <ModuleKpiCard label="In CAPA Phase"   value={kpi.inCapaPhase} sub="Action items in flight" accent={C.brand} />
+        <ModuleKpiCard label="Overdue Actions" value={kpi.overdue}     sub="Past due date"          accent={C.danger} />
+        <ModuleKpiCard label="Closed"          value={kpi.closed}      sub="Verified closed"        accent={C.success} />
       </div>
 
-      {/* Pipeline */}
       <PipelineBar cases={cases} />
 
       {/* Action items table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.06)", overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Action Items</span>
           <span style={{ fontSize: 11, color: C.text3, marginLeft: 4 }}>({allActions.length} total)</span>
           <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
             {["All Actions", "Overdue", "In Progress", "Completed"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} style={{
-                padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer",
-                border: `1px solid ${activeTab === tab ? ACCENT : C.borderLight}`,
+                padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                border:     `1px solid ${activeTab === tab ? ACCENT : C.borderLight}`,
                 background: activeTab === tab ? ACCENT : C.surface,
-                color: activeTab === tab ? C.card : C.text2,
+                color:      activeTab === tab ? C.card  : C.text2,
               }}>{tab}</button>
             ))}
           </div>
@@ -267,7 +229,7 @@ export function CapaModule({ onNavigate }) {
       </div>
 
       {/* Cases table */}
-      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
+      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.06)", overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}` }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Cases</span>
         </div>
@@ -289,7 +251,7 @@ export function CapaModule({ onNavigate }) {
                   <td style={{ padding: "10px 14px" }}><StatusBadge status={c.status} /></td>
                   <td style={{ padding: "10px 14px", color: C.text2 }}>{(c.capaActions || []).length} action{(c.capaActions || []).length !== 1 ? "s" : ""}</td>
                   <td style={{ padding: "10px 14px" }}>
-                    <button onClick={() => setSelectedCaseId(c.id)} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, border: `1px solid ${C.borderLight}`, background: C.surface, cursor: "pointer", color: C.text2 }}>
+                    <button onClick={() => setSelectedCaseId(c.id)} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, border: `1px solid ${C.borderLight}`, background: C.surface, cursor: "pointer", color: C.text2, fontFamily: "inherit" }}>
                       View
                     </button>
                   </td>
@@ -302,3 +264,14 @@ export function CapaModule({ onNavigate }) {
     </div>
   );
 }
+
+registerModule({
+  id:             "capas",
+  label:          "Field Execution",
+  iconKey:        "gear",
+  group:          "modules",
+  component:      CapaModule,
+  accentColor:    "var(--t-purple)",
+  description:    "Full CAPA lifecycle — initiation, root-cause, action items, verification, and closure with on-time tracking.",
+  overviewStatus: "configure",
+});

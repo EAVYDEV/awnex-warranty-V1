@@ -1,12 +1,7 @@
 import { useState, useCallback } from "react";
 import { QMSSidebar } from "./QMSSidebar.jsx";
-import { QMSOverview } from "./modules/QMSOverview.jsx";
-import { InspectionsModule } from "./modules/InspectionsModule.jsx";
-import { NcrModule } from "./modules/NcrModule.jsx";
-import { CapaModule } from "./modules/CapaModule.jsx";
-import { ProductionModule } from "./modules/ProductionModule.jsx";
-import { DispatchModule } from "./modules/DispatchModule.jsx";
-import { WarrantyDashboard } from "../src/WarrantyDashboard.jsx";
+import "./modules/index.js";
+import { getModule } from "../lib/moduleRegistry.js";
 import { colors } from "../lib/tokens.js";
 
 const C = colors;
@@ -54,16 +49,6 @@ function TopBarBtn({ title, onClick, children, active = false, badgeCount = 0 })
   );
 }
 
-const MODULE_COMPONENTS = {
-  overview:    QMSOverview,
-  warranty:    (props) => <WarrantyDashboard apiRoute="/api/warranty-orders" standalone={false} {...props} />,
-  inspections: InspectionsModule,
-  ncrs:        NcrModule,
-  capas:       CapaModule,
-  production:  ProductionModule,
-  dispatch:    DispatchModule,
-};
-
 export function QMSShell() {
   const [activeModule, setActiveModule] = useState("overview");
   const [collapsed, setCollapsed]       = useState(false);
@@ -72,7 +57,8 @@ export function QMSShell() {
     setActiveModule(id);
   }, []);
 
-  const ActiveComponent = MODULE_COMPONENTS[activeModule] || QMSOverview;
+  const mod = getModule(activeModule) || getModule("overview");
+  const { component: ActiveComponent, defaultProps: modProps = {} } = mod;
 
   return (
     <div style={{
@@ -164,7 +150,7 @@ export function QMSShell() {
           minWidth: 0,
           background: C.bg,
         }}>
-          <ActiveComponent onNavigate={handleModuleChange} />
+          <ActiveComponent {...modProps} onNavigate={handleModuleChange} />
         </main>
       </div>
     </div>
