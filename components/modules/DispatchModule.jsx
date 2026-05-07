@@ -200,7 +200,7 @@ export function DispatchModule() {
       </div>
 
       {loadState === "unconfigured" && (
-        <div style={{ background: ACCENT + "12", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "20px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <div style={{ background: ACCENT + "12", border: `1px dashed ${ACCENT}`, borderRadius: 8, padding: "20px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <div>
             <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 4px" }}>Reports not configured</p>
             <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Configure both Quickbase reports above to start dispatch planning.</p>
@@ -208,7 +208,7 @@ export function DispatchModule() {
         </div>
       )}
       {loadState === "error" && (
-        <div style={{ background: C.dangerSubtle, border: `1px solid ${C.danger}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, color: C.dangerText, fontSize: 13, fontWeight: 600 }}>
+        <div style={{ background: C.dangerSubtle, border: `1px solid ${C.danger}`, borderRadius: 8, padding: "16px 20px", marginBottom: 24, color: C.dangerText, fontSize: 13, fontWeight: 600 }}>
           {errorMsg}
         </div>
       )}
@@ -225,7 +225,7 @@ export function DispatchModule() {
             <KpiCard label="Unassigned"      value={unassigned}          accent={C.danger} />
           </div>
 
-          <div style={{ border: `1px solid ${C.borderLight}`, borderRadius: 12, overflow: "hidden", background: C.card, boxShadow: shadows.card }}>
+          <div style={{ border: `1px solid ${C.borderLight}`, borderRadius: 8, overflow: "hidden", background: C.card, boxShadow: shadows.card }}>
             <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}` }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Combined Schedule</span>
             </div>

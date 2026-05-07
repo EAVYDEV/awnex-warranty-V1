@@ -45,7 +45,7 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
       style={{
         background: C.card,
         border: `1px solid ${C.borderLight}`,
-        borderRadius: 12,
+        borderRadius: 8,
         padding: "20px",
         boxShadow: shadows.card,
         cursor: "pointer",
@@ -58,7 +58,7 @@ function ModuleCard({ title, description, status, onClick, accentColor, icon }) 
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10,
+          width: 40, height: 40, borderRadius: 8,
           background: accentColor + "18",
           display: "flex", alignItems: "center", justifyContent: "center",
           color: accentColor, flexShrink: 0,

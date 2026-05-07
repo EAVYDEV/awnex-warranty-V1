@@ -62,7 +62,7 @@ function ResultBadge({ result }) {
 
 function ConnectBanner({ onSettings }) {
   return (
-    <div style={{ background: ACCENT + "12", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "20px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div style={{ background: ACCENT + "12", border: `1px dashed ${ACCENT}`, borderRadius: 8, padding: "20px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <div>
         <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 4px" }}>Showing sample data</p>
         <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live inspection records.</p>
@@ -149,7 +149,7 @@ export function InspectionsModule() {
       </div>
 
       {/* Pass/Fail bar */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: shadows.card }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 8, padding: "18px 20px", marginBottom: 24, boxShadow: shadows.card }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Inspection Results Breakdown</p>
         <div style={{ display: "flex", gap: 0, height: 20, borderRadius: 999, overflow: "hidden", background: C.bg }}>
           {passed > 0 && <div style={{ flex: passed, background: C.success }} title={`Pass: ${passed}`} />}
@@ -167,7 +167,7 @@ export function InspectionsModule() {
       </div>
 
       {/* Table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 8, boxShadow: shadows.card, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Inspection Records</span>
           {!isConnected && <span style={{ fontSize: 11, color: C.text3 }}>Sample data — connect QB to load live records</span>}

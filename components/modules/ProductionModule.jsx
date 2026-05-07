@@ -77,7 +77,7 @@ function YieldBar({ value }) {
 
 function ConnectBanner({ onSettings }) {
   return (
-    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 8, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <div>
         <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 2px" }}>Showing sample data</p>
         <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live production batch records.</p>
@@ -179,7 +179,7 @@ export function ProductionModule() {
       {/* Line stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 24 }}>
         {lineStats.map(({ line, batches: cnt, yield: y }) => (
-          <div key={line} style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "16px 20px", boxShadow: shadows.card }}>
+          <div key={line} style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 8, padding: "16px 20px", boxShadow: shadows.card }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{line}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
               <span style={{ fontSize: 28, fontWeight: 800, color: C.text1 }}>{y != null ? `${y}%` : "—"}</span>
@@ -191,7 +191,7 @@ export function ProductionModule() {
       </div>
 
       {/* Batch table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 8, boxShadow: shadows.card, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Batch Records</span>
           <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>

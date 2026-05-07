@@ -71,7 +71,7 @@ function StatusBadge({ status }) {
 
 function ConnectBanner({ onSettings }) {
   return (
-    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div style={{ background: ACCENT + "10", border: `1px dashed ${ACCENT}`, borderRadius: 8, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <div>
         <p style={{ fontSize: 13, fontWeight: 700, color: C.text1, margin: "0 0 2px" }}>Showing sample data</p>
         <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>Connect a Quickbase report to load live CAPA records.</p>
@@ -88,11 +88,11 @@ function PipelineBar({ cases }) {
     cfg: STATUS_CFG[s],
   }));
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, padding: "18px 20px", marginBottom: 24, boxShadow: shadows.card }}>
+    <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 8, padding: "18px 20px", marginBottom: 24, boxShadow: shadows.card }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: C.text2, margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>CAPA Pipeline</p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {counts.map(({ status, count, cfg }) => (
-          <div key={status} style={{ flex: "1 1 80px", background: cfg.bg, border: `1px solid ${cfg.dot}30`, borderRadius: 10, padding: "10px 14px" }}>
+          <div key={status} style={{ flex: "1 1 80px", background: cfg.bg, border: `1px solid ${cfg.dot}30`, borderRadius: 8, padding: "10px 14px" }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: cfg.text }}>{count}</div>
             <div style={{ fontSize: 10, fontWeight: 600, color: cfg.text, opacity: 0.8, marginTop: 2 }}>{status}</div>
           </div>
@@ -229,7 +229,7 @@ export function CapaModule({ onNavigate }) {
       <PipelineBar cases={cases} />
 
       {/* Action items table */}
-      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 8, boxShadow: shadows.card, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Action Items</span>
           <span style={{ fontSize: 11, color: C.text3, marginLeft: 4 }}>({allActions.length} total)</span>
@@ -267,7 +267,7 @@ export function CapaModule({ onNavigate }) {
       </div>
 
       {/* Cases table */}
-      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 12, boxShadow: shadows.card, overflow: "hidden" }}>
+      <div style={{ marginTop: 24, background: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 8, boxShadow: shadows.card, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.borderLight}` }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Cases</span>
         </div>
