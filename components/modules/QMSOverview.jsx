@@ -19,17 +19,21 @@ function KpiCard({ label, value, sub, accent, icon }) {
     <div style={{
       background: C.card,
       border: `1px solid ${C.borderLight}`,
-      borderRadius: 12,
-      padding: "20px 22px",
+      borderRadius: 6,
+      padding: "14px 16px",
       boxShadow: shadows.card,
-      borderLeft: `4px solid ${accent}`,
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.35 }}>{label}</span>
         <span style={{ color: accent, opacity: 0.8 }}>{icon}</span>
       </div>
-      <div style={{ fontSize: 36, fontWeight: 800, color: C.text1, lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: C.text2, marginTop: 6 }}>{sub}</div>}
+      <div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: accent, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</div>
+        {sub && <div style={{ fontSize: 11.5, color: C.text3, marginTop: 4, fontWeight: 500 }}>{sub}</div>}
+      </div>
     </div>
   );
 }

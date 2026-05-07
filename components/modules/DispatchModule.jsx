@@ -68,9 +68,9 @@ function StatChip({ label, value, sub }) {
 
 function KpiCard({ label, value, accent }) {
   return (
-    <div style={{ border: `1px solid ${C.borderLight}`, borderTop: `3px solid ${accent}`, borderRadius: 12, padding: "16px 18px", background: C.card, boxShadow: shadows.card }}>
-      <div style={{ fontSize: 11, color: C.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: C.text1, lineHeight: 1 }}>{value}</div>
+    <div style={{ border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "14px 16px", background: C.card, boxShadow: shadows.card, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ fontSize: 10, color: C.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.35 }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 800, color: accent, lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</div>
     </div>
   );
 }
